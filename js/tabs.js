@@ -90,14 +90,28 @@ function renderArchiveTab(container) {
 
   entries.forEach((entry) => {
     const item = el("div", { class: "archive-item" });
-    const head = el("button", { class: "archive-item-head", type: "button" }, [
+    const toggleBtn = el("button", { class: "archive-item-toggle", type: "button" }, [
       el("span", { class: "archive-date", text: `${formatDateHe(entry.date)}, ${PERIOD_LABELS[entry.period]}` }),
       el("span", { class: "archive-count", text: `${entry.exerciseIds.length} תרגילים` }),
       el("span", { class: "archive-chevron", text: "︿" })
     ]);
+    const deleteBtn = el("button", {
+      class: "archive-delete",
+      type: "button",
+      text: "🗑",
+      title: "מחיקת הרשומה לצמיתות",
+      onclick: (e) => {
+        e.stopPropagation();
+        if (confirm(`למחוק לצמיתות את היומן של ${formatDateHe(entry.date)}, ${PERIOD_LABELS[entry.period]}? לא ניתן לשחזר.`)) {
+          deleteEntry(entry.date, entry.period);
+          renderArchiveTab(container);
+        }
+      }
+    });
+    const head = el("div", { class: "archive-item-head" }, [toggleBtn, deleteBtn]);
     const body = el("div", { class: "archive-item-body is-collapsed" });
     let built = false;
-    head.addEventListener("click", () => {
+    toggleBtn.addEventListener("click", () => {
       const collapsed = body.classList.toggle("is-collapsed");
       head.querySelector(".archive-chevron").textContent = collapsed ? "﹀" : "︿";
       if (!collapsed && !built) {
@@ -175,6 +189,54 @@ const TABS = [
   { id: "habits", label: "מעקב הרגלים", render: renderHabitsTab }
 ];
 
+function buildExercisesMenu(nav, exBtn) {
+  const dropdown = el("div", { class: "exercises-dropdown is-collapsed" });
+
+  function closeMenu() {
+    dropdown.classList.add("is-collapsed");
+    exBtn.classList.remove("is-active");
+  }
+
+  function openMenu() {
+    dropdown.innerHTML = "";
+    const date = todayISO();
+    PERIODS.forEach((p) => {
+      dropdown.appendChild(el("div", { class: "dropdown-section-label", text: PERIOD_LABELS[p] }));
+      EXERCISES.filter((e) => e.period === p).forEach((ex) => {
+        dropdown.appendChild(
+          el("button", {
+            type: "button",
+            class: "dropdown-item",
+            text: ex.name,
+            onclick: () => {
+              const status = dayStatus(date);
+              if (status[p] && status[p].saved) {
+                alert(`היומן של ${PERIOD_LABELS[p]} כבר נשמר היום. אי אפשר להוסיף אליו תרגילים נוספים.`);
+                return;
+              }
+              addExerciseToDay(date, ex.id);
+              closeMenu();
+            }
+          })
+        );
+      });
+    });
+    dropdown.classList.remove("is-collapsed");
+    exBtn.classList.add("is-active");
+  }
+
+  exBtn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    if (dropdown.classList.contains("is-collapsed")) openMenu();
+    else closeMenu();
+  });
+  document.addEventListener("click", (e) => {
+    if (!dropdown.contains(e.target) && e.target !== exBtn) closeMenu();
+  });
+
+  nav.insertAdjacentElement("afterend", dropdown);
+}
+
 function initTabs() {
   const nav = document.getElementById("tab-nav");
   const content = document.getElementById("tab-content");
@@ -189,7 +251,20 @@ function initTabs() {
     location.hash = tabId;
   }
 
-  TABS.forEach((t) => {
+  const journalBtn = el("button", {
+    class: "tab-btn",
+    type: "button",
+    "data-tab": "journal",
+    text: "יומן",
+    onclick: () => activate("journal")
+  });
+  nav.appendChild(journalBtn);
+
+  const exBtn = el("button", { class: "tab-btn", type: "button", text: "תרגילים" });
+  nav.appendChild(exBtn);
+  buildExercisesMenu(nav, exBtn);
+
+  TABS.filter((t) => t.id !== "journal").forEach((t) => {
     const btn = el("button", { class: "tab-btn", type: "button", "data-tab": t.id, text: t.label, onclick: () => activate(t.id) });
     nav.appendChild(btn);
   });

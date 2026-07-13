@@ -59,7 +59,6 @@ function renderExerciseBlocks(entry, cardBody, isLocked, activeBlocks) {
 function buildDraftEditor(date, period, onSaved) {
   const root = el("div", { class: "day-card" });
   let activeBlocks = [];
-  let pickerOpen = false;
 
   function captureAll() {
     const entry = getOrCreateDraft(date, period);
@@ -69,58 +68,17 @@ function buildDraftEditor(date, period, onSaved) {
     return entry;
   }
 
-  function renderPicker(cardBody, entry) {
-    const available = EXERCISES.filter((e) => e.period === period && !entry.exerciseIds.includes(e.id));
-    cardBody.appendChild(
-      el("button", {
-        class: "btn btn-secondary btn-small add-exercise-toggle",
-        type: "button",
-        text: pickerOpen ? "✕ סגירה" : "+ הוספת תרגיל",
-        onclick: () => {
-          pickerOpen = !pickerOpen;
-          render();
-        }
-      })
-    );
-    if (!pickerOpen) return;
-
-    const panel = el("div", { class: "add-exercise-panel" });
-    panel.appendChild(el("div", { class: "period-heading-mini", text: `תרגילי ${PERIOD_LABELS[period]}` }));
-    if (available.length === 0) {
-      panel.appendChild(el("div", { class: "empty-state-mini", text: "כל התרגילים כבר נוספו." }));
-    } else {
-      const row = el("div", { class: "picker-row" });
-      const select = el("select", { class: "field-input picker-select" });
-      available.forEach((ex) => select.appendChild(el("option", { value: ex.id, text: ex.name })));
-      row.appendChild(select);
-      row.appendChild(
-        el("button", {
-          class: "btn btn-primary btn-small",
-          type: "button",
-          text: "הוספה",
-          onclick: () => {
-            if (select.value) addExerciseToDay(date, select.value);
-          }
-        })
-      );
-      panel.appendChild(row);
-    }
-    cardBody.appendChild(panel);
-  }
-
   function render() {
     activeBlocks = [];
     root.innerHTML = "";
     const entry = getOrCreateDraft(date, period);
     const cardBody = el("div", { class: "day-body" });
 
-    renderPicker(cardBody, entry);
-
     if (entry.exerciseIds.length === 0) {
       cardBody.appendChild(
         el("div", {
           class: "empty-state",
-          text: `עדיין לא נוספו תרגילי ${PERIOD_LABELS[period]} ליום הזה. לחצי למעלה על "הוספת תרגיל" כדי להתחיל.`
+          text: `עדיין לא נוספו תרגילים ליום הזה. לחצי על לשונית "תרגילים" למעלה ובחרי מה למלא.`
         })
       );
     } else {

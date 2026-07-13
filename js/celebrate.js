@@ -1,54 +1,63 @@
-// חגיגת שמירה - קונפטי או הבזק אור (לסירוגין) + צליל עידוד קצר, בלי קבצים חיצוניים
+// חגיגת שמירה - כל פעם שילוב אחר של אפקט חזותי וצליל, לגיוון, בלי קבצים חיצוניים
 
-function playChime() {
+function playNotes(notes, { gap = 0.09, dur = 0.5, gain = 0.15 } = {}) {
   try {
     const Ctx = window.AudioContext || window.webkitAudioContext;
     const ctx = new Ctx();
-    const notes = [523.25, 659.25, 783.99]; // דו-מי-סול, אקורד עולה קצר
-    notes.forEach((freq, i) => {
+    notes.forEach(([freq, offset], i) => {
       const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
+      const g = ctx.createGain();
       osc.type = "sine";
       osc.frequency.value = freq;
-      const start = ctx.currentTime + i * 0.09;
-      gain.gain.setValueAtTime(0, start);
-      gain.gain.linearRampToValueAtTime(0.15, start + 0.02);
-      gain.gain.exponentialRampToValueAtTime(0.001, start + 0.5);
-      osc.connect(gain);
-      gain.connect(ctx.destination);
+      const start = ctx.currentTime + (offset !== undefined ? offset : i * gap);
+      g.gain.setValueAtTime(0, start);
+      g.gain.linearRampToValueAtTime(gain, start + 0.02);
+      g.gain.exponentialRampToValueAtTime(0.001, start + dur);
+      osc.connect(g);
+      g.connect(ctx.destination);
       osc.start(start);
-      osc.stop(start + 0.55);
+      osc.stop(start + dur + 0.05);
     });
-    setTimeout(() => ctx.close(), 900);
+    setTimeout(() => ctx.close(), (notes.length * gap + dur + 0.3) * 1000);
   } catch (e) {
-    /* אין תמיכה ב-Web Audio - פשוט מדלגים על הצליל */
+    /* אין תמיכה ב-Web Audio - מדלגים על הצליל */
   }
 }
 
-function burstConfetti() {
-  const colors = ["#be95c4", "#e0b1cb", "#9f86c0", "#f6f1fb"];
+const CHIMES = [
+  () => playNotes([[523.25], [659.25], [783.99]], { gap: 0.09, dur: 0.5 }), // אקורד עולה
+  () => playNotes([[392.0], [392.0, 0.12], [659.25, 0.26]], { dur: 0.45 }), // טה-דה
+  () => playNotes([[987.77], [880.0], [783.99], [659.25]], { gap: 0.07, dur: 0.35 }) // נצנוץ יורד
+];
+
+function burstConfettiExplosion() {
+  const colors = ["#ddd0e6", "#e0b1cb", "#9f86c0", "#f6f1fb"];
   const container = el("div", { class: "confetti-layer" });
   document.body.appendChild(container);
-  for (let i = 0; i < 40; i++) {
-    const piece = el("div", { class: "confetti-piece" });
-    piece.style.left = Math.random() * 100 + "vw";
+  for (let i = 0; i < 36; i++) {
+    const angle = Math.random() * Math.PI * 2;
+    const dist = 28 + Math.random() * 42;
+    const piece = el("div", { class: "confetti-piece confetti-explode" });
+    piece.style.left = "50vw";
+    piece.style.top = "38vh";
     piece.style.background = colors[Math.floor(Math.random() * colors.length)];
-    piece.style.animationDuration = 1.1 + Math.random() * 0.9 + "s";
-    piece.style.animationDelay = Math.random() * 0.3 + "s";
-    piece.style.transform = `rotate(${Math.random() * 360}deg)`;
+    piece.style.setProperty("--dx", Math.cos(angle) * dist + "vmin");
+    piece.style.setProperty("--dy", Math.sin(angle) * dist + "vmin");
+    piece.style.animationDuration = 0.7 + Math.random() * 0.5 + "s";
     container.appendChild(piece);
   }
-  setTimeout(() => container.remove(), 2200);
+  setTimeout(() => container.remove(), 1400);
 }
 
-function flashLight() {
-  const flash = el("div", { class: "light-flash" });
-  document.body.appendChild(flash);
-  setTimeout(() => flash.remove(), 700);
+function lightSweep() {
+  const sweep = el("div", { class: "light-sweep" });
+  document.body.appendChild(sweep);
+  setTimeout(() => sweep.remove(), 950);
 }
+
+const VISUAL_EFFECTS = [burstConfettiExplosion, lightSweep];
 
 function celebrateSave() {
-  playChime();
-  if (Math.random() < 0.5) burstConfetti();
-  else flashLight();
+  VISUAL_EFFECTS[Math.floor(Math.random() * VISUAL_EFFECTS.length)]();
+  CHIMES[Math.floor(Math.random() * CHIMES.length)]();
 }
