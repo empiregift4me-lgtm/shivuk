@@ -411,34 +411,24 @@ select.field-input:focus {
 .evidence-editable:focus { outline: none; border-color: var(--c-highlight); }
 .evidence-editable mark { background: var(--c-highlight); color: #231942; }
 
-/* ===== תרגילים - לשונית בחירה קומפקטית ===== */
-.exercise-section { margin-bottom: var(--space-lg); }
-.period-heading {
-  font-size: 1.2rem;
-  color: var(--text-light);
-  border-bottom: 2px solid var(--c-border);
-  padding-bottom: 6px;
-  margin-bottom: var(--space);
-}
-.picker-row { display: flex; gap: var(--space-sm); margin-bottom: var(--space-sm); }
-.picker-select { flex: 1 1 auto; }
-.picked-chips { display: flex; flex-wrap: wrap; gap: 8px; }
-.picked-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
+/* ===== הוספת תרגיל מוטמעת בדף היומן ===== */
+.add-exercise-toggle { margin-bottom: var(--space-sm); }
+.add-exercise-panel {
   background: var(--c-panel);
   border: 1px solid var(--c-border);
-  border-radius: 999px;
-  padding: 5px 6px 5px 12px;
+  border-radius: var(--radius-sm);
+  padding: var(--space);
+  margin-bottom: var(--space);
+}
+.period-heading-mini {
   font-size: 0.95rem;
-  color: var(--text-light);
+  color: var(--text-submuted);
+  margin-bottom: var(--space-sm);
+  font-weight: 600;
 }
-.chip-remove {
-  border: none; background: var(--c-muted-btn); color: var(--text-light);
-  width: 20px; height: 20px; border-radius: 50%; cursor: pointer; font-size: 1rem; line-height: 1;
-}
-.chip-remove:hover { background: var(--c-highlight); color: #231942; }
+.picker-row { display: flex; gap: var(--space-sm); }
+.picker-select { flex: 1 1 auto; }
+.empty-state-mini { color: var(--text-submuted); font-size: 0.95rem; }
 
 /* ===== ארכיונים ===== */
 .archive-item {
@@ -540,6 +530,40 @@ select.field-input:focus {
 .modal-line-strong { font-weight: 600; margin-top: var(--space-sm); }
 .modal-quote { font-size: 0.95rem; color: var(--text-submuted); font-style: italic; margin: 0 0 6px; padding-inline-start: 10px; border-inline-start: 2px solid var(--c-highlight); }
 .modal-box .btn { margin-top: var(--space); }
+
+/* ===== חגיגת שמירה ===== */
+.confetti-layer {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 200;
+}
+.confetti-piece {
+  position: absolute;
+  top: -20px;
+  width: 8px;
+  height: 14px;
+  border-radius: 2px;
+  animation: confetti-fall linear forwards;
+}
+@keyframes confetti-fall {
+  0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+  100% { transform: translateY(105vh) rotate(360deg); opacity: 0.9; }
+}
+.light-flash {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 200;
+  background: radial-gradient(circle at 50% 40%, rgba(246, 241, 251, 0.9), rgba(224, 177, 203, 0.2) 45%, transparent 70%);
+  animation: flash-fade 0.7s ease-out forwards;
+}
+@keyframes flash-fade {
+  0% { opacity: 0; }
+  25% { opacity: 1; }
+  100% { opacity: 0; }
+}
 
 /* ===== רספונסיביות ===== */
 @media (max-width: 560px) {

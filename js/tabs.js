@@ -76,73 +76,6 @@ function renderJournalTab(container) {
   container.appendChild(wrap);
 }
 
-function renderExercisesTab(container) {
-  container.innerHTML = "";
-  const wrap = el("div", { class: "panel" });
-  wrap.appendChild(el("h2", { class: "panel-title", text: "תרגילים" }));
-  wrap.appendChild(el("p", { class: "panel-subtitle", text: "בחרי תרגיל מהרשימה כדי להוסיף אותו ליומן של היום." }));
-
-  const date = todayISO();
-
-  function section(periodKey, label) {
-    const sec = el("div", { class: "exercise-section" });
-    sec.appendChild(el("h3", { class: "period-heading", text: label }));
-
-    const pickRow = el("div", { class: "picker-row" });
-    const select = el("select", { class: "field-input picker-select" });
-    const addBtn = el("button", { class: "btn btn-primary btn-small", type: "button", text: "הוספה" });
-    pickRow.appendChild(select);
-    pickRow.appendChild(addBtn);
-    sec.appendChild(pickRow);
-
-    const chips = el("div", { class: "picked-chips" });
-    sec.appendChild(chips);
-
-    function refresh() {
-      const entry = getEntry(date, periodKey);
-      const activeIds = entry ? entry.exerciseIds : [];
-      select.innerHTML = "";
-      EXERCISES.filter((e) => e.period === periodKey && !activeIds.includes(e.id)).forEach((ex) => {
-        select.appendChild(el("option", { value: ex.id, text: ex.name }));
-      });
-      addBtn.disabled = select.options.length === 0;
-
-      chips.innerHTML = "";
-      activeIds.forEach((id) => {
-        const ex = getExerciseById(id);
-        if (!ex) return;
-        const chip = el("span", { class: "picked-chip" }, [
-          el("span", { text: ex.name }),
-          el("button", {
-            type: "button",
-            class: "chip-remove",
-            text: "×",
-            title: "הסרה",
-            onclick: () => {
-              removeExerciseFromDay(date, periodKey, id);
-              refresh();
-            }
-          })
-        ]);
-        chips.appendChild(chip);
-      });
-    }
-
-    addBtn.addEventListener("click", () => {
-      if (!select.value) return;
-      addExerciseToDay(date, select.value);
-      refresh();
-    });
-
-    refresh();
-    return sec;
-  }
-
-  wrap.appendChild(section("morning", "בוקר"));
-  wrap.appendChild(section("evening", "ערב"));
-  container.appendChild(wrap);
-}
-
 function renderArchiveTab(container) {
   container.innerHTML = "";
   const wrap = el("div", { class: "panel" });
@@ -237,7 +170,6 @@ function renderFiltersTab(container) {
 
 const TABS = [
   { id: "journal", label: "יומן", render: renderJournalTab },
-  { id: "exercises", label: "תרגילים", render: renderExercisesTab },
   { id: "archive", label: "ארכיונים", render: renderArchiveTab },
   { id: "filters", label: "סינונים", render: renderFiltersTab },
   { id: "habits", label: "מעקב הרגלים", render: renderHabitsTab }
