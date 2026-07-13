@@ -1,12 +1,5 @@
 // לשונית מעקב הרגלים - סופרת ימי התמדה רצופים לכל הרגל
 
-function addDaysISO(dateStr, delta) {
-  const d = new Date(dateStr + "T00:00:00");
-  d.setDate(d.getDate() + delta);
-  const tz = d.getTimezoneOffset() * 60000;
-  return new Date(d.getTime() - tz).toISOString().slice(0, 10);
-}
-
 function formatStreakLabel(n) {
   if (n === 0) return "0 ימים";
   if (n === 1) return "יום אחד";

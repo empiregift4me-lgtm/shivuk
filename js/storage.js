@@ -1,12 +1,28 @@
 // שכבת שמירה - הכל ב-localStorage, שום דבר לא יוצא מהדפדפן
+// כל רשומה מזוהה לפי תאריך + פרק זמן (בוקר/ערב) - כלומר עד 2 יומנים ליום
 
 const STORE_KEYS = {
-  entries: "journal_entries_v1",
-  habits: "journal_habits_v1"
+  entries: "journal_entries_v2",
+  habits: "journal_habits_v1",
+  prefs: "journal_prefs_v1"
 };
+
+const PERIODS = ["morning", "evening"];
+const PERIOD_LABELS = { morning: "בוקר", evening: "ערב" };
 
 function todayISO() {
   const d = new Date();
+  const tz = d.getTimezoneOffset() * 60000;
+  return new Date(d.getTime() - tz).toISOString().slice(0, 10);
+}
+
+function entryKey(date, period) {
+  return `${date}|${period}`;
+}
+
+function addDaysISO(dateStr, delta) {
+  const d = new Date(dateStr + "T00:00:00");
+  d.setDate(d.getDate() + delta);
   const tz = d.getTimezoneOffset() * 60000;
   return new Date(d.getTime() - tz).toISOString().slice(0, 10);
 }
@@ -23,26 +39,35 @@ function saveEntries(entries) {
   localStorage.setItem(STORE_KEYS.entries, JSON.stringify(entries));
 }
 
-function getEntry(date) {
+function getEntry(date, period) {
   const entries = loadEntries();
-  return entries[date] || null;
+  return entries[entryKey(date, period)] || null;
 }
 
 function upsertEntry(entry) {
   const entries = loadEntries();
-  entries[entry.date] = entry;
+  entries[entryKey(entry.date, entry.period)] = entry;
   saveEntries(entries);
 }
 
-function deleteEntry(date) {
+function deleteEntry(date, period) {
   const entries = loadEntries();
-  delete entries[date];
+  delete entries[entryKey(date, period)];
   saveEntries(entries);
+}
+
+// שני הפרקים של תאריך נתון: { morning: entry|null, evening: entry|null }
+function dayStatus(date) {
+  return { morning: getEntry(date, "morning"), evening: getEntry(date, "evening") };
 }
 
 function allEntriesSorted(order = "desc") {
   const entries = Object.values(loadEntries());
-  entries.sort((a, b) => (order === "desc" ? b.date.localeCompare(a.date) : a.date.localeCompare(b.date)));
+  entries.sort((a, b) => {
+    const cmp = order === "desc" ? b.date.localeCompare(a.date) : a.date.localeCompare(b.date);
+    if (cmp !== 0) return cmp;
+    return a.period === "morning" ? -1 : 1;
+  });
   return entries;
 }
 
@@ -58,7 +83,33 @@ function saveHabits(habits) {
   localStorage.setItem(STORE_KEYS.habits, JSON.stringify(habits));
 }
 
+function loadPrefs() {
+  try {
+    return JSON.parse(localStorage.getItem(STORE_KEYS.prefs)) || {};
+  } catch (e) {
+    return {};
+  }
+}
+
+function savePrefs(prefs) {
+  localStorage.setItem(STORE_KEYS.prefs, JSON.stringify(prefs));
+}
+
 function formatDateHe(dateStr) {
   const d = new Date(dateStr + "T00:00:00");
   return new Intl.DateTimeFormat("he-IL", { weekday: "long", day: "numeric", month: "long", year: "numeric" }).format(d);
+}
+
+// כמה ימים רצופים (עד היום/אתמול) יש בהם לפחות רשומה שמורה אחת
+function computeJournalStreak() {
+  const entries = Object.values(loadEntries()).filter((e) => e.saved);
+  const datesWithEntry = new Set(entries.map((e) => e.date));
+  const today = todayISO();
+  let cursor = datesWithEntry.has(today) ? today : addDaysISO(today, -1);
+  let streak = 0;
+  while (datesWithEntry.has(cursor)) {
+    streak++;
+    cursor = addDaysISO(cursor, -1);
+  }
+  return streak;
 }

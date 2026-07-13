@@ -130,12 +130,10 @@ const RENDERERS = {
       if (tbody.children.length >= (cfg.maxRows || 15)) return;
       const tr = el("tr");
       if (cfg.numbered) tr.appendChild(el("td", { class: "num-col", text: String(tbody.children.length + 1) }));
-      const rInput = el("input", { type: "text", class: "field-input" });
-      rInput.value = r || "";
-      rInput.disabled = !!readOnly;
-      const lInput = el("input", { type: "text", class: "field-input" });
-      lInput.value = l || "";
-      lInput.disabled = !!readOnly;
+      const rInput = makeAutoTextarea(r, "", 1, readOnly);
+      rInput.classList.add("table-cell-textarea");
+      const lInput = makeAutoTextarea(l, "", 1, readOnly);
+      lInput.classList.add("table-cell-textarea");
       tr.appendChild(el("td", {}, rInput));
       tr.appendChild(el("td", {}, lInput));
       tbody.appendChild(tr);
@@ -156,8 +154,8 @@ const RENDERERS = {
       el: wrap,
       getData: () => ({
         rows: Array.from(tbody.querySelectorAll("tr")).map((tr) => {
-          const inputs = tr.querySelectorAll("input");
-          return { r: inputs[0].value, l: inputs[1].value };
+          const textareas = tr.querySelectorAll("textarea");
+          return { r: textareas[0].value, l: textareas[1].value };
         })
       })
     };
@@ -289,6 +287,39 @@ const RENDERERS = {
       tas.push(ta);
     });
     return { el: wrap, getData: () => ({ answers: tas.map((t) => t.value) }) };
+  },
+
+  "story-split"(instance, data, readOnly) {
+    const cfg = instance.config;
+    const wrap = el("div", { class: "exercise-body" });
+    if (cfg.note) wrap.appendChild(el("p", { class: "exercise-note", text: cfg.note }));
+
+    const table = el("table", { class: "story-table" });
+    const tbody = el("tbody");
+    table.appendChild(tbody);
+
+    const storyRowHead = el("tr", {}, el("th", { colspan: "2", text: "הסיפור:" }));
+    const storyTa = makeAutoTextarea((data && data.story) || "", "חלונית להשלמה בכתיבה חופשית...", 3, readOnly);
+    const storyRowBody = el("tr", {}, el("td", { colspan: "2" }, storyTa));
+    tbody.appendChild(storyRowHead);
+    tbody.appendChild(storyRowBody);
+
+    const splitHead = el("tr", {}, [
+      el("th", { text: "העובדות:" }),
+      el("th", { text: "הסיפור שסיפרתי לעצמי:" })
+    ]);
+    const factsTa = makeAutoTextarea((data && data.facts) || "", "חלונית להשלמה בכתיבה חופשית...", 3, readOnly);
+    const selfStoryTa = makeAutoTextarea((data && data.selfStory) || "", "חלונית להשלמה בכתיבה חופשית...", 3, readOnly);
+    const splitBody = el("tr", {}, [el("td", {}, factsTa), el("td", {}, selfStoryTa)]);
+    tbody.appendChild(splitHead);
+    tbody.appendChild(splitBody);
+
+    wrap.appendChild(table);
+
+    return {
+      el: wrap,
+      getData: () => ({ story: storyTa.value, facts: factsTa.value, selfStory: selfStoryTa.value })
+    };
   }
 };
 

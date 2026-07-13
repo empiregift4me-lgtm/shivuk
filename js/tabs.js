@@ -2,43 +2,139 @@
 
 function renderJournalTab(container) {
   container.innerHTML = "";
-  const card = buildDayCard(todayISO());
-  container.appendChild(card.element);
+  const date = todayISO();
+  const wrap = el("div", { class: "day-card" });
+
+  const header = el("div", { class: "day-header" });
+  header.appendChild(el("div", { class: "day-date", text: formatDateHe(date) }));
+  const streakNote = el("div", { class: "streak-note" });
+  header.appendChild(streakNote);
+  wrap.appendChild(header);
+
+  function renderStreak() {
+    const streakN = computeJournalStreak();
+    streakNote.textContent = streakN > 0 ? `✍️ ${formatStreakLabel(streakN)} ברצף שאת כותבת` : "היום זה מתחיל 🌱";
+  }
+
+  const pillsRow = el("div", { class: "period-pills" });
+  wrap.appendChild(pillsRow);
+
+  const editorHost = el("div");
+  wrap.appendChild(editorHost);
+
+  let activePeriod = null;
+  let editorInstance = null;
+
+  function pickDefaultPeriod(status) {
+    if (!status.morning || !status.morning.saved) return "morning";
+    if (!status.evening || !status.evening.saved) return "evening";
+    return null;
+  }
+
+  function renderPills() {
+    pillsRow.innerHTML = "";
+    const status = dayStatus(date);
+    PERIODS.forEach((p) => {
+      const isSaved = status[p] && status[p].saved;
+      const btn = el("button", {
+        class: "period-pill" + (activePeriod === p ? " is-active" : "") + (isSaved ? " is-done" : ""),
+        type: "button",
+        text: isSaved ? `✓ ${PERIOD_LABELS[p]}` : PERIOD_LABELS[p],
+        onclick: () => {
+          if (isSaved) return;
+          activePeriod = p;
+          renderPills();
+          renderEditor();
+        }
+      });
+      if (isSaved) btn.disabled = true;
+      pillsRow.appendChild(btn);
+    });
+  }
+
+  function renderEditor() {
+    editorHost.innerHTML = "";
+    if (editorInstance && editorInstance.destroy) editorInstance.destroy();
+    if (!activePeriod) {
+      editorHost.appendChild(el("div", { class: "empty-state", text: "שני היומנים של היום נשמרו. מתראים מחר 🎉" }));
+      return;
+    }
+    editorInstance = buildDraftEditor(date, activePeriod, () => {
+      activePeriod = pickDefaultPeriod(dayStatus(date));
+      renderStreak();
+      renderPills();
+      renderEditor();
+    });
+    editorHost.appendChild(editorInstance.element);
+  }
+
+  activePeriod = pickDefaultPeriod(dayStatus(date));
+  renderStreak();
+  renderPills();
+  renderEditor();
+
+  container.appendChild(wrap);
 }
 
 function renderExercisesTab(container) {
   container.innerHTML = "";
   const wrap = el("div", { class: "panel" });
   wrap.appendChild(el("h2", { class: "panel-title", text: "תרגילים" }));
-  wrap.appendChild(el("p", { class: "panel-subtitle", text: 'לחיצה על תרגיל מוסיפה אותו כתבנית ליומן של היום. לחיצה נוספת מסירה אותו.' }));
+  wrap.appendChild(el("p", { class: "panel-subtitle", text: "בחרי תרגיל מהרשימה כדי להוסיף אותו ליומן של היום." }));
+
+  const date = todayISO();
 
   function section(periodKey, label) {
     const sec = el("div", { class: "exercise-section" });
     sec.appendChild(el("h3", { class: "period-heading", text: label }));
-    const grid = el("div", { class: "exercise-grid" });
-    sec.appendChild(grid);
 
-    function renderGrid() {
-      grid.innerHTML = "";
-      const entry = getEntry(todayISO());
+    const pickRow = el("div", { class: "picker-row" });
+    const select = el("select", { class: "field-input picker-select" });
+    const addBtn = el("button", { class: "btn btn-primary btn-small", type: "button", text: "הוספה" });
+    pickRow.appendChild(select);
+    pickRow.appendChild(addBtn);
+    sec.appendChild(pickRow);
+
+    const chips = el("div", { class: "picked-chips" });
+    sec.appendChild(chips);
+
+    function refresh() {
+      const entry = getEntry(date, periodKey);
       const activeIds = entry ? entry.exerciseIds : [];
-      EXERCISES.filter((e) => e.period === periodKey).forEach((ex) => {
-        const isActive = activeIds.includes(ex.id);
-        const card = el("button", {
-          class: "exercise-picker-card" + (isActive ? " is-active" : ""),
-          type: "button",
-          onclick: () => {
-            if (isActive) removeExerciseFromDay(todayISO(), ex.id);
-            else addExerciseToDay(todayISO(), ex.id);
-            renderGrid();
-          }
-        });
-        card.appendChild(el("span", { class: "picker-card-name", text: ex.name }));
-        card.appendChild(el("span", { class: "picker-card-status", text: isActive ? "✓ נוסף היום" : "הוספה ליומן" }));
-        grid.appendChild(card);
+      select.innerHTML = "";
+      EXERCISES.filter((e) => e.period === periodKey && !activeIds.includes(e.id)).forEach((ex) => {
+        select.appendChild(el("option", { value: ex.id, text: ex.name }));
+      });
+      addBtn.disabled = select.options.length === 0;
+
+      chips.innerHTML = "";
+      activeIds.forEach((id) => {
+        const ex = getExerciseById(id);
+        if (!ex) return;
+        const chip = el("span", { class: "picked-chip" }, [
+          el("span", { text: ex.name }),
+          el("button", {
+            type: "button",
+            class: "chip-remove",
+            text: "×",
+            title: "הסרה",
+            onclick: () => {
+              removeExerciseFromDay(date, periodKey, id);
+              refresh();
+            }
+          })
+        ]);
+        chips.appendChild(chip);
       });
     }
-    renderGrid();
+
+    addBtn.addEventListener("click", () => {
+      if (!select.value) return;
+      addExerciseToDay(date, select.value);
+      refresh();
+    });
+
+    refresh();
     return sec;
   }
 
@@ -62,7 +158,7 @@ function renderArchiveTab(container) {
   entries.forEach((entry) => {
     const item = el("div", { class: "archive-item" });
     const head = el("button", { class: "archive-item-head", type: "button" }, [
-      el("span", { class: "archive-date", text: formatDateHe(entry.date) }),
+      el("span", { class: "archive-date", text: `${formatDateHe(entry.date)}, ${PERIOD_LABELS[entry.period]}` }),
       el("span", { class: "archive-count", text: `${entry.exerciseIds.length} תרגילים` }),
       el("span", { class: "archive-chevron", text: "︿" })
     ]);
@@ -72,7 +168,7 @@ function renderArchiveTab(container) {
       const collapsed = body.classList.toggle("is-collapsed");
       head.querySelector(".archive-chevron").textContent = collapsed ? "﹀" : "︿";
       if (!collapsed && !built) {
-        const card = buildDayCard(entry.date);
+        const card = buildArchiveCard(entry.date, entry.period);
         body.appendChild(card.element);
         built = true;
       }
@@ -125,7 +221,9 @@ function renderFiltersTab(container) {
     }
     entries.forEach((entry) => {
       const block = el("div", { class: "filter-result-block" });
-      block.appendChild(el("div", { class: "filter-result-date", text: formatDateHe(entry.date) }));
+      block.appendChild(
+        el("div", { class: "filter-result-date", text: `${formatDateHe(entry.date)}, ${PERIOD_LABELS[entry.period]}` })
+      );
       const rendered = renderExercise(instance, entry.data[exId], true);
       block.appendChild(rendered.el);
       results.appendChild(block);

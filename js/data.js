@@ -190,8 +190,15 @@ const EXERCISES = [
     id: "fact-vs-story",
     period: "evening",
     name: "הפרדת עובדה מסיפור",
-    type: "fixed-questions",
-    config: { questions: ["הסיפור", "העובדות", "הסיפור שסיפרתי לעצמי"] }
+    type: "story-split",
+    config: { note: "מגיע עם 3 חלונות לכתיבה חופשית כמו שרואים פה בדוגמא." }
+  },
+  {
+    id: "what-i-learned",
+    period: "evening",
+    name: "מה שלמדתי היום",
+    type: "freetext",
+    config: { rows: 6, placeholder: "מה שלמדתי היום..." }
   }
 ];
 
