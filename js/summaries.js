@@ -13,7 +13,8 @@ function initSummariesView(container) {
 
   const SUB_TABS = [
     { id: "write", label: "כתיבה חופשית", render: renderSummaryWriteTab },
-    { id: "archive", label: "ארכיונים", render: renderSummaryArchiveTab }
+    { id: "archive", label: "ארכיונים", render: renderSummaryArchiveTab },
+    { id: "payments", label: "תשלומים", render: renderPaymentsTab }
   ];
 
   function activate(id) {
@@ -124,13 +125,15 @@ function renderSummaryArchiveTab(content, goToWriteTab) {
     ]);
     toggleBtn.querySelector(".paid-badge").addEventListener("click", (e) => {
       e.stopPropagation();
-      item.paid = !item.paid;
+      const becamePaid = !item.paid;
+      item.paid = becamePaid;
       const all = loadSummaries();
       const idx = all.findIndex((s) => s.id === item.id);
       if (idx !== -1) {
         all[idx] = item;
         saveSummaries(all);
       }
+      if (becamePaid) onSessionMarkedPaidManually();
       renderSummaryArchiveTab(content, goToWriteTab);
     });
 
@@ -231,6 +234,80 @@ function renderSummaryArchiveTab(content, goToWriteTab) {
     const card = el("div", { class: "archive-item" }, [head, body]);
     wrap.appendChild(card);
   });
+
+  content.appendChild(wrap);
+}
+
+function renderPaymentsTab(content) {
+  content.innerHTML = "";
+  const wrap = el("div", { class: "panel" });
+  wrap.appendChild(el("h2", { class: "panel-title", text: "תשלומים" }));
+  wrap.appendChild(
+    el("p", {
+      class: "panel-subtitle",
+      text: `מעקב חוב מול פגישות שלא סומנו כשולמו, לפי תעריף קבוע של ${SESSION_RATE} ₪ לפגישה.`
+    })
+  );
+
+  const summary = computeDebtSummary();
+  const debtBox = el("div", { class: "debt-summary" }, [
+    el("div", { class: "debt-amount", text: `${summary.debt} ₪ לתשלום` }),
+    el("p", {
+      class: "debt-sub",
+      text: `${summary.unpaidCount} פגישות לא משולמות × ${SESSION_RATE} ₪ = ${summary.totalOwed} ₪ | יתרת זכות שטרם שויכה: ${summary.pool} ₪`
+    })
+  ]);
+  wrap.appendChild(debtBox);
+
+  const entryRow = el("div", { class: "payment-entry-row" });
+  const amountInput = el("input", { type: "number", min: "1", class: "field-input payment-amount-input", placeholder: "סכום ששולם (₪)" });
+  entryRow.appendChild(amountInput);
+  entryRow.appendChild(
+    el("button", {
+      class: "btn btn-primary",
+      type: "button",
+      text: "רישום תשלום",
+      onclick: () => {
+        const amount = Number(amountInput.value);
+        if (!amount || amount <= 0) {
+          alert("יש להזין סכום תקין.");
+          return;
+        }
+        logPayment(amount);
+        renderPaymentsTab(content);
+      }
+    })
+  );
+  wrap.appendChild(entryRow);
+
+  wrap.appendChild(el("h3", { class: "panel-title", text: "היסטוריית תשלומים" }));
+  const ledger = loadPaymentLedger();
+  const history = el("div", { class: "payment-history" });
+  const log = ledger.log.slice().sort((a, b) => b.timestamp - a.timestamp);
+  if (log.length === 0) {
+    history.appendChild(el("div", { class: "empty-state", text: "עדיין לא נרשמו תשלומים." }));
+  } else {
+    log.forEach((entry) => {
+      const row = el("div", { class: "payment-history-row" }, [
+        el("span", { class: "payment-history-date", text: formatTimestamp(entry.timestamp) }),
+        el("span", { text: `${entry.amount} ₪` }),
+        el("button", {
+          class: "archive-delete",
+          type: "button",
+          text: "🗑",
+          title: "מחיקת רשומת תשלום",
+          onclick: () => {
+            if (confirm("למחוק את רשומת התשלום הזו?")) {
+              deletePaymentLogEntry(entry.id);
+              renderPaymentsTab(content);
+            }
+          }
+        })
+      ]);
+      history.appendChild(row);
+    });
+  }
+  wrap.appendChild(history);
 
   content.appendChild(wrap);
 }

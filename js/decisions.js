@@ -33,6 +33,7 @@ function initChatView(container, listKey, draftKey) {
         const contentEl = el("div", { class: "chat-bubble-content" });
         contentEl.contentEditable = editing ? "true" : "false";
         contentEl.innerHTML = msg.html;
+        attachPlainTextPaste(contentEl);
         bubble.appendChild(contentEl);
 
         const meta = el("div", { class: "chat-bubble-meta" });

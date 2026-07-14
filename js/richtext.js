@@ -93,7 +93,18 @@ function forceRubikFont(editableEl) {
   });
 }
 
+// הדבקה תמיד כטקסט פשוט בלבד, כדי שהתוכן המודבק יאמץ את העיצוב הקיים של המסמך ולא יביא איתו
+// גופן/גודל זרים מהמקור
+function attachPlainTextPaste(editableEl) {
+  editableEl.addEventListener("paste", (e) => {
+    e.preventDefault();
+    const text = (e.clipboardData || window.clipboardData).getData("text/plain");
+    document.execCommand("insertText", false, text);
+  });
+}
+
 function createRichToolbar(editableEl) {
+  attachPlainTextPaste(editableEl);
   let fontSizeIdx = 3; // "4" - גודל בינוני בסולם הישן של execCommand
   let lineHeightIdx = -1;
 

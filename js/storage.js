@@ -10,7 +10,8 @@ const STORE_KEYS = {
   decisions: "decisions_v1",
   decisionDraft: "decision_draft_v1",
   emotional: "emotional_docs_v1",
-  emotionalDraft: "emotional_draft_v1"
+  emotionalDraft: "emotional_draft_v1",
+  paymentLedger: "summary_payment_ledger_v1"
 };
 
 const PERIODS = ["morning", "evening"];

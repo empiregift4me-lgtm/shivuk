@@ -806,9 +806,19 @@ select.field-input:focus {
 .paid-badge.is-paid { background: var(--c-accent); color: #231942; border-color: var(--c-accent); font-weight: 600; }
 .paid-badge:hover { filter: brightness(1.1); }
 .a4-editor:focus { box-shadow: var(--shadow-hover), 0 0 0 3px rgba(224, 177, 203, 0.4); }
-.checklist-line { list-style: none; margin: 4px 0; }
-.checklist-mark { margin-inline-end: 6px; width: 16px; height: 16px; vertical-align: middle; cursor: pointer; }
+.checklist-line { list-style: none; margin: 4px 0; display: flex; align-items: flex-start; gap: 6px; }
+.checklist-mark { width: 16px; height: 16px; margin-top: 3px; flex-shrink: 0; cursor: pointer; }
 .checklist-mark:disabled { cursor: default; opacity: 0.7; }
+
+/* ===== סיכומים - תשלומים ===== */
+.debt-summary { background: var(--c-panel); border: 1px solid var(--c-border); border-radius: 12px; padding: var(--space); margin: var(--space) 0; text-align: center; }
+.debt-amount { font-size: 28px; font-weight: 700; color: var(--c-highlight); }
+.debt-sub { color: var(--text-submuted); font-size: 13px; margin-top: 6px; }
+.payment-entry-row { display: flex; gap: 8px; align-items: center; margin: var(--space) 0; }
+.payment-amount-input { max-width: 200px; }
+.payment-history { display: flex; flex-direction: column; gap: 6px; }
+.payment-history-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; background: var(--c-panel); border: 1px solid var(--c-border); border-radius: 8px; padding: 8px 12px; }
+.payment-history-date { color: var(--text-submuted); font-size: 13px; }
 
 /* ===== החלטות עסקיות - צ'אט עם עצמך ===== */
 .chat-wrap { display: flex; flex-direction: column; gap: var(--space); }

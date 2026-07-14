@@ -9,7 +9,8 @@ function exportBackup() {
     prefs: loadPrefs(),
     summaries: loadSummaries(),
     decisions: loadChatList(STORE_KEYS.decisions),
-    emotional: loadChatList(STORE_KEYS.emotional)
+    emotional: loadChatList(STORE_KEYS.emotional),
+    paymentLedger: loadPaymentLedger()
   };
   const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
   const url = URL.createObjectURL(blob);
@@ -34,6 +35,7 @@ function importBackupFile(file) {
       if (payload.summaries) saveSummaries(payload.summaries);
       if (payload.decisions) saveChatList(STORE_KEYS.decisions, payload.decisions);
       if (payload.emotional) saveChatList(STORE_KEYS.emotional, payload.emotional);
+      if (payload.paymentLedger) savePaymentLedger(payload.paymentLedger);
       alert("השחזור הושלם בהצלחה! העמוד ייטען מחדש.");
       location.reload();
     } catch (e) {
