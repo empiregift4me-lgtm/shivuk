@@ -51,6 +51,17 @@ const RENDERERS = {
     const list = el("div", { class: "dynamic-list" });
     wrap.appendChild(list);
 
+    const countLabel = cfg.showCount ? el("p", { class: "dynamic-list-count" }) : null;
+    if (countLabel) wrap.appendChild(countLabel);
+
+    function filledCount() {
+      return Array.from(list.querySelectorAll("input")).filter((i) => i.value.trim().length).length;
+    }
+
+    function updateCount() {
+      if (countLabel) countLabel.textContent = `${filledCount()} הזנות התקבלו`;
+    }
+
     function addRow(val) {
       if (list.children.length >= (cfg.maxLines || 50)) return null;
       const row = el("div", { class: "dynamic-row" });
@@ -58,6 +69,7 @@ const RENDERERS = {
       const input = el("input", { type: "text", class: "field-input", placeholder: cfg.placeholder || "" });
       input.value = val || "";
       input.disabled = !!readOnly;
+      input.addEventListener("input", updateCount);
       input.addEventListener("keydown", (e) => {
         if (e.key === "Enter") {
           e.preventDefault();
@@ -82,6 +94,7 @@ const RENDERERS = {
             onclick: () => {
               if (list.children.length > 1) row.remove();
               else input.value = "";
+              updateCount();
             }
           })
         );
@@ -91,6 +104,7 @@ const RENDERERS = {
     }
 
     items.forEach((v) => addRow(v));
+    updateCount();
 
     return {
       el: wrap,

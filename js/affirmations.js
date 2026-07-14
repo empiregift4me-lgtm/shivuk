@@ -1,7 +1,18 @@
-// חלונית משפט יומי - מופיעה פעם ב-24 שעות מיד אחרי הזנת הסיסמה, ומשאירה שורת כותרת קבועה עם אותו משפט לכל אורך היום
+// חלונית משפט יומי - מתאפסת בשעה קבועה (06:00) מיד אחרי הזנת הסיסמה, עם אפשרות להופעות אקראיות נוספות באותו יום,
+// ומשאירה שורת כותרת קבועה עם אותו משפט לכל אורך היום
 
-const DAILY_AFFIRMATION_INTERVAL_MS = 24 * 60 * 60 * 1000;
+const DAILY_AFFIRMATION_RESET_HOUR = 6;
+const DAILY_AFFIRMATION_MAX_SHOWS = 3; // הצגה ראשונה מובטחת ביום + עד 2 הופעות נוספות אקראיות
+const DAILY_AFFIRMATION_EXTRA_CHANCE = 0.25;
 const DAILY_AFFIRMATION_CLOSE_DELAY_MS = 25 * 1000;
+
+// "היום" באפליקציה מתחיל ב-06:00 ולא בחצות הלילה
+function affirmationAppDay(ts) {
+  const d = new Date(ts);
+  if (d.getHours() < DAILY_AFFIRMATION_RESET_HOUR) d.setDate(d.getDate() - 1);
+  const tz = d.getTimezoneOffset() * 60000;
+  return new Date(d.getTime() - tz).toISOString().slice(0, 10);
+}
 
 const DAILY_AFFIRMATIONS = [
   "עדיה, הערך שלך אינו במקוריות מוחלטת, אלא ביכולת הייחודית שלך לקחת שיטה, להבין אותה לעומק וליישם אותה בשטח.",
@@ -71,7 +82,8 @@ function saveAffirmationState(state) {
 function renderAffirmationHeadline(sentence) {
   const line = document.getElementById("daily-affirmation-line");
   if (!line) return;
-  line.textContent = sentence;
+  line.innerHTML = "";
+  line.appendChild(el("span", { class: "affirmation-headline-text", text: sentence }));
   line.classList.add("is-visible");
 }
 
@@ -102,18 +114,24 @@ function showAffirmationSplash(sentence) {
   setTimeout(() => closeBtn.classList.add("is-ready"), DAILY_AFFIRMATION_CLOSE_DELAY_MS);
 }
 
-// נקראת מיד אחרי הזנת סיסמה מוצלחת - בוחרת (או שומרת) את משפט היום, ומציגה את החלונית רק אם עברו 24 שעות מהפעם האחרונה
+// נקראת מיד אחרי הזנת סיסמה מוצלחת - בוחרת (או שומרת) את משפט היום, ומציגה את החלונית פעם מובטחת אחרי איפוס
+// היום ב-06:00, ועד 2 פעמים נוספות באקראי במהלך אותו יום
 function initDailyAffirmation() {
   const now = Date.now();
+  const currentAppDay = affirmationAppDay(now);
   let state = loadAffirmationState();
-  const dueForNewSplash = !state || now - state.lastShownAt >= DAILY_AFFIRMATION_INTERVAL_MS;
+  let showSplash = false;
 
-  if (dueForNewSplash) {
+  if (!state || state.appDay !== currentAppDay) {
     const sentence = DAILY_AFFIRMATIONS[Math.floor(Math.random() * DAILY_AFFIRMATIONS.length)];
-    state = { sentence, lastShownAt: now };
-    saveAffirmationState(state);
+    state = { sentence, appDay: currentAppDay, showsToday: 1 };
+    showSplash = true;
+  } else if (state.showsToday < DAILY_AFFIRMATION_MAX_SHOWS && Math.random() < DAILY_AFFIRMATION_EXTRA_CHANCE) {
+    state.showsToday += 1;
+    showSplash = true;
   }
 
+  saveAffirmationState(state);
   renderAffirmationHeadline(state.sentence);
-  if (dueForNewSplash) showAffirmationSplash(state.sentence);
+  if (showSplash) showAffirmationSplash(state.sentence);
 }

@@ -12,7 +12,10 @@ function showSection(name) {
   SECTIONS.forEach((s) => {
     document.getElementById(`${s}-view`).classList.toggle("is-hidden", s !== name);
   });
-  if (LAZY_SECTION_INIT[name] && !sectionsInitialized[name]) {
+  if (name === "dashboard") {
+    // מתעדכן בכל כניסה, לא רק פעם אחת - כדי שהמד תמיד ישקף נתונים טריים
+    renderDashboard(document.getElementById("dashboard-view"));
+  } else if (LAZY_SECTION_INIT[name] && !sectionsInitialized[name]) {
     LAZY_SECTION_INIT[name](document.getElementById(`${name}-view`));
     sectionsInitialized[name] = true;
   }

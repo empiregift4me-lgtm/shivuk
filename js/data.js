@@ -177,7 +177,7 @@ const EXERCISES = [
     period: "evening",
     name: "פעולות ערך עצמי",
     type: "dynamic-list",
-    config: { rowIcon: "✨", placeholder: "פעולת ערך...", maxLines: 50 }
+    config: { rowIcon: "✨", placeholder: "פעולת ערך...", maxLines: 50, showCount: true }
   },
   {
     id: "daily-reflection",
