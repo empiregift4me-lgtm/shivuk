@@ -1,4 +1,5 @@
 // מודול "סיכומים" - עמוד כתיבה חופשית בסגנון Google Docs + ארכיון
+// מותאם גם לשימוש עם מטפלת: תאריך פגישה נפרד מזמן השמירה, סימון תשלום, והעברת סעיפים שלא סומנו לסיכום הבא
 
 function initSummariesView(container) {
   container.innerHTML = "";
@@ -18,7 +19,7 @@ function initSummariesView(container) {
   function activate(id) {
     nav.querySelectorAll(".sub-tab-btn").forEach((b) => b.classList.toggle("is-active", b.dataset.tab === id));
     const tab = SUB_TABS.find((t) => t.id === id);
-    tab.render(content, () => activate("archive"));
+    tab.render(content, () => activate("write"));
   }
 
   nav.innerHTML = "";
@@ -43,15 +44,32 @@ function renderSummaryWriteTab(content) {
   wrap.appendChild(el("h2", { class: "panel-title", text: "כתיבה חופשית" }));
   wrap.appendChild(el("p", { class: "panel-subtitle", text: "כתבי כאן חופשי - עם שמירה זה יעבור לארכיון, והדף יתפנה לסיכום הבא." }));
 
+  const draft = loadSummaryDraft();
+
+  const dateRow = el("div", { class: "session-date-row" });
+  dateRow.appendChild(el("label", { class: "session-date-label", text: "תאריך הפגישה:" }));
+  const dateInput = el("input", { type: "date", class: "field-input session-date-input" });
+  dateInput.value = draft.sessionDate || todayISO();
+  dateRow.appendChild(dateInput);
+  wrap.appendChild(dateRow);
+
   const editable = el("div", { class: "a4-editor", contenteditable: "true" });
-  editable.innerHTML = loadSummaryDraft();
+  editable.innerHTML = draft.html || "";
 
   const toolbar = createRichToolbar(editable);
   wrap.appendChild(toolbar);
   wrap.appendChild(editable);
 
-  const persist = debounce(() => saveSummaryDraft(editable.innerHTML), 400);
-  editable.addEventListener("input", persist);
+  const draftStatus = el("p", { class: "draft-status" });
+  wrap.appendChild(draftStatus);
+
+  function persistDraft() {
+    saveSummaryDraft({ html: editable.innerHTML, sessionDate: dateInput.value || todayISO() });
+    draftStatus.textContent = "✓ טיוטה נשמרה אוטומטית";
+  }
+  const debouncedPersist = debounce(persistDraft, 400);
+  editable.addEventListener("input", debouncedPersist);
+  dateInput.addEventListener("change", persistDraft);
 
   wrap.appendChild(
     el("button", {
@@ -64,11 +82,19 @@ function renderSummaryWriteTab(content) {
           alert("אין כאן עדיין תוכן לשמירה.");
           return;
         }
+        syncCheckboxAttributes(editable);
         const list = loadSummaries();
-        list.push({ id: "sum_" + Date.now(), html, createdAt: Date.now(), updatedAt: Date.now() });
+        list.push({
+          id: "sum_" + Date.now(),
+          html: editable.innerHTML,
+          sessionDate: dateInput.value || todayISO(),
+          paid: false,
+          createdAt: Date.now(),
+          updatedAt: Date.now()
+        });
         saveSummaries(list);
         editable.innerHTML = "";
-        saveSummaryDraft("");
+        saveSummaryDraft({ html: "", sessionDate: todayISO() });
         celebrateSave();
         renderSummaryWriteTab(content);
       }
@@ -78,12 +104,12 @@ function renderSummaryWriteTab(content) {
   content.appendChild(wrap);
 }
 
-function renderSummaryArchiveTab(content) {
+function renderSummaryArchiveTab(content, goToWriteTab) {
   content.innerHTML = "";
   const wrap = el("div", { class: "panel" });
   wrap.appendChild(el("h2", { class: "panel-title", text: "ארכיונים" }));
 
-  const list = loadSummaries().slice().sort((a, b) => b.createdAt - a.createdAt);
+  const list = loadSummaries().slice().sort((a, b) => (b.sessionDate || "").localeCompare(a.sessionDate || "") || b.createdAt - a.createdAt);
   if (list.length === 0) {
     wrap.appendChild(el("div", { class: "empty-state", text: "עדיין אין סיכומים שמורים." }));
     content.appendChild(wrap);
@@ -92,9 +118,22 @@ function renderSummaryArchiveTab(content) {
 
   list.forEach((item) => {
     const toggleBtn = el("button", { class: "archive-item-toggle", type: "button" }, [
-      el("span", { class: "archive-date", text: formatTimestamp(item.createdAt) }),
+      el("span", { class: "archive-date", text: item.sessionDate ? formatDateHe(item.sessionDate) : formatTimestamp(item.createdAt) }),
+      el("span", { class: "paid-badge" + (item.paid ? " is-paid" : ""), text: item.paid ? "💰 שולם" : "לא שולם" }),
       el("span", { class: "archive-chevron", text: "︿" })
     ]);
+    toggleBtn.querySelector(".paid-badge").addEventListener("click", (e) => {
+      e.stopPropagation();
+      item.paid = !item.paid;
+      const all = loadSummaries();
+      const idx = all.findIndex((s) => s.id === item.id);
+      if (idx !== -1) {
+        all[idx] = item;
+        saveSummaries(all);
+      }
+      renderSummaryArchiveTab(content, goToWriteTab);
+    });
+
     const deleteBtn = el("button", {
       class: "archive-delete",
       type: "button",
@@ -104,7 +143,7 @@ function renderSummaryArchiveTab(content) {
         e.stopPropagation();
         if (confirm("למחוק את הסיכום הזה לצמיתות?")) {
           saveSummaries(loadSummaries().filter((s) => s.id !== item.id));
-          renderSummaryArchiveTab(content);
+          renderSummaryArchiveTab(content, goToWriteTab);
         }
       }
     });
@@ -113,47 +152,70 @@ function renderSummaryArchiveTab(content) {
     let built = false;
     let editing = false;
 
+    function persistItem() {
+      const all = loadSummaries();
+      const idx = all.findIndex((s) => s.id === item.id);
+      if (idx !== -1) {
+        all[idx] = item;
+        saveSummaries(all);
+      }
+    }
+
+    function buildEditToggle(label) {
+      return el("button", {
+        class: "btn btn-secondary btn-small",
+        type: "button",
+        text: label,
+        onclick: () => {
+          if (editing && bodyEditableRef) {
+            syncCheckboxAttributes(bodyEditableRef);
+            item.html = bodyEditableRef.innerHTML;
+            item.updatedAt = Date.now();
+            persistItem();
+          }
+          editing = !editing;
+          buildBody();
+        }
+      });
+    }
+
+    let bodyEditableRef = null;
+
     function buildBody() {
       body.innerHTML = "";
+      const hasUnchecked = hasUncheckedChecklistItems(item.html);
+
       if (editing) {
-        const editableRef = el("div", { class: "a4-editor", contenteditable: "true" });
-        editableRef.innerHTML = item.html;
-        body.appendChild(createRichToolbar(editableRef));
-        body.appendChild(editableRef);
-        body.appendChild(
-          el("button", {
-            class: "btn btn-primary btn-small",
-            type: "button",
-            text: "שמירת שינויים",
-            onclick: () => {
-              item.html = editableRef.innerHTML;
-              item.updatedAt = Date.now();
-              const all = loadSummaries();
-              const idx = all.findIndex((s) => s.id === item.id);
-              if (idx !== -1) {
-                all[idx] = item;
-                saveSummaries(all);
-              }
-              editing = false;
-              buildBody();
-            }
-          })
-        );
+        body.appendChild(buildEditToggle("סיום עריכה ✓"));
+        bodyEditableRef = el("div", { class: "a4-editor", contenteditable: "true" });
+        bodyEditableRef.innerHTML = item.html;
+        bodyEditableRef.querySelectorAll('input[type="checkbox"]').forEach((cb) => (cb.disabled = false));
+        body.appendChild(createRichToolbar(bodyEditableRef));
+        body.appendChild(bodyEditableRef);
+        body.appendChild(buildEditToggle("שמירת שינויים"));
       } else {
+        body.appendChild(buildEditToggle("עריכה ושינוי"));
         const view = el("div", { class: "a4-editor a4-editor-readonly" });
         view.innerHTML = item.html;
+        view.querySelectorAll('input[type="checkbox"]').forEach((cb) => (cb.disabled = true));
         body.appendChild(view);
-        body.appendChild(
-          el("button", {
-            class: "btn btn-secondary btn-small",
-            type: "button",
-            text: "עריכה ושינוי",
-            onclick: () => {
-              editing = true;
-              buildBody();
-            }
-          })
-        );
+        if (hasUnchecked) {
+          body.appendChild(
+            el("button", {
+              class: "btn btn-ghost btn-small",
+              type: "button",
+              text: "➡ העברת סעיפים שלא סומנו לסיכום הבא",
+              onclick: () => {
+                if (!confirm("הסעיפים שלא סומנו יוסרו מהסיכום הזה ויעברו לטיוטת הכתיבה החופשית. להמשיך?")) return;
+                moveUncheckedToDraft(item, persistItem, () => {
+                  renderSummaryArchiveTab(content, goToWriteTab);
+                  goToWriteTab();
+                });
+              }
+            })
+          );
+        }
+        body.appendChild(buildEditToggle("עריכה ושינוי"));
       }
     }
 
@@ -171,4 +233,42 @@ function renderSummaryArchiveTab(content) {
   });
 
   content.appendChild(wrap);
+}
+
+function hasUncheckedChecklistItems(html) {
+  const temp = document.createElement("div");
+  temp.innerHTML = html;
+  return Array.from(temp.querySelectorAll(".checklist-line")).some((block) => {
+    const checkbox = block.querySelector('input[type="checkbox"]');
+    return checkbox && !checkbox.hasAttribute("checked");
+  });
+}
+
+// מעבירה (לא מעתיקה) סעיפי V שלא סומנו מסיכום שמור לטיוטת הכתיבה החופשית, באותו עיצוב
+function moveUncheckedToDraft(item, persistItem, onDone) {
+  const temp = document.createElement("div");
+  temp.innerHTML = item.html;
+
+  const leftovers = [];
+  temp.querySelectorAll(".checklist-line").forEach((block) => {
+    const checkbox = block.querySelector('input[type="checkbox"]');
+    if (checkbox && !checkbox.hasAttribute("checked")) {
+      leftovers.push(block);
+      block.remove();
+    }
+  });
+
+  if (leftovers.length === 0) return;
+
+  item.html = temp.innerHTML;
+  item.updatedAt = Date.now();
+  persistItem();
+
+  const draft = loadSummaryDraft();
+  const draftContainer = document.createElement("div");
+  draftContainer.innerHTML = draft.html || "";
+  leftovers.forEach((block) => draftContainer.appendChild(block));
+  saveSummaryDraft({ html: draftContainer.innerHTML, sessionDate: draft.sessionDate || todayISO() });
+
+  onDone();
 }

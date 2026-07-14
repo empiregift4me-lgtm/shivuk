@@ -1,4 +1,5 @@
 document.addEventListener("DOMContentLoaded", () => {
+  initLock();
   applyFontScale();
   initShell();
   initTabs();

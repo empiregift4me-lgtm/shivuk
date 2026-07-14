@@ -114,11 +114,15 @@ function saveSummaries(list) {
 }
 
 function loadSummaryDraft() {
-  return localStorage.getItem(STORE_KEYS.summaryDraft) || "";
+  try {
+    return JSON.parse(localStorage.getItem(STORE_KEYS.summaryDraft)) || { html: "", sessionDate: todayISO() };
+  } catch (e) {
+    return { html: "", sessionDate: todayISO() };
+  }
 }
 
-function saveSummaryDraft(html) {
-  localStorage.setItem(STORE_KEYS.summaryDraft, html);
+function saveSummaryDraft(draft) {
+  localStorage.setItem(STORE_KEYS.summaryDraft, JSON.stringify(draft));
 }
 
 // אחסון גנרי לפי מפתח - משמש גם ל"החלטות עסקיות חשובות" וגם ל"תיעוד רגשי" (אותו מנגנון, שני יומני-צ'אט נפרדים)

@@ -61,3 +61,8 @@ function celebrateSave() {
   VISUAL_EFFECTS[Math.floor(Math.random() * VISUAL_EFFECTS.length)]();
   CHIMES[Math.floor(Math.random() * CHIMES.length)]();
 }
+
+// לצ'אטים (החלטות עסקיות / תיעוד רגשי) - רק צליל קטן, בלי שום אפקט חזותי
+function playMessageSentSound() {
+  playNotes([[659.25], [880.0, 0.08]], { dur: 0.3, gain: 0.12 });
+}

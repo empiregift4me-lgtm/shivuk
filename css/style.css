@@ -23,6 +23,47 @@
   --shadow-hover: 0 6px 18px rgba(0, 0, 0, 0.35);
 }
 
+/* ===== מסך נעילה ===== */
+.lock-overlay {
+  position: fixed;
+  inset: 0;
+  background: #231942;
+  z-index: 999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space);
+}
+.lock-overlay.is-hidden { display: none; }
+.lock-box {
+  background: var(--c-card);
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-hover);
+  padding: var(--space-lg);
+  width: 100%;
+  max-width: 280px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+.lock-icon { font-size: 2.2rem; }
+.lock-label { color: var(--text-light); font-size: 1rem; margin: 0 0 4px; }
+.lock-input {
+  font-family: inherit;
+  font-size: 1.1rem;
+  text-align: center;
+  background: var(--c-field);
+  color: var(--text-light);
+  border: 1.5px solid var(--c-border);
+  border-radius: var(--radius-sm);
+  padding: 10px;
+  letter-spacing: 2px;
+}
+.lock-input:focus { outline: none; border-color: var(--c-highlight); }
+.lock-error { color: var(--c-highlight); font-size: 0.9rem; min-height: 1.2em; }
+
 * { box-sizing: border-box; }
 
 html { font-size: 12px; }
@@ -714,6 +755,10 @@ select.field-input:focus {
   border: 1px solid var(--c-border);
   border-radius: var(--radius-sm);
   padding: 6px;
+  position: sticky;
+  top: 8px;
+  z-index: 30;
+  box-shadow: var(--shadow-card);
 }
 .rt-btn {
   font-family: inherit;
@@ -745,9 +790,25 @@ select.field-input:focus {
   outline: none;
 }
 .a4-editor-readonly { min-height: auto; }
+.session-date-row { display: flex; align-items: center; gap: var(--space-sm); margin-bottom: var(--space-sm); }
+.session-date-label { color: var(--text-submuted); font-size: 0.95rem; }
+.session-date-input { max-width: 190px; }
+.draft-status { color: var(--text-submuted); font-size: 0.85rem; min-height: 1.2em; margin: 6px 0 0; }
+.paid-badge {
+  font-size: 0.85rem;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: var(--c-field);
+  color: var(--text-submuted);
+  cursor: pointer;
+  border: 1px solid var(--c-border);
+}
+.paid-badge.is-paid { background: var(--c-accent); color: #231942; border-color: var(--c-accent); font-weight: 600; }
+.paid-badge:hover { filter: brightness(1.1); }
 .a4-editor:focus { box-shadow: var(--shadow-hover), 0 0 0 3px rgba(224, 177, 203, 0.4); }
 .checklist-line { list-style: none; margin: 4px 0; }
-.checklist-line input[type="checkbox"] { margin-inline-end: 6px; }
+.checklist-mark { margin-inline-end: 6px; width: 16px; height: 16px; vertical-align: middle; cursor: pointer; }
+.checklist-mark:disabled { cursor: default; opacity: 0.7; }
 
 /* ===== החלטות עסקיות - צ'אט עם עצמך ===== */
 .chat-wrap { display: flex; flex-direction: column; gap: var(--space); }

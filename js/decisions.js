@@ -92,7 +92,7 @@ function initChatView(container, listKey, draftKey) {
     saveChatList(listKey, list);
     editable.innerHTML = "";
     saveChatDraft(draftKey, "");
-    celebrateSave();
+    playMessageSentSound();
     renderFeed();
   }
 
