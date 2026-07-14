@@ -118,22 +118,23 @@ body {
 .affirmation-headline {
   display: none;
   margin: 10px auto 0;
-  max-width: 720px;
+  max-width: min(1040px, 92vw);
   text-align: center;
-  font-size: 1.55rem;
+  text-wrap: balance;
+  font-size: clamp(1.5rem, 3.2vw, 35px);
   font-weight: 700;
   line-height: 1.4;
-  color: var(--text-light);
   padding: 12px 22px;
   border-radius: 999px;
   background: linear-gradient(135deg, rgba(224, 177, 203, 0.16), rgba(157, 134, 192, 0.16));
   border: 1px solid rgba(224, 177, 203, 0.4);
-  animation: affirmation-headline-glow 2.8s ease-in-out infinite;
+  animation: affirmation-headline-glow 6s ease-in-out infinite;
 }
 .affirmation-headline.is-visible { display: block; }
 @keyframes affirmation-headline-glow {
-  0%, 100% { box-shadow: 0 0 8px rgba(224, 177, 203, 0.2); border-color: rgba(224, 177, 203, 0.3); text-shadow: 0 0 6px rgba(224, 177, 203, 0.2); }
-  50% { box-shadow: 0 0 28px rgba(224, 177, 203, 0.85); border-color: rgba(224, 177, 203, 0.95); text-shadow: 0 0 18px rgba(224, 177, 203, 0.8); }
+  0%, 100% { box-shadow: 0 0 8px rgba(224, 177, 203, 0.25); border-color: rgba(224, 177, 203, 0.35); color: #f6f1fb; text-shadow: 0 0 8px rgba(224, 177, 203, 0.3); }
+  33% { box-shadow: 0 0 28px rgba(245, 200, 150, 0.85); border-color: rgba(245, 200, 150, 0.9); color: #f7d9a8; text-shadow: 0 0 20px rgba(245, 200, 150, 0.75); }
+  66% { box-shadow: 0 0 28px rgba(130, 220, 214, 0.85); border-color: rgba(130, 220, 214, 0.9); color: #9fe6dd; text-shadow: 0 0 20px rgba(130, 220, 214, 0.75); }
 }
 
 .affirmation-overlay {
@@ -227,6 +228,7 @@ body {
   font-size: clamp(1.9rem, 5vw, 3.4rem);
   font-weight: 800;
   text-align: center;
+  text-wrap: balance;
   color: var(--text-light);
   line-height: 1.45;
   animation: affirmation-pulse 2.4s ease-in-out infinite;
