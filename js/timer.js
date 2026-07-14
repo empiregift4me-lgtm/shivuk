@@ -82,4 +82,5 @@ function initTimer() {
   resetBtn.addEventListener("click", reset);
 
   render();
+  start();
 }

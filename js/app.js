@@ -1,5 +1,6 @@
 document.addEventListener("DOMContentLoaded", () => {
   applyFontScale();
+  initShell();
   initTabs();
   initTimer();
   maybeShowMonthlyInsights();

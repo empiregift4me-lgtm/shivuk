@@ -36,12 +36,94 @@ body {
   min-height: 100vh;
 }
 
-.app-shell {
+.site-shell {
   max-width: 860px;
   margin: 0 auto;
   padding: var(--space) var(--space) var(--space-lg);
   position: relative;
 }
+
+/* ===== סרגל עליון + תפריט צד ===== */
+.top-bar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  justify-content: space-between;
+  margin-bottom: var(--space);
+}
+
+.sidebar-toggle-btn {
+  font-family: inherit;
+  border: 1px solid var(--c-border);
+  background: var(--c-card);
+  color: var(--text-light);
+  border-radius: var(--radius-sm);
+  width: 40px;
+  height: 40px;
+  font-size: 1.2rem;
+  cursor: pointer;
+  flex: 0 0 auto;
+}
+.sidebar-toggle-btn:hover { background: var(--c-panel); }
+
+.site-title {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: var(--text-light);
+  margin: 0;
+  cursor: pointer;
+  flex: 1 1 auto;
+  text-align: center;
+}
+
+.sidebar-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(10, 6, 20, 0.6);
+  z-index: 90;
+}
+.sidebar-overlay.is-hidden { display: none; }
+
+.sidebar-panel {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: min(300px, 82vw);
+  background: var(--c-card);
+  border-inline-start: 1px solid var(--c-border);
+  box-shadow: var(--shadow-hover);
+  padding: var(--space-lg) var(--space);
+  z-index: 95;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+.sidebar-panel.is-hidden { display: none; }
+
+.sidebar-item {
+  font-family: inherit;
+  text-align: right;
+  background: var(--c-panel);
+  color: var(--text-light);
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius-sm);
+  padding: 14px 16px;
+  font-size: 1.05rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+.sidebar-item:hover { background: var(--c-field); color: var(--c-highlight); }
+
+.app-section.is-hidden { display: none; }
+
+.dashboard-empty {
+  text-align: center;
+  padding: 80px var(--space);
+  color: var(--text-submuted);
+}
+.dashboard-empty p { margin: 0 0 8px; font-size: 1.1rem; }
+.dashboard-hint { font-size: 0.95rem !important; }
 
 .app-header {
   text-align: center;
@@ -594,6 +676,144 @@ select.field-input:focus {
 .modal-line-strong { font-weight: 600; margin-top: var(--space-sm); }
 .modal-quote { font-size: 0.95rem; color: var(--text-submuted); font-style: italic; margin: 0 0 6px; padding-inline-start: 10px; border-inline-start: 2px solid var(--c-highlight); }
 .modal-box .btn { margin-top: var(--space); }
+
+/* ===== לשוניות משנה (סיכומים) ===== */
+.module-wrap { display: flex; flex-direction: column; gap: var(--space); }
+.sub-tab-nav {
+  display: flex;
+  gap: 6px;
+  background: var(--c-card);
+  border: 1px solid var(--c-border);
+  border-radius: 999px;
+  padding: 6px;
+  box-shadow: var(--shadow-card);
+}
+.sub-tab-btn {
+  flex: 1 1 auto;
+  border: none;
+  background: transparent;
+  color: var(--text-submuted);
+  font-family: inherit;
+  font-size: 1rem;
+  font-weight: 500;
+  padding: 9px 14px;
+  border-radius: 999px;
+  cursor: pointer;
+}
+.sub-tab-btn:hover { background: var(--c-panel); color: var(--text-light); }
+.sub-tab-btn.is-active { background: var(--c-accent); color: #231942; font-weight: 700; }
+
+/* ===== סרגל כלים לעריכה עשירה ===== */
+.rt-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  background: var(--c-panel);
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius-sm);
+  padding: 6px;
+}
+.rt-btn {
+  font-family: inherit;
+  border: 1px solid var(--c-border);
+  background: var(--c-field);
+  color: var(--text-light);
+  border-radius: 6px;
+  padding: 5px 10px;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+.rt-btn:hover { background: var(--c-highlight); color: #231942; }
+
+/* ===== עמוד כתיבה בגודל A4 ===== */
+.a4-editor {
+  background: #fdfbff;
+  color: #231942;
+  min-height: 900px;
+  max-width: 720px;
+  width: 100%;
+  margin: var(--space) auto 0;
+  padding: 48px 56px;
+  border-radius: 6px;
+  box-shadow: var(--shadow-hover);
+  direction: rtl;
+  text-align: right;
+  line-height: 1.9;
+  font-size: 1.05rem;
+  outline: none;
+}
+.a4-editor-readonly { min-height: auto; }
+.a4-editor:focus { box-shadow: var(--shadow-hover), 0 0 0 3px rgba(224, 177, 203, 0.4); }
+.checklist-line { list-style: none; margin: 4px 0; }
+.checklist-line input[type="checkbox"] { margin-inline-end: 6px; }
+
+/* ===== החלטות עסקיות - צ'אט עם עצמך ===== */
+.chat-wrap { display: flex; flex-direction: column; gap: var(--space); }
+.chat-feed {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  max-height: 60vh;
+  overflow-y: auto;
+  padding: var(--space);
+  background: var(--c-card);
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius);
+}
+.chat-bubble {
+  align-self: flex-end;
+  max-width: 80%;
+  background: var(--c-panel);
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius-sm);
+  padding: 10px 14px;
+}
+.chat-bubble-content {
+  color: var(--text-light);
+  font-size: 1rem;
+  line-height: 1.7;
+  outline: none;
+}
+.chat-bubble-content[contenteditable="true"] { border-bottom: 1px dashed var(--c-highlight); }
+.chat-bubble-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-sm);
+  margin-top: 6px;
+}
+.chat-timestamp { font-size: 0.8rem; color: var(--text-submuted); }
+.chat-bubble-actions { display: flex; gap: 4px; }
+.bubble-icon-btn {
+  border: none;
+  background: transparent;
+  color: var(--text-submuted);
+  cursor: pointer;
+  font-size: 0.95rem;
+  padding: 2px 5px;
+  border-radius: 4px;
+}
+.bubble-icon-btn:hover { background: var(--c-field); color: var(--c-highlight); }
+.chat-compose {
+  background: var(--c-card);
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius);
+  padding: var(--space);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+.chat-editable {
+  min-height: 90px;
+  background: #fdfbff;
+  color: #231942;
+  border-radius: var(--radius-sm);
+  padding: 12px 14px;
+  direction: rtl;
+  text-align: right;
+  line-height: 1.8;
+  outline: none;
+}
 
 /* ===== חגיגת שמירה ===== */
 .confetti-layer {

@@ -1,5 +1,15 @@
 // ניהול הלשוניות והתוכן של כל אחת מהן
 
+// פרק הזמן (בוקר/ערב) שמוצג כרגע בלשונית "יומן" - כדי שתפריט התרגילים תמיד יוסיף בדיוק לשם
+let activeJournalPeriod = null;
+
+function currentActivePeriod(date) {
+  const status = dayStatus(date);
+  if (!status.morning || !status.morning.saved) return "morning";
+  if (!status.evening || !status.evening.saved) return "evening";
+  return null;
+}
+
 function renderJournalTab(container) {
   container.innerHTML = "";
   const date = todayISO();
@@ -25,10 +35,9 @@ function renderJournalTab(container) {
   let activePeriod = null;
   let editorInstance = null;
 
-  function pickDefaultPeriod(status) {
-    if (!status.morning || !status.morning.saved) return "morning";
-    if (!status.evening || !status.evening.saved) return "evening";
-    return null;
+  function setActivePeriod(p) {
+    activePeriod = p;
+    activeJournalPeriod = p;
   }
 
   function renderPills() {
@@ -42,7 +51,7 @@ function renderJournalTab(container) {
         text: isSaved ? `✓ ${PERIOD_LABELS[p]}` : PERIOD_LABELS[p],
         onclick: () => {
           if (isSaved) return;
-          activePeriod = p;
+          setActivePeriod(p);
           renderPills();
           renderEditor();
         }
@@ -60,7 +69,7 @@ function renderJournalTab(container) {
       return;
     }
     editorInstance = buildDraftEditor(date, activePeriod, () => {
-      activePeriod = pickDefaultPeriod(dayStatus(date));
+      setActivePeriod(currentActivePeriod(date));
       renderStreak();
       renderPills();
       renderEditor();
@@ -68,7 +77,7 @@ function renderJournalTab(container) {
     editorHost.appendChild(editorInstance.element);
   }
 
-  activePeriod = pickDefaultPeriod(dayStatus(date));
+  setActivePeriod(currentActivePeriod(date));
   renderStreak();
   renderPills();
   renderEditor();
@@ -209,7 +218,13 @@ function buildExercisesMenu(nav, exBtn) {
             class: "dropdown-item",
             text: ex.name,
             onclick: () => {
-              addExerciseToDay(date, ex.id);
+              // מוסיפים תמיד ליומן שמוצג כרגע בפועל בלשונית "יומן" - לא לפי הקטגוריה של התרגיל עצמו
+              const targetPeriod = activeJournalPeriod || currentActivePeriod(date);
+              if (!targetPeriod) {
+                alert("שני היומנים של היום כבר נשמרו - אין לאן להוסיף היום.");
+                return;
+              }
+              addExerciseToDay(date, targetPeriod, ex.id);
               closeMenu();
             }
           })

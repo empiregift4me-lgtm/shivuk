@@ -12,9 +12,7 @@ function getOrCreateDraft(date, period) {
   return getEntry(date, period) || { date, period, exerciseIds: [], data: {}, saved: false };
 }
 
-function addExerciseToDay(date, exerciseId) {
-  const instance = getExerciseById(exerciseId);
-  const period = instance.period;
+function addExerciseToDay(date, period, exerciseId) {
   const entry = getOrCreateDraft(date, period);
   if (!entry.exerciseIds.includes(exerciseId)) {
     entry.exerciseIds.push(exerciseId);

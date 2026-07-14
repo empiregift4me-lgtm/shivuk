@@ -4,7 +4,11 @@
 const STORE_KEYS = {
   entries: "journal_entries_v2",
   habits: "journal_habits_v1",
-  prefs: "journal_prefs_v1"
+  prefs: "journal_prefs_v1",
+  summaries: "summaries_v1",
+  summaryDraft: "summary_draft_v1",
+  decisions: "decisions_v1",
+  decisionDraft: "decision_draft_v1"
 };
 
 const PERIODS = ["morning", "evening"];
@@ -93,6 +97,56 @@ function loadPrefs() {
 
 function savePrefs(prefs) {
   localStorage.setItem(STORE_KEYS.prefs, JSON.stringify(prefs));
+}
+
+function loadSummaries() {
+  try {
+    return JSON.parse(localStorage.getItem(STORE_KEYS.summaries)) || [];
+  } catch (e) {
+    return [];
+  }
+}
+
+function saveSummaries(list) {
+  localStorage.setItem(STORE_KEYS.summaries, JSON.stringify(list));
+}
+
+function loadSummaryDraft() {
+  return localStorage.getItem(STORE_KEYS.summaryDraft) || "";
+}
+
+function saveSummaryDraft(html) {
+  localStorage.setItem(STORE_KEYS.summaryDraft, html);
+}
+
+function loadDecisions() {
+  try {
+    return JSON.parse(localStorage.getItem(STORE_KEYS.decisions)) || [];
+  } catch (e) {
+    return [];
+  }
+}
+
+function saveDecisions(list) {
+  localStorage.setItem(STORE_KEYS.decisions, JSON.stringify(list));
+}
+
+function loadDecisionDraft() {
+  return localStorage.getItem(STORE_KEYS.decisionDraft) || "";
+}
+
+function saveDecisionDraft(html) {
+  localStorage.setItem(STORE_KEYS.decisionDraft, html);
+}
+
+function formatTimestamp(ms) {
+  return new Intl.DateTimeFormat("he-IL", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit"
+  }).format(new Date(ms));
 }
 
 function formatDateHe(dateStr) {
