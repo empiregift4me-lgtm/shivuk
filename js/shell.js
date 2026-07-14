@@ -1,19 +1,20 @@
 // מעטפת האתר - ניווט בין דשבורד/יומן/סיכומים/החלטות דרך תפריט צד
 
-const SECTIONS = ["dashboard", "journal", "summaries", "decisions"];
-let sectionsInitialized = { summaries: false, decisions: false };
+const SECTIONS = ["dashboard", "journal", "summaries", "decisions", "emotional"];
+const LAZY_SECTION_INIT = {
+  summaries: initSummariesView,
+  decisions: initDecisionsView,
+  emotional: initEmotionalView
+};
+let sectionsInitialized = {};
 
 function showSection(name) {
   SECTIONS.forEach((s) => {
     document.getElementById(`${s}-view`).classList.toggle("is-hidden", s !== name);
   });
-  if (name === "summaries" && !sectionsInitialized.summaries) {
-    initSummariesView(document.getElementById("summaries-view"));
-    sectionsInitialized.summaries = true;
-  }
-  if (name === "decisions" && !sectionsInitialized.decisions) {
-    initDecisionsView(document.getElementById("decisions-view"));
-    sectionsInitialized.decisions = true;
+  if (LAZY_SECTION_INIT[name] && !sectionsInitialized[name]) {
+    LAZY_SECTION_INIT[name](document.getElementById(`${name}-view`));
+    sectionsInitialized[name] = true;
   }
   closeSidebar();
 }

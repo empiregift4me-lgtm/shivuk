@@ -1,6 +1,7 @@
-// מודול "החלטות עסקיות חשובות" - צ'אט עם עצמך: הודעות עם חותמת זמן, תיבת כתיבה עשירה למטה
+// מודול צ'אט עם עצמך - גנרי, משמש גם ל"החלטות עסקיות חשובות" וגם ל"תיעוד רגשי"
+// הודעות עם חותמת זמן, תיבת כתיבה עשירה למטה, Ctrl+Enter לשליחה
 
-function initDecisionsView(container) {
+function initChatView(container, listKey, draftKey) {
   container.innerHTML = "";
   const wrap = el("div", { class: "chat-wrap" });
   const feed = el("div", { class: "chat-feed" });
@@ -8,7 +9,7 @@ function initDecisionsView(container) {
 
   const composeArea = el("div", { class: "chat-compose" });
   const editable = el("div", { class: "chat-editable", contenteditable: "true" });
-  editable.innerHTML = loadDecisionDraft();
+  editable.innerHTML = loadChatDraft(draftKey);
   const toolbar = createRichToolbar(editable);
   const sendBtn = el("button", { class: "btn btn-primary", type: "button", text: "שליחה (או Ctrl+Enter)" });
   composeArea.appendChild(toolbar);
@@ -19,9 +20,9 @@ function initDecisionsView(container) {
 
   function renderFeed() {
     feed.innerHTML = "";
-    const list = loadDecisions().slice().sort((a, b) => a.createdAt - b.createdAt);
+    const list = loadChatList(listKey).slice().sort((a, b) => a.createdAt - b.createdAt);
     if (list.length === 0) {
-      feed.appendChild(el("div", { class: "empty-state", text: "עדיין אין הודעות. כתבי לעצמך את ההחלטה הראשונה למטה." }));
+      feed.appendChild(el("div", { class: "empty-state", text: "עדיין אין הודעות. כתבי לעצמך את ההודעה הראשונה למטה." }));
     }
     list.forEach((msg) => {
       let editing = false;
@@ -47,11 +48,11 @@ function initDecisionsView(container) {
             onclick: () => {
               if (editing) {
                 msg.html = contentEl.innerHTML;
-                const all = loadDecisions();
+                const all = loadChatList(listKey);
                 const idx = all.findIndex((m) => m.id === msg.id);
                 if (idx !== -1) {
                   all[idx] = msg;
-                  saveDecisions(all);
+                  saveChatList(listKey, all);
                 }
               }
               editing = !editing;
@@ -67,7 +68,7 @@ function initDecisionsView(container) {
             title: "מחיקה",
             onclick: () => {
               if (confirm("למחוק את ההודעה הזו לצמיתות?")) {
-                saveDecisions(loadDecisions().filter((m) => m.id !== msg.id));
+                saveChatList(listKey, loadChatList(listKey).filter((m) => m.id !== msg.id));
                 renderFeed();
               }
             }
@@ -86,11 +87,11 @@ function initDecisionsView(container) {
   function sendMessage() {
     const html = editable.innerHTML.trim();
     if (!html || html === "<br>") return;
-    const list = loadDecisions();
-    list.push({ id: "dec_" + Date.now(), html, createdAt: Date.now() });
-    saveDecisions(list);
+    const list = loadChatList(listKey);
+    list.push({ id: "msg_" + Date.now(), html, createdAt: Date.now() });
+    saveChatList(listKey, list);
     editable.innerHTML = "";
-    saveDecisionDraft("");
+    saveChatDraft(draftKey, "");
     celebrateSave();
     renderFeed();
   }
@@ -102,8 +103,16 @@ function initDecisionsView(container) {
       sendMessage();
     }
   });
-  const persistDraft = debounce(() => saveDecisionDraft(editable.innerHTML), 400);
+  const persistDraft = debounce(() => saveChatDraft(draftKey, editable.innerHTML), 400);
   editable.addEventListener("input", persistDraft);
 
   renderFeed();
+}
+
+function initDecisionsView(container) {
+  initChatView(container, STORE_KEYS.decisions, STORE_KEYS.decisionDraft);
+}
+
+function initEmotionalView(container) {
+  initChatView(container, STORE_KEYS.emotional, STORE_KEYS.emotionalDraft);
 }

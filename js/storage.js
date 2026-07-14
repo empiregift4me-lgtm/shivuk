@@ -8,7 +8,9 @@ const STORE_KEYS = {
   summaries: "summaries_v1",
   summaryDraft: "summary_draft_v1",
   decisions: "decisions_v1",
-  decisionDraft: "decision_draft_v1"
+  decisionDraft: "decision_draft_v1",
+  emotional: "emotional_docs_v1",
+  emotionalDraft: "emotional_draft_v1"
 };
 
 const PERIODS = ["morning", "evening"];
@@ -119,24 +121,25 @@ function saveSummaryDraft(html) {
   localStorage.setItem(STORE_KEYS.summaryDraft, html);
 }
 
-function loadDecisions() {
+// אחסון גנרי לפי מפתח - משמש גם ל"החלטות עסקיות חשובות" וגם ל"תיעוד רגשי" (אותו מנגנון, שני יומני-צ'אט נפרדים)
+function loadChatList(key) {
   try {
-    return JSON.parse(localStorage.getItem(STORE_KEYS.decisions)) || [];
+    return JSON.parse(localStorage.getItem(key)) || [];
   } catch (e) {
     return [];
   }
 }
 
-function saveDecisions(list) {
-  localStorage.setItem(STORE_KEYS.decisions, JSON.stringify(list));
+function saveChatList(key, list) {
+  localStorage.setItem(key, JSON.stringify(list));
 }
 
-function loadDecisionDraft() {
-  return localStorage.getItem(STORE_KEYS.decisionDraft) || "";
+function loadChatDraft(key) {
+  return localStorage.getItem(key) || "";
 }
 
-function saveDecisionDraft(html) {
-  localStorage.setItem(STORE_KEYS.decisionDraft, html);
+function saveChatDraft(key, html) {
+  localStorage.setItem(key, html);
 }
 
 function formatTimestamp(ms) {
