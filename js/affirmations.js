@@ -1,7 +1,7 @@
 // חלונית משפט יומי - מופיעה פעם ב-24 שעות מיד אחרי הזנת הסיסמה, ומשאירה שורת כותרת קבועה עם אותו משפט לכל אורך היום
 
 const DAILY_AFFIRMATION_INTERVAL_MS = 24 * 60 * 60 * 1000;
-const DAILY_AFFIRMATION_SPLASH_MS = 20 * 1000;
+const DAILY_AFFIRMATION_CLOSE_DELAY_MS = 25 * 1000;
 
 const DAILY_AFFIRMATIONS = [
   "עדיה, הערך שלך אינו במקוריות מוחלטת, אלא ביכולת הייחודית שלך לקחת שיטה, להבין אותה לעומק וליישם אותה בשטח.",
@@ -77,7 +77,7 @@ function renderAffirmationHeadline(sentence) {
 
 function showAffirmationSplash(sentence) {
   const overlay = el("div", { class: "affirmation-overlay" });
-  const particles = Array.from({ length: 6 }).map((_, i) => el("span", { class: `affirmation-particle p${i}` }));
+  const particles = Array.from({ length: 12 }).map((_, i) => el("span", { class: `affirmation-particle p${i}` }));
   const closeBtn = el("button", { type: "button", class: "affirmation-close", title: "סגירה", text: "✕" });
   const card = el("div", { class: "affirmation-card" }, [
     el("div", { class: "affirmation-glow" }),
@@ -90,7 +90,7 @@ function showAffirmationSplash(sentence) {
 
   let dismissed = false;
   function dismiss() {
-    if (dismissed) return;
+    if (dismissed || !closeBtn.classList.contains("is-ready")) return;
     dismissed = true;
     overlay.classList.remove("is-visible");
     setTimeout(() => overlay.remove(), 400);
@@ -98,7 +98,8 @@ function showAffirmationSplash(sentence) {
 
   closeBtn.addEventListener("click", dismiss);
   requestAnimationFrame(() => overlay.classList.add("is-visible"));
-  setTimeout(dismiss, DAILY_AFFIRMATION_SPLASH_MS);
+  // כפתור הסגירה נשאר חסום כדי שהמשפט באמת ייקלט, לפני שאפשר לסגור אותו
+  setTimeout(() => closeBtn.classList.add("is-ready"), DAILY_AFFIRMATION_CLOSE_DELAY_MS);
 }
 
 // נקראת מיד אחרי הזנת סיסמה מוצלחת - בוחרת (או שומרת) את משפט היום, ומציגה את החלונית רק אם עברו 24 שעות מהפעם האחרונה

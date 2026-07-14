@@ -113,14 +113,24 @@ body {
 .affirmation-headline {
   flex-basis: 100%;
   display: none;
-  margin: 6px 0 0;
+  margin: 10px auto 0;
+  max-width: 720px;
   text-align: center;
-  font-size: 0.85rem;
-  font-weight: 500;
-  color: var(--text-submuted);
-  animation: affirmation-pulse 3s ease-in-out infinite;
+  font-size: 1.55rem;
+  font-weight: 700;
+  line-height: 1.4;
+  color: var(--text-light);
+  padding: 12px 22px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, rgba(224, 177, 203, 0.16), rgba(157, 134, 192, 0.16));
+  border: 1px solid rgba(224, 177, 203, 0.4);
+  animation: affirmation-headline-glow 2.8s ease-in-out infinite;
 }
 .affirmation-headline.is-visible { display: block; }
+@keyframes affirmation-headline-glow {
+  0%, 100% { box-shadow: 0 0 8px rgba(224, 177, 203, 0.2); border-color: rgba(224, 177, 203, 0.3); text-shadow: 0 0 6px rgba(224, 177, 203, 0.2); }
+  50% { box-shadow: 0 0 28px rgba(224, 177, 203, 0.85); border-color: rgba(224, 177, 203, 0.95); text-shadow: 0 0 18px rgba(224, 177, 203, 0.8); }
+}
 
 .affirmation-overlay {
   position: fixed;
@@ -130,22 +140,28 @@ body {
   align-items: center;
   justify-content: center;
   background: radial-gradient(circle at 50% 40%, rgba(74, 66, 112, 0.6), rgba(35, 25, 66, 0.94));
+  background-size: 200% 200%;
   backdrop-filter: blur(6px);
   -webkit-backdrop-filter: blur(6px);
   opacity: 0;
   pointer-events: none;
   transition: opacity 0.4s ease;
+  animation: affirmation-bg-shift 9s ease-in-out infinite;
 }
 .affirmation-overlay.is-visible { opacity: 1; pointer-events: auto; }
+@keyframes affirmation-bg-shift {
+  0%, 100% { background-position: 50% 40%; }
+  50% { background-position: 50% 60%; }
+}
 
 .affirmation-card {
   position: relative;
-  max-width: min(680px, 88vw);
-  min-height: 35vh;
+  max-width: min(760px, 92vw);
+  min-height: 40vh;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 48px 40px;
+  padding: 56px 44px;
   border-radius: 28px;
   background: rgba(74, 66, 112, 0.35);
   border: 1px solid rgba(221, 208, 230, 0.35);
@@ -156,14 +172,18 @@ body {
   transition: transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
   overflow: hidden;
 }
-.affirmation-overlay.is-visible .affirmation-card { transform: scale(1); }
+.affirmation-overlay.is-visible .affirmation-card { transform: scale(1); animation: affirmation-breathe 4s ease-in-out infinite; }
+@keyframes affirmation-breathe {
+  0%, 100% { box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35), 0 0 30px rgba(224, 177, 203, 0.2); }
+  50% { box-shadow: 0 8px 46px rgba(0, 0, 0, 0.4), 0 0 80px rgba(224, 177, 203, 0.6); }
+}
 
 .affirmation-glow {
   position: absolute;
-  inset: -20%;
-  background: conic-gradient(from 0deg, rgba(224, 177, 203, 0.25), rgba(157, 134, 192, 0.15), rgba(224, 177, 203, 0.25));
-  filter: blur(40px);
-  animation: affirmation-rotate 12s linear infinite;
+  inset: -25%;
+  background: conic-gradient(from 0deg, rgba(224, 177, 203, 0.35), rgba(157, 134, 192, 0.2), rgba(224, 177, 203, 0.35));
+  filter: blur(38px);
+  animation: affirmation-rotate 7s linear infinite;
   z-index: 0;
   border-radius: 50%;
 }
@@ -177,33 +197,39 @@ body {
   background: var(--c-highlight);
   opacity: 0.6;
   filter: blur(1px);
-  animation: affirmation-float 6s ease-in-out infinite;
+  animation: affirmation-float 5s ease-in-out infinite;
   z-index: 1;
 }
-.affirmation-particle.p0 { top: 15%; left: 20%; animation-delay: 0s; }
-.affirmation-particle.p1 { top: 70%; left: 15%; animation-delay: 1s; }
-.affirmation-particle.p2 { top: 25%; left: 80%; animation-delay: 2s; }
-.affirmation-particle.p3 { top: 80%; left: 75%; animation-delay: 0.5s; }
-.affirmation-particle.p4 { top: 50%; left: 5%; animation-delay: 1.5s; }
-.affirmation-particle.p5 { top: 45%; left: 92%; animation-delay: 2.5s; }
+.affirmation-particle.p0 { top: 12%; left: 18%; animation-delay: 0s; }
+.affirmation-particle.p1 { top: 72%; left: 12%; animation-delay: 0.8s; }
+.affirmation-particle.p2 { top: 20%; left: 84%; animation-delay: 1.6s; }
+.affirmation-particle.p3 { top: 84%; left: 78%; animation-delay: 0.4s; }
+.affirmation-particle.p4 { top: 48%; left: 4%; animation-delay: 1.2s; }
+.affirmation-particle.p5 { top: 42%; left: 95%; animation-delay: 2s; }
+.affirmation-particle.p6 { top: 6%; left: 50%; animation-delay: 2.4s; width: 6px; height: 6px; }
+.affirmation-particle.p7 { top: 92%; left: 45%; animation-delay: 0.2s; width: 10px; height: 10px; }
+.affirmation-particle.p8 { top: 30%; left: 35%; animation-delay: 1.8s; width: 5px; height: 5px; }
+.affirmation-particle.p9 { top: 60%; left: 65%; animation-delay: 1s; width: 7px; height: 7px; }
+.affirmation-particle.p10 { top: 15%; left: 65%; animation-delay: 2.8s; width: 6px; height: 6px; }
+.affirmation-particle.p11 { top: 78%; left: 30%; animation-delay: 1.4s; width: 9px; height: 9px; }
 @keyframes affirmation-float {
-  0%, 100% { transform: translateY(0) scale(1); opacity: 0.5; }
-  50% { transform: translateY(-18px) scale(1.3); opacity: 1; }
+  0%, 100% { transform: translateY(0) scale(1); opacity: 0.45; }
+  50% { transform: translateY(-26px) scale(1.6); opacity: 1; }
 }
 
 .affirmation-text {
   position: relative;
   z-index: 2;
-  font-size: clamp(1.4rem, 3.2vw, 2.4rem);
-  font-weight: 700;
+  font-size: clamp(1.9rem, 5vw, 3.4rem);
+  font-weight: 800;
   text-align: center;
   color: var(--text-light);
-  line-height: 1.5;
-  animation: affirmation-pulse 3s ease-in-out infinite;
+  line-height: 1.45;
+  animation: affirmation-pulse 2.4s ease-in-out infinite;
 }
 @keyframes affirmation-pulse {
-  0%, 100% { text-shadow: 0 0 18px rgba(224, 177, 203, 0.4); }
-  50% { text-shadow: 0 0 34px rgba(224, 177, 203, 0.85); }
+  0%, 100% { text-shadow: 0 0 18px rgba(224, 177, 203, 0.45); transform: scale(1); }
+  50% { text-shadow: 0 0 55px rgba(224, 177, 203, 1); transform: scale(1.035); }
 }
 
 .affirmation-close {
@@ -217,12 +243,16 @@ body {
   border: 1px solid var(--c-border);
   background: rgba(255, 255, 255, 0.08);
   color: var(--text-light);
-  cursor: pointer;
+  cursor: not-allowed;
   font-size: 14px;
   display: flex;
   align-items: center;
   justify-content: center;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.5s ease;
 }
+.affirmation-close.is-ready { opacity: 1; pointer-events: auto; cursor: pointer; }
 .affirmation-close:hover { background: rgba(255, 255, 255, 0.2); }
 
 .site-title {
