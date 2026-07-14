@@ -209,11 +209,6 @@ function buildExercisesMenu(nav, exBtn) {
             class: "dropdown-item",
             text: ex.name,
             onclick: () => {
-              const status = dayStatus(date);
-              if (status[p] && status[p].saved) {
-                alert(`היומן של ${PERIOD_LABELS[p]} כבר נשמר היום. אי אפשר להוסיף אליו תרגילים נוספים.`);
-                return;
-              }
               addExerciseToDay(date, ex.id);
               closeMenu();
             }

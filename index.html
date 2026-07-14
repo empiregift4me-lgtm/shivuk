@@ -16,6 +16,14 @@
 <body>
   <div class="app-shell">
     <header class="app-header">
+      <div class="header-tools-row">
+        <button id="insights-btn" type="button" class="util-btn" title="הצגת תובנות מ-30 הימים האחרונים">📊 ניתוח חודשי</button>
+        <div class="timer-widget">
+          <button id="timer-reset" type="button" class="util-btn timer-btn" title="איפוס הטיימר">↺</button>
+          <span id="timer-display" class="timer-display">40:00</span>
+          <button id="timer-toggle" type="button" class="util-btn timer-btn" title="הפעלה/השהיה">▶</button>
+        </div>
+      </div>
       <h1 class="app-title">יומן הערכה עצמית</h1>
       <p class="app-subtitle">רגע אחד ביום, לעצמך</p>
       <div class="utility-bar">
@@ -43,6 +51,7 @@
   <script src="js/backup.js"></script>
   <script src="js/renderers.js"></script>
   <script src="js/celebrate.js"></script>
+  <script src="js/timer.js"></script>
   <script src="js/journal.js"></script>
   <script src="js/pdf.js"></script>
   <script src="js/habits.js"></script>

@@ -63,6 +63,30 @@ body {
   font-weight: 500;
 }
 
+.header-tools-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+
+.timer-widget {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.timer-display {
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  color: var(--text-light);
+  font-size: 0.95rem;
+  min-width: 3.6em;
+  text-align: center;
+}
+
+.timer-btn { padding: 4px 8px; }
+
 .utility-bar {
   display: flex;
   align-items: center;

@@ -1,7 +1,10 @@
 document.addEventListener("DOMContentLoaded", () => {
   applyFontScale();
   initTabs();
+  initTimer();
   maybeShowMonthlyInsights();
+
+  document.getElementById("insights-btn").addEventListener("click", showManualInsights);
 
   document.getElementById("font-dec").addEventListener("click", () => setFontScale(getFontScale() - FONT_SCALE_STEP));
   document.getElementById("font-inc").addEventListener("click", () => setFontScale(getFontScale() + FONT_SCALE_STEP));
