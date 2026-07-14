@@ -105,12 +105,30 @@ function renderSummaryWriteTab(content) {
   content.appendChild(wrap);
 }
 
+let summaryArchiveOrder = "desc";
+
 function renderSummaryArchiveTab(content, goToWriteTab) {
   content.innerHTML = "";
   const wrap = el("div", { class: "panel" });
   wrap.appendChild(el("h2", { class: "panel-title", text: "ארכיונים" }));
 
-  const list = loadSummaries().slice().sort((a, b) => (b.sessionDate || "").localeCompare(a.sessionDate || "") || b.createdAt - a.createdAt);
+  const orderBtn = el("button", {
+    class: "btn btn-ghost btn-small archive-order-btn",
+    type: "button",
+    text: summaryArchiveOrder === "desc" ? "מהחדש לישן ⇅" : "מהישן לחדש ⇅",
+    onclick: () => {
+      summaryArchiveOrder = summaryArchiveOrder === "desc" ? "asc" : "desc";
+      renderSummaryArchiveTab(content, goToWriteTab);
+    }
+  });
+  wrap.appendChild(orderBtn);
+
+  const list = loadSummaries()
+    .slice()
+    .sort((a, b) => {
+      const cmp = (a.sessionDate || "").localeCompare(b.sessionDate || "") || a.createdAt - b.createdAt;
+      return summaryArchiveOrder === "desc" ? -cmp : cmp;
+    });
   if (list.length === 0) {
     wrap.appendChild(el("div", { class: "empty-state", text: "עדיין אין סיכומים שמורים." }));
     content.appendChild(wrap);
@@ -197,7 +215,16 @@ function renderSummaryArchiveTab(content, goToWriteTab) {
         body.appendChild(bodyEditableRef);
         body.appendChild(buildEditToggle("שמירת שינויים"));
       } else {
-        body.appendChild(buildEditToggle("עריכה ושינוי"));
+        const topRow = el("div", { class: "archive-body-actions" }, [
+          buildEditToggle("עריכה ושינוי"),
+          el("button", {
+            class: "btn btn-secondary btn-small",
+            type: "button",
+            text: "ייצוא ל-PDF",
+            onclick: () => exportSummaryToPDF(item)
+          })
+        ]);
+        body.appendChild(topRow);
         const view = el("div", { class: "a4-editor a4-editor-readonly" });
         view.innerHTML = item.html;
         view.querySelectorAll('input[type="checkbox"]').forEach((cb) => (cb.disabled = true));
@@ -310,6 +337,23 @@ function renderPaymentsTab(content) {
   wrap.appendChild(history);
 
   content.appendChild(wrap);
+}
+
+function exportSummaryToPDF(item) {
+  const printRoot = el("div", { class: "day-card summary-print-root" });
+  const header = el("div", { class: "day-header" });
+  header.appendChild(el("div", { class: "day-date", text: item.sessionDate ? formatDateHe(item.sessionDate) : formatTimestamp(item.createdAt) }));
+  printRoot.appendChild(header);
+  const body = el("div", { class: "a4-editor a4-editor-readonly" });
+  body.innerHTML = item.html;
+  body.querySelectorAll('input[type="checkbox"]').forEach((cb) => (cb.disabled = true));
+  printRoot.appendChild(body);
+  printRoot.style.position = "fixed";
+  printRoot.style.left = "-9999px";
+  printRoot.style.top = "0";
+  printRoot.style.width = "700px";
+  document.body.appendChild(printRoot);
+  exportElementToPDF(printRoot, `סיכום-${item.sessionDate || todayISO()}`, null, () => printRoot.remove());
 }
 
 function hasUncheckedChecklistItems(html) {

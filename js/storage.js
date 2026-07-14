@@ -11,7 +11,8 @@ const STORE_KEYS = {
   decisionDraft: "decision_draft_v1",
   emotional: "emotional_docs_v1",
   emotionalDraft: "emotional_draft_v1",
-  paymentLedger: "summary_payment_ledger_v1"
+  paymentLedger: "summary_payment_ledger_v1",
+  affirmationState: "daily_affirmation_state_v1"
 };
 
 const PERIODS = ["morning", "evening"];

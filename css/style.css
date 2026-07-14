@@ -87,6 +87,7 @@ body {
 /* ===== סרגל עליון + תפריט צד ===== */
 .top-bar {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: var(--space-sm);
   justify-content: space-between;
@@ -108,6 +109,121 @@ body {
   flex: 0 0 auto;
 }
 .sidebar-toggle-btn:hover { background: var(--c-panel); }
+
+.affirmation-headline {
+  flex-basis: 100%;
+  display: none;
+  margin: 6px 0 0;
+  text-align: center;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--text-submuted);
+  animation: affirmation-pulse 3s ease-in-out infinite;
+}
+.affirmation-headline.is-visible { display: block; }
+
+.affirmation-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(circle at 50% 40%, rgba(74, 66, 112, 0.6), rgba(35, 25, 66, 0.94));
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.4s ease;
+}
+.affirmation-overlay.is-visible { opacity: 1; pointer-events: auto; }
+
+.affirmation-card {
+  position: relative;
+  max-width: min(680px, 88vw);
+  min-height: 35vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 40px;
+  border-radius: 28px;
+  background: rgba(74, 66, 112, 0.35);
+  border: 1px solid rgba(221, 208, 230, 0.35);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  transform: scale(0.9);
+  transition: transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
+  overflow: hidden;
+}
+.affirmation-overlay.is-visible .affirmation-card { transform: scale(1); }
+
+.affirmation-glow {
+  position: absolute;
+  inset: -20%;
+  background: conic-gradient(from 0deg, rgba(224, 177, 203, 0.25), rgba(157, 134, 192, 0.15), rgba(224, 177, 203, 0.25));
+  filter: blur(40px);
+  animation: affirmation-rotate 12s linear infinite;
+  z-index: 0;
+  border-radius: 50%;
+}
+@keyframes affirmation-rotate { to { transform: rotate(360deg); } }
+
+.affirmation-particle {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--c-highlight);
+  opacity: 0.6;
+  filter: blur(1px);
+  animation: affirmation-float 6s ease-in-out infinite;
+  z-index: 1;
+}
+.affirmation-particle.p0 { top: 15%; left: 20%; animation-delay: 0s; }
+.affirmation-particle.p1 { top: 70%; left: 15%; animation-delay: 1s; }
+.affirmation-particle.p2 { top: 25%; left: 80%; animation-delay: 2s; }
+.affirmation-particle.p3 { top: 80%; left: 75%; animation-delay: 0.5s; }
+.affirmation-particle.p4 { top: 50%; left: 5%; animation-delay: 1.5s; }
+.affirmation-particle.p5 { top: 45%; left: 92%; animation-delay: 2.5s; }
+@keyframes affirmation-float {
+  0%, 100% { transform: translateY(0) scale(1); opacity: 0.5; }
+  50% { transform: translateY(-18px) scale(1.3); opacity: 1; }
+}
+
+.affirmation-text {
+  position: relative;
+  z-index: 2;
+  font-size: clamp(1.4rem, 3.2vw, 2.4rem);
+  font-weight: 700;
+  text-align: center;
+  color: var(--text-light);
+  line-height: 1.5;
+  animation: affirmation-pulse 3s ease-in-out infinite;
+}
+@keyframes affirmation-pulse {
+  0%, 100% { text-shadow: 0 0 18px rgba(224, 177, 203, 0.4); }
+  50% { text-shadow: 0 0 34px rgba(224, 177, 203, 0.85); }
+}
+
+.affirmation-close {
+  position: absolute;
+  top: 14px;
+  left: 14px;
+  z-index: 3;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 1px solid var(--c-border);
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-light);
+  cursor: pointer;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.affirmation-close:hover { background: rgba(255, 255, 255, 0.2); }
 
 .site-title {
   font-size: 1.3rem;
@@ -560,6 +676,7 @@ select.field-input:focus {
 }
 .evidence-editable:focus { outline: none; border-color: var(--c-highlight); }
 .evidence-editable mark { background: var(--c-highlight); color: #231942; }
+.evidence-image { max-width: 100%; border-radius: 8px; margin: 8px 0; display: block; }
 
 /* ===== תפריט נפתח - לשונית תרגילים ===== */
 .exercises-dropdown {
@@ -610,6 +727,8 @@ select.field-input:focus {
   margin-bottom: var(--space-sm);
   overflow: hidden;
 }
+.archive-order-btn { margin-bottom: var(--space); }
+.archive-body-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: var(--space-sm); }
 .archive-item-head {
   display: flex;
   align-items: stretch;

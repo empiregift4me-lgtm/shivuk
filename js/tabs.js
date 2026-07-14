@@ -85,11 +85,24 @@ function renderJournalTab(container) {
   container.appendChild(wrap);
 }
 
+let journalArchiveOrder = "desc";
+
 function renderArchiveTab(container) {
   container.innerHTML = "";
   const wrap = el("div", { class: "panel" });
   wrap.appendChild(el("h2", { class: "panel-title", text: "ארכיונים" }));
-  const entries = allEntriesSorted("desc").filter((e) => e.saved);
+  const entries = allEntriesSorted(journalArchiveOrder).filter((e) => e.saved);
+
+  const orderBtn = el("button", {
+    class: "btn btn-ghost btn-small archive-order-btn",
+    type: "button",
+    text: journalArchiveOrder === "desc" ? "מהחדש לישן ⇅" : "מהישן לחדש ⇅",
+    onclick: () => {
+      journalArchiveOrder = journalArchiveOrder === "desc" ? "asc" : "desc";
+      renderArchiveTab(container);
+    }
+  });
+  wrap.appendChild(orderBtn);
 
   if (entries.length === 0) {
     wrap.appendChild(el("div", { class: "empty-state", text: "עדיין אין רשומות שמורות בארכיון." }));

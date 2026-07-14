@@ -29,6 +29,7 @@ function initLock() {
     if (val === LOCK_PASSWORD) {
       hideLock();
       scheduleRelock();
+      initDailyAffirmation();
     } else {
       document.getElementById("lock-error").textContent = "סיסמה שגויה, נסי שוב.";
       document.getElementById("lock-password").value = "";

@@ -243,15 +243,31 @@ const RENDERERS = {
 
     function addBlock(html) {
       const block = el("div", { class: "evidence-block" });
+      const editable = el("div", { class: "evidence-editable", contenteditable: readOnly ? "false" : "true" });
+      editable.innerHTML = html || "";
       if (!readOnly) {
+        const fileInput = el("input", { type: "file", accept: "image/*", hidden: "hidden" });
+        fileInput.addEventListener("change", () => {
+          const file = fileInput.files[0];
+          if (!file) return;
+          const reader = new FileReader();
+          reader.onload = () => {
+            const img = document.createElement("img");
+            img.src = reader.result;
+            img.className = "evidence-image";
+            editable.appendChild(img);
+            fileInput.value = "";
+          };
+          reader.readAsDataURL(file);
+        });
         const toolbar = el("div", { class: "evidence-toolbar" }, [
           el("button", { type: "button", class: "tb-btn", text: "B", title: "הדגשה מודגשת", onclick: () => document.execCommand("bold") }),
-          el("button", { type: "button", class: "tb-btn highlight-btn", text: "צביעה", title: "סימון טקסט", onclick: () => document.execCommand("hiliteColor", false, "#E99F8B") })
+          el("button", { type: "button", class: "tb-btn highlight-btn", text: "צביעה", title: "סימון טקסט", onclick: () => document.execCommand("hiliteColor", false, "#E99F8B") }),
+          el("button", { type: "button", class: "tb-btn", text: "📷 הוספת תמונה", title: "העלאת צילום מסך או תמונה", onclick: () => fileInput.click() }),
+          fileInput
         ]);
         block.appendChild(toolbar);
       }
-      const editable = el("div", { class: "evidence-editable", contenteditable: readOnly ? "false" : "true" });
-      editable.innerHTML = html || "";
       block.appendChild(editable);
       if (!readOnly) {
         block.appendChild(

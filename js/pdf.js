@@ -16,21 +16,23 @@ function swapSpacesForCapture(root) {
   return () => originals.forEach(({ node, value }) => (node.nodeValue = value));
 }
 
-function exportDayToPDF(dayCardRoot, date) {
-  const actionsEl = dayCardRoot.querySelector(".day-actions");
-  const prevDisplay = actionsEl ? actionsEl.style.display : null;
-  if (actionsEl) actionsEl.style.display = "none";
+// גרסה גנרית של ייצוא PDF - משמשת גם ליומן ההערכה וגם לסיכומים
+function exportElementToPDF(root, filename, hideSelector, onDone) {
+  const hideEl = hideSelector ? root.querySelector(hideSelector) : null;
+  const prevDisplay = hideEl ? hideEl.style.display : null;
+  if (hideEl) hideEl.style.display = "none";
 
   const opt = {
     margin: 10,
-    filename: `יומן-${date}.pdf`,
+    filename: `${filename}.pdf`,
     image: { type: "jpeg", quality: 0.98 },
     html2canvas: { scale: 2, useCORS: true, backgroundColor: "#ffffff", letterRendering: true },
     jsPDF: { unit: "mm", format: "a4", orientation: "portrait" }
   };
 
   function restoreUI() {
-    if (actionsEl) actionsEl.style.display = prevDisplay || "";
+    if (hideEl) hideEl.style.display = prevDisplay || "";
+    if (onDone) onDone();
   }
 
   // ממתינים לטעינה מלאה של הגופן (Rubik) לפני הצילום - טעינה חלקית היא גורם נפוץ
@@ -38,10 +40,10 @@ function exportDayToPDF(dayCardRoot, date) {
   const ready = document.fonts && document.fonts.ready ? document.fonts.ready : Promise.resolve();
 
   ready.then(() => {
-    const restoreSpaces = swapSpacesForCapture(dayCardRoot);
+    const restoreSpaces = swapSpacesForCapture(root);
     html2pdf()
       .set(opt)
-      .from(dayCardRoot)
+      .from(root)
       .save()
       .then(() => {
         restoreSpaces();
@@ -53,4 +55,8 @@ function exportDayToPDF(dayCardRoot, date) {
         restoreUI();
       });
   });
+}
+
+function exportDayToPDF(dayCardRoot, date) {
+  exportElementToPDF(dayCardRoot, `יומן-${date}`, ".day-actions");
 }
