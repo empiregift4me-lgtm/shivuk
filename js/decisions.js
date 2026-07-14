@@ -10,7 +10,7 @@ function initDecisionsView(container) {
   const editable = el("div", { class: "chat-editable", contenteditable: "true" });
   editable.innerHTML = loadDecisionDraft();
   const toolbar = createRichToolbar(editable);
-  const sendBtn = el("button", { class: "btn btn-primary", type: "button", text: "שליחה (או Shift+Enter)" });
+  const sendBtn = el("button", { class: "btn btn-primary", type: "button", text: "שליחה (או Ctrl+Enter)" });
   composeArea.appendChild(toolbar);
   composeArea.appendChild(editable);
   composeArea.appendChild(sendBtn);
@@ -97,7 +97,7 @@ function initDecisionsView(container) {
 
   sendBtn.addEventListener("click", sendMessage);
   editable.addEventListener("keydown", (e) => {
-    if (e.key === "Enter" && e.shiftKey) {
+    if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
       e.preventDefault();
       sendMessage();
     }

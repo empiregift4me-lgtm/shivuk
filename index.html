@@ -14,19 +14,19 @@
 <link rel="stylesheet" href="css/style.css" />
 </head>
 <body>
+  <header class="top-bar">
+    <button id="sidebar-toggle" class="sidebar-toggle-btn" type="button" title="תפריט">☰</button>
+    <h1 id="site-title" class="site-title">יומן אישי של עדיה</h1>
+  </header>
+
+  <div id="sidebar-overlay" class="sidebar-overlay is-hidden"></div>
+  <nav id="sidebar-panel" class="sidebar-panel is-hidden">
+    <button class="sidebar-item" type="button" data-section="journal">📔 יומן הערכה</button>
+    <button class="sidebar-item" type="button" data-section="summaries">📝 סיכומים</button>
+    <button class="sidebar-item" type="button" data-section="decisions">💬 החלטות עסקיות חשובות</button>
+  </nav>
+
   <div class="site-shell">
-    <header class="top-bar">
-      <button id="sidebar-toggle" class="sidebar-toggle-btn" type="button" title="תפריט">☰</button>
-      <h1 id="site-title" class="site-title">יומן אישי של עדיה</h1>
-    </header>
-
-    <div id="sidebar-overlay" class="sidebar-overlay is-hidden"></div>
-    <nav id="sidebar-panel" class="sidebar-panel is-hidden">
-      <button class="sidebar-item" type="button" data-section="journal">📔 יומן הערכה</button>
-      <button class="sidebar-item" type="button" data-section="summaries">📝 סיכומים</button>
-      <button class="sidebar-item" type="button" data-section="decisions">💬 החלטות עסקיות חשובות</button>
-    </nav>
-
     <main class="site-main">
       <section id="dashboard-view" class="app-section">
         <div class="dashboard-empty">

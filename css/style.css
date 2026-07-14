@@ -49,7 +49,9 @@ body {
   align-items: center;
   gap: var(--space-sm);
   justify-content: space-between;
-  margin-bottom: var(--space);
+  padding: var(--space);
+  position: relative;
+  z-index: 96;
 }
 
 .sidebar-toggle-btn {
@@ -93,7 +95,7 @@ body {
   background: var(--c-card);
   border-inline-start: 1px solid var(--c-border);
   box-shadow: var(--shadow-hover);
-  padding: var(--space-lg) var(--space);
+  padding: 140px var(--space) var(--space-lg);
   z-index: 95;
   display: flex;
   flex-direction: column;
