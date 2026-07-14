@@ -87,13 +87,18 @@ body {
 /* ===== סרגל עליון + תפריט צד ===== */
 .top-bar {
   display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--space-sm);
-  justify-content: space-between;
+  flex-direction: column;
+  gap: 2px;
   padding: var(--space);
   position: relative;
   z-index: 96;
+}
+
+.top-bar-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  justify-content: space-between;
 }
 
 .sidebar-toggle-btn {
@@ -111,7 +116,6 @@ body {
 .sidebar-toggle-btn:hover { background: var(--c-panel); }
 
 .affirmation-headline {
-  flex-basis: 100%;
   display: none;
   margin: 10px auto 0;
   max-width: 720px;
