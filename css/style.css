@@ -759,7 +759,12 @@ select.field-input:focus {
 
 /* ===== אתגר משפטים / הצהרת זהות ===== */
 .sentence-rows { display: flex; flex-direction: column; gap: var(--space-sm); margin-bottom: var(--space-sm); }
-.sentence-row,
+.sentence-row {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 6px;
+}
 .identity-row {
   display: flex;
   align-items: center;
@@ -773,7 +778,7 @@ select.field-input:focus {
   flex: 1 1 auto;
   min-width: 180px;
 }
-.sentence-row .field-input,
+.sentence-row .field-input { width: 100%; }
 .identity-row .field-textarea { flex: 1 1 220px; }
 
 /* ===== תיעוד ראיות ===== */
