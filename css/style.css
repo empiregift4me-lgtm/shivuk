@@ -733,10 +733,18 @@ select.field-input:focus {
 .dynamic-list-count { margin: 8px 0 0; font-size: 0.85rem; color: var(--text-submuted); opacity: 0.75; }
 
 /* ===== ניהול משימות היום ===== */
-.task-start-row { display: flex; align-items: center; gap: 10px; margin: var(--space) 0; }
+.task-summary { color: var(--c-highlight); font-weight: 600; font-size: 0.95rem; margin: 0 0 var(--space); min-height: 1.2em; }
+.task-start-row { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px; margin: 0 0 var(--space); }
+.task-start-group { display: flex; align-items: center; gap: 10px; }
 .task-start-label { font-weight: 600; color: var(--text-light); }
 .task-start-input { max-width: 140px; }
-.task-summary { color: var(--c-highlight); font-weight: 600; font-size: 0.95rem; margin: 0 0 var(--space); min-height: 1.2em; }
+.task-timer-group { display: flex; align-items: center; gap: 8px; }
+.task-timer-inputs { display: flex; align-items: center; gap: 4px; direction: ltr; }
+.task-timer-hours,
+.task-timer-minutes { flex: 0 0 42px; text-align: center; }
+.task-timer-colon { color: var(--text-submuted); font-weight: 700; }
+.task-timer-display { font-variant-numeric: tabular-nums; font-weight: 700; color: var(--c-highlight); min-width: 60px; text-align: center; }
+.task-timer-btn { width: 34px; height: 34px; padding: 0; }
 .task-add-row { display: flex; gap: 8px; margin-bottom: var(--space); }
 .task-list { display: flex; flex-direction: column; }
 .task-row {
@@ -776,10 +784,9 @@ select.field-input:focus {
 }
 .task-text-input { flex: 1 1 auto; min-width: 120px; }
 .task-text-input:disabled { opacity: 0.8; cursor: default; }
-.task-duration-group { display: flex; align-items: center; gap: 4px; flex: 0 0 auto; }
+.task-duration-group { display: flex; align-items: center; gap: 6px; flex: 0 0 auto; }
 .task-hours-input,
-.task-minutes-input { flex: 0 0 52px; text-align: center; }
-.task-duration-suffix { flex: 0 0 auto; color: var(--text-submuted); font-size: 0.8rem; }
+.task-minutes-input { flex: 0 0 46px; text-align: center; }
 .task-row-controls { display: flex; align-items: center; gap: 2px; flex: 0 0 auto; }
 .task-move-btn,
 .task-delete-btn {

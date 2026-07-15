@@ -51,6 +51,14 @@ function computeTaskSchedule(state) {
   });
 }
 
+// צלצול ארוך יותר מהצ'ימר הרגיל - כמה צפצופים חוזרים, לתשומת לב ברורה שהטיימר הסתיים
+function playLongAlarm() {
+  if (typeof playNotes !== "function") return;
+  const notes = [];
+  for (let i = 0; i < 7; i++) notes.push([880, i * 0.5]);
+  playNotes(notes, { dur: 0.35, gain: 0.2 });
+}
+
 function renderTasksView(container) {
   container.innerHTML = "";
   const state = loadTaskState();
@@ -61,15 +69,108 @@ function renderTasksView(container) {
     el("p", { class: "panel-subtitle", text: "כתבי משימה, הגדירי כמה זמן היא תיקח, והמערכת תחשב לך את טווח השעות אוטומטית." })
   );
 
-  const startRow = el("div", { class: "task-start-row" });
-  startRow.appendChild(el("label", { class: "task-start-label", text: "שעת התחלה:" }));
-  const startInput = el("input", { type: "time", class: "field-input task-start-input" });
-  startInput.value = state.startTime || "09:00";
-  startRow.appendChild(startInput);
-  wrap.appendChild(startRow);
-
   const summaryLine = el("p", { class: "task-summary" });
   wrap.appendChild(summaryLine);
+
+  const startRow = el("div", { class: "task-start-row" });
+
+  const startGroup = el("div", { class: "task-start-group" });
+  startGroup.appendChild(el("label", { class: "task-start-label", text: "שעת התחלה:" }));
+  const startInput = el("input", { type: "time", class: "field-input task-start-input" });
+  startInput.value = state.startTime || "09:00";
+  startGroup.appendChild(startInput);
+
+  const timerGroup = el("div", { class: "task-timer-group" });
+  const timerInputs = el("div", { class: "task-timer-inputs" });
+  const timerHoursInput = el("input", {
+    type: "text",
+    inputmode: "numeric",
+    class: "field-input task-timer-hours",
+    placeholder: "שע",
+    autocomplete: "off"
+  });
+  const timerMinutesInput = el("input", {
+    type: "text",
+    inputmode: "numeric",
+    class: "field-input task-timer-minutes",
+    placeholder: "דק",
+    autocomplete: "off"
+  });
+  timerInputs.appendChild(timerHoursInput);
+  timerInputs.appendChild(el("span", { class: "task-timer-colon", text: ":" }));
+  timerInputs.appendChild(timerMinutesInput);
+  const timerDisplay = el("span", { class: "task-timer-display", text: "" });
+  const timerToggleBtn = el("button", { type: "button", class: "util-btn task-timer-btn", text: "▶", title: "התחלה/השהיה" });
+  const timerResetBtn = el("button", { type: "button", class: "util-btn task-timer-btn", text: "↺", title: "איפוס" });
+  timerGroup.appendChild(timerInputs);
+  timerGroup.appendChild(timerDisplay);
+  timerGroup.appendChild(timerToggleBtn);
+  timerGroup.appendChild(timerResetBtn);
+
+  startRow.appendChild(timerGroup);
+  startRow.appendChild(startGroup);
+  wrap.appendChild(startRow);
+
+  let timerRemaining = 0;
+  let timerRunning = false;
+  let timerIntervalId = null;
+
+  function timerFormat(totalSec) {
+    const h = Math.floor(totalSec / 3600);
+    const m = Math.floor((totalSec % 3600) / 60);
+    const s = totalSec % 60;
+    if (h > 0) return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
+    return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
+  }
+
+  function renderTimer() {
+    timerDisplay.textContent = timerRemaining > 0 || timerRunning ? timerFormat(timerRemaining) : "";
+    timerToggleBtn.textContent = timerRunning ? "⏸" : "▶";
+    timerInputs.style.display = timerRemaining > 0 || timerRunning ? "none" : "flex";
+  }
+
+  function stopTimer() {
+    timerRunning = false;
+    clearInterval(timerIntervalId);
+    renderTimer();
+  }
+
+  function timerTick() {
+    timerRemaining -= 1;
+    if (timerRemaining <= 0) {
+      timerRemaining = 0;
+      stopTimer();
+      playLongAlarm();
+      alert("⏰ הטיימר הסתיים!");
+      return;
+    }
+    renderTimer();
+  }
+
+  function startTimer() {
+    if (timerRunning) return;
+    if (timerRemaining <= 0) {
+      const h = Number(timerHoursInput.value) || 0;
+      const m = Number(timerMinutesInput.value) || 0;
+      timerRemaining = h * 3600 + m * 60;
+      if (timerRemaining <= 0) return;
+    }
+    timerRunning = true;
+    timerIntervalId = setInterval(timerTick, 1000);
+    renderTimer();
+  }
+
+  function resetTimer() {
+    stopTimer();
+    timerRemaining = 0;
+    timerHoursInput.value = "";
+    timerMinutesInput.value = "";
+    renderTimer();
+  }
+
+  timerToggleBtn.addEventListener("click", () => (timerRunning ? stopTimer() : startTimer()));
+  timerResetBtn.addEventListener("click", resetTimer);
+  renderTimer();
 
   const addRow = el("div", { class: "task-add-row" });
   const addTaskBtn = el("button", { class: "btn btn-primary btn-small", type: "button", text: "+ משימה" });
@@ -195,39 +296,38 @@ function renderTasksView(container) {
       row.appendChild(textInput);
 
       const durationGroup = el("div", { class: "task-duration-group" });
-      const hoursInput = el("input", {
-        type: "number",
-        class: "field-input task-hours-input",
-        min: "0",
-        step: "1",
-        placeholder: "0",
-        autocomplete: "off"
-      });
-      hoursInput.value = task.hours === 0 || task.hours === "" ? "" : task.hours;
-      hoursInput.addEventListener("input", () => {
-        state.tasks[idx].hours = hoursInput.value === "" ? "" : Number(hoursInput.value);
-        persist();
-        renderList();
-      });
       const minutesInput = el("input", {
-        type: "number",
+        type: "text",
+        inputmode: "numeric",
         class: "field-input task-minutes-input",
-        min: "0",
-        max: "59",
-        step: "5",
-        placeholder: "0",
+        placeholder: "דק",
         autocomplete: "off"
       });
       minutesInput.value = task.minutes === 0 || task.minutes === "" ? "" : task.minutes;
       minutesInput.addEventListener("input", () => {
-        state.tasks[idx].minutes = minutesInput.value === "" ? "" : Number(minutesInput.value);
+        const digits = minutesInput.value.replace(/\D/g, "").slice(0, 2);
+        minutesInput.value = digits;
+        state.tasks[idx].minutes = digits === "" ? "" : Math.min(59, Number(digits));
         persist();
         renderList();
       });
-      durationGroup.appendChild(hoursInput);
-      durationGroup.appendChild(el("span", { class: "task-duration-suffix", text: "שע'" }));
+      const hoursInput = el("input", {
+        type: "text",
+        inputmode: "numeric",
+        class: "field-input task-hours-input",
+        placeholder: "שע",
+        autocomplete: "off"
+      });
+      hoursInput.value = task.hours === 0 || task.hours === "" ? "" : task.hours;
+      hoursInput.addEventListener("input", () => {
+        const digits = hoursInput.value.replace(/\D/g, "").slice(0, 2);
+        hoursInput.value = digits;
+        state.tasks[idx].hours = digits === "" ? "" : Number(digits);
+        persist();
+        renderList();
+      });
       durationGroup.appendChild(minutesInput);
-      durationGroup.appendChild(el("span", { class: "task-duration-suffix", text: "דק'" }));
+      durationGroup.appendChild(hoursInput);
       row.appendChild(durationGroup);
 
       const controls = el("div", { class: "task-row-controls" });
