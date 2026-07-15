@@ -66,30 +66,33 @@ function isBlankSummaryTopic(topic) {
 }
 
 // בונה עורך אינטראקטיבי (readOnly:false) או תצוגה בלבד (readOnly:true) על אותה מערך topics (מוחזק לפי רפרנס)
+// opts.hideAddButton - כאשר הקורא רוצה לבנות בעצמו כפתור "+ נושא חדש" במקום אחר (למשל לצד שדה התאריך), משתמש ב-addTopic() שמוחזר
 function buildTopicsEditor(root, topics, persist, opts) {
   const readOnly = !!opts.readOnly;
   const collapsedState = {};
   const debouncedPersist = debounce(persist, 400);
 
+  function addTopic() {
+    topics.push(newSummaryTopic());
+    persist();
+    fullRender();
+    requestAnimationFrame(() => {
+      const titles = root.querySelectorAll(".summary-topic-title-input");
+      const last = titles[titles.length - 1];
+      if (last) last.focus();
+    });
+  }
+
   function fullRender() {
     root.innerHTML = "";
 
-    if (!readOnly) {
+    if (!readOnly && !opts.hideAddButton) {
       const addTopicBtn = el("button", {
         type: "button",
         class: "btn btn-primary btn-small summary-add-topic-btn",
         text: "+ נושא חדש"
       });
-      addTopicBtn.addEventListener("click", () => {
-        topics.push(newSummaryTopic());
-        persist();
-        fullRender();
-        requestAnimationFrame(() => {
-          const titles = root.querySelectorAll(".summary-topic-title-input");
-          const last = titles[titles.length - 1];
-          if (last) last.focus();
-        });
-      });
+      addTopicBtn.addEventListener("click", addTopic);
       root.appendChild(addTopicBtn);
     }
 
@@ -110,8 +113,9 @@ function buildTopicsEditor(root, topics, persist, opts) {
       const titleInput = el("input", {
         type: "text",
         class: "summary-topic-title-input",
-        placeholder: "כותרת נושא (למשל: ענייני עבודה)",
-        autocomplete: "off"
+        placeholder: "כותרת",
+        autocomplete: "off",
+        spellcheck: "false"
       });
       titleInput.value = topic.title || "";
       titleInput.addEventListener("input", () => {
@@ -192,7 +196,8 @@ function buildTopicsEditor(root, topics, persist, opts) {
         type: "text",
         class: "field-input summary-item-text-input",
         placeholder: "עניין...",
-        autocomplete: "off"
+        autocomplete: "off",
+        spellcheck: "false"
       });
       textEl.value = item.text || "";
       textEl.addEventListener("input", () => {
@@ -250,7 +255,7 @@ function buildTopicsEditor(root, topics, persist, opts) {
       view.innerHTML = item.notesHtml || "";
       notesWrap.appendChild(view);
     } else {
-      const notesEditable = el("div", { class: "summary-item-notes", contenteditable: "true" });
+      const notesEditable = el("div", { class: "summary-item-notes", contenteditable: "true", spellcheck: "false" });
       notesEditable.innerHTML = item.notesHtml || "";
       attachPlainTextPaste(notesEditable);
       const autoGrow = () => {
@@ -273,6 +278,7 @@ function buildTopicsEditor(root, topics, persist, opts) {
   }
 
   fullRender();
+  return { addTopic };
 }
 
 function renderSummaryWriteTab(content) {
@@ -286,14 +292,19 @@ function renderSummaryWriteTab(content) {
   const draft = loadSummaryDraft();
   const topics = normalizeSummaryTopics(draft.topics);
 
+  const draftStatus = el("p", { class: "draft-status" });
+
+  // כפתור "+ נושא חדש" ותאריך הפגישה באותה שורה - התאריך בקצה השמאלי ביותר
+  const topRow = el("div", { class: "summary-top-row" });
+  const addTopicBtn = el("button", { type: "button", class: "btn btn-primary btn-small summary-add-topic-btn", text: "+ נושא חדש" });
+  topRow.appendChild(addTopicBtn);
   const dateRow = el("div", { class: "session-date-row" });
   dateRow.appendChild(el("label", { class: "session-date-label", text: "תאריך הפגישה:" }));
   const dateInput = el("input", { type: "date", class: "field-input session-date-input" });
   dateInput.value = draft.sessionDate || todayISO();
   dateRow.appendChild(dateInput);
-  wrap.appendChild(dateRow);
-
-  const draftStatus = el("p", { class: "draft-status" });
+  topRow.appendChild(dateRow);
+  wrap.appendChild(topRow);
 
   function persistDraft() {
     saveSummaryDraft({ topics, sessionDate: dateInput.value || todayISO() });
@@ -307,7 +318,8 @@ function renderSummaryWriteTab(content) {
 
   const editorRoot = el("div", { class: "summary-topics-wrap" });
   wrap.appendChild(editorRoot);
-  buildTopicsEditor(editorRoot, topics, persistDraft, { readOnly: false });
+  const editorHandle = buildTopicsEditor(editorRoot, topics, persistDraft, { readOnly: false, hideAddButton: true });
+  addTopicBtn.addEventListener("click", () => editorHandle.addTopic());
 
   wrap.appendChild(draftStatus);
   dateInput.addEventListener("change", persistDraft);

@@ -95,6 +95,41 @@ function attachPlainTextPaste(editableEl) {
   });
 }
 
+// צבע הדגשה עמוק מספיק שהטקסט הבהיר של האפליקציה נשאר קריא מעליו (בניגוד לוורוד הבהיר שדומה מדי לצבע הטקסט)
+const MINI_TOOLBAR_HIGHLIGHT_COLOR = "#5e548e";
+
+function colorsMatch(a, b) {
+  if (!a || !b) return false;
+  const norm = (s) => s.replace(/\s+/g, "").toLowerCase();
+  return norm(a) === norm(b);
+}
+
+function hexToRgbString(hex) {
+  const v = hex.replace("#", "");
+  const r = parseInt(v.substring(0, 2), 16);
+  const g = parseInt(v.substring(2, 4), 16);
+  const b = parseInt(v.substring(4, 6), 16);
+  return `rgb(${r}, ${g}, ${b})`;
+}
+
+// queryCommandValue("hiliteColor") לא אמין (מחזיר מחרוזת ריקה בדפדפנים רבים), אז בודקים ישירות
+// את ה-DOM: אם תחילת הבחירה כבר יושבת בתוך אלמנט עם רקע בצבע שלנו, זה סימן שהיא מודגשת
+function isSelectionHighlighted(editableEl) {
+  const sel = window.getSelection();
+  if (!sel.rangeCount) return false;
+  let node = sel.getRangeAt(0).startContainer;
+  if (node.nodeType === 3) node = node.parentElement;
+  if (!node || !editableEl.contains(node)) return false;
+  return colorsMatch(getComputedStyle(node).backgroundColor, hexToRgbString(MINI_TOOLBAR_HIGHLIGHT_COLOR));
+}
+
+// טוגל אמיתי להדגשה - אם הבחירה כבר מודגשת בצבע שלנו מסירים אותה, אחרת מוסיפים
+function toggleHighlight(editableEl) {
+  const isHighlighted = isSelectionHighlighted(editableEl);
+  editableEl.focus();
+  document.execCommand("hiliteColor", false, isHighlighted ? "transparent" : MINI_TOOLBAR_HIGHLIGHT_COLOR);
+}
+
 // סרגל כלים מצומצם לתיבות כתיבה חופשית קטנות (רק מודגש/קו תחתון/צביעה) - למשל בתוך "עניינים" בסיכומים
 function createMiniRichToolbar(editableEl) {
   attachPlainTextPaste(editableEl);
@@ -105,7 +140,7 @@ function createMiniRichToolbar(editableEl) {
   return el("div", { class: "rt-toolbar rt-toolbar-mini" }, [
     richTextButton("B", "מודגש", () => exec("bold")),
     richTextButton("U", "קו תחתון", () => exec("underline")),
-    richTextButton("🖍", "צביעת טקסט", () => exec("hiliteColor", "#e0b1cb"))
+    richTextButton("🖍", "צביעת טקסט (לחיצה נוספת על טקסט מודגש מסירה את ההדגשה)", () => toggleHighlight(editableEl))
   ]);
 }
 

@@ -105,9 +105,9 @@ function renderTasksView(container) {
 
   // ---- ניווט בין ימים ----
   const dateNavRow = el("div", { class: "task-date-nav" });
-  const prevDayBtn = el("button", { type: "button", class: "util-btn", text: "◀", title: "יום קודם" });
+  const prevDayBtn = el("button", { type: "button", class: "util-btn", text: "◀", title: "יום הבא" });
   const dateLabel = el("span", { class: "task-date-label" });
-  const nextDayBtn = el("button", { type: "button", class: "util-btn", text: "▶", title: "יום הבא" });
+  const nextDayBtn = el("button", { type: "button", class: "util-btn", text: "▶", title: "יום קודם" });
   const todayBtn = el("button", { type: "button", class: "btn btn-ghost btn-small", text: "היום" });
   const addBreakBtn = el("button", { class: "btn btn-secondary btn-small", type: "button", text: "☕ הפסקה" });
   dateNavRow.appendChild(nextDayBtn);
@@ -458,8 +458,10 @@ function renderTasksView(container) {
     persist();
     renderList();
   });
-  prevDayBtn.addEventListener("click", () => activateDate(addDaysISO(currentDate, -1)));
-  nextDayBtn.addEventListener("click", () => activateDate(addDaysISO(currentDate, 1)));
+  // הכפתורים נשארים באותו מיקום/צורה כמו קודם - רק הפעולה שמתחת לכל אחד מהם התחלפה,
+  // כך ש"יום הבא" מתבצע דרך הכפתור שבצד שמאל (◀) ו"יום קודם" דרך הכפתור שבצד ימין (▶)
+  prevDayBtn.addEventListener("click", () => activateDate(addDaysISO(currentDate, 1)));
+  nextDayBtn.addEventListener("click", () => activateDate(addDaysISO(currentDate, -1)));
   todayBtn.addEventListener("click", () => activateDate(todayISO()));
 
   startInput.value = state.startTime || "09:00";

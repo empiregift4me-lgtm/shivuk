@@ -1151,7 +1151,8 @@ select.field-input:focus {
 .rt-btn:hover { background: var(--c-highlight); color: #231942; }
 
 /* ===== סיכומים - נושא -> עניינים -> כתיבה חופשית ===== */
-.session-date-row { display: flex; align-items: center; gap: var(--space-sm); margin-bottom: var(--space-sm); }
+.summary-top-row { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: var(--space-sm); margin-bottom: var(--space); }
+.session-date-row { display: flex; align-items: center; gap: var(--space-sm); }
 .session-date-label { color: var(--text-submuted); font-size: 0.95rem; }
 .session-date-input { max-width: 190px; }
 .draft-status { color: var(--text-submuted); font-size: 0.85rem; min-height: 1.2em; margin: 6px 0 0; }
@@ -1170,44 +1171,39 @@ select.field-input:focus {
 .checklist-mark { width: 16px; height: 16px; margin-top: 3px; flex-shrink: 0; cursor: pointer; }
 .checklist-mark:disabled { cursor: default; opacity: 0.7; }
 
-.summary-topics-wrap { display: flex; flex-direction: column; gap: var(--space); margin-top: var(--space-sm); }
-.summary-add-topic-btn { align-self: flex-start; }
-.summary-topic {
-  background: var(--c-panel);
-  border: 1px solid var(--c-border);
-  border-radius: var(--radius-sm);
-  padding: var(--space);
-}
+.summary-topics-wrap { display: flex; flex-direction: column; }
+.summary-topic + .summary-topic { margin-top: var(--space-lg); }
 .summary-topic-head {
   display: flex;
   align-items: center;
   gap: 10px;
   border-bottom: 2px solid var(--c-border);
   padding-bottom: 10px;
-  margin-bottom: 12px;
+  margin-bottom: 4px;
 }
 .summary-topic-title-input {
   flex: 1 1 auto;
   background: transparent;
   border: none;
-  border-bottom: 2px solid transparent;
   font-family: inherit;
   font-size: 1.2rem;
   font-weight: 700;
   color: var(--text-light);
   padding: 4px 2px;
 }
-.summary-topic-title-input:focus { outline: none; border-bottom-color: var(--c-highlight); }
+.summary-topic-title-input:focus { outline: none; }
 .summary-topic-title-input::placeholder { color: var(--text-submuted); opacity: 0.8; font-weight: 400; }
 .summary-topic-title-view { flex: 1 1 auto; font-size: 1.2rem; font-weight: 700; color: var(--text-light); margin: 0; }
-.summary-items { display: flex; flex-direction: column; gap: 10px; }
-.summary-item { background: var(--c-field); border-radius: var(--radius-sm); padding: 8px 10px; }
+.summary-items { display: flex; flex-direction: column; }
+.summary-item { padding: 8px 0; border-bottom: 1px solid var(--c-border); }
+.summary-item:last-child { border-bottom: none; }
 .summary-item-row { display: flex; align-items: center; gap: 8px; }
 .summary-item.is-dragging { opacity: 0.4; }
-.summary-item.drag-over { background: rgba(224, 177, 203, 0.25); }
+.summary-item.drag-over { background: rgba(224, 177, 203, 0.15); }
 .summary-item.is-done .summary-item-text-input,
 .summary-item.is-done .summary-item-text-view { text-decoration: line-through; opacity: 0.65; }
-.summary-item-text-input { flex: 1 1 auto; min-width: 120px; }
+.summary-item-text-input { flex: 1 1 auto; min-width: 120px; background: transparent; border: none; }
+.summary-item-text-input:focus { outline: none; box-shadow: none; border-color: transparent; }
 .summary-item-text-view { flex: 1 1 auto; color: var(--text-light); }
 .summary-notes-toggle {
   flex: 0 0 auto;
@@ -1219,9 +1215,9 @@ select.field-input:focus {
   padding: 4px 6px;
 }
 .summary-notes-toggle:hover { color: var(--c-highlight); }
-.summary-item-notes-wrap { margin-top: 8px; }
+.summary-item-notes-wrap { margin: 6px 0 4px; }
 .summary-item-notes-wrap.is-collapsed { display: none; }
-.rt-toolbar-mini { position: static; margin-bottom: 6px; box-shadow: none; }
+.rt-toolbar-mini { position: static; background: none; border: none; box-shadow: none; padding: 0 0 6px; margin: 0; }
 .summary-item-notes {
   min-height: 4.6em;
   background: var(--c-page);
