@@ -268,8 +268,10 @@ function buildTopicsEditor(root, topics, persist, opts) {
         debouncedPersist();
       });
       requestAnimationFrame(autoGrow);
-      notesWrap.appendChild(createMiniRichToolbar(notesEditable));
-      notesWrap.appendChild(notesEditable);
+      const notesRow = el("div", { class: "summary-item-notes-row" });
+      notesRow.appendChild(notesEditable);
+      notesRow.appendChild(createMiniRichToolbar(notesEditable));
+      notesWrap.appendChild(notesRow);
     }
 
     setCollapsed(collapsedState[item.id]);

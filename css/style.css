@@ -1217,8 +1217,21 @@ select.field-input:focus {
 .summary-notes-toggle:hover { color: var(--c-highlight); }
 .summary-item-notes-wrap { margin: 6px 0 4px; }
 .summary-item-notes-wrap.is-collapsed { display: none; }
-.rt-toolbar-mini { position: static; background: none; border: none; box-shadow: none; padding: 0 0 6px; margin: 0; }
+.summary-item-notes-row { display: flex; align-items: stretch; gap: 6px; }
+.rt-toolbar-mini {
+  position: static;
+  flex: 0 0 auto;
+  flex-direction: column;
+  justify-content: flex-start;
+  background: none;
+  border: none;
+  box-shadow: none;
+  padding: 0;
+  margin: 0;
+}
 .summary-item-notes {
+  flex: 1 1 auto;
+  min-width: 0;
   min-height: 4.6em;
   background: var(--c-page);
   border: 1px solid var(--c-border);
