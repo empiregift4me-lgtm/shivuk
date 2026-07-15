@@ -1,10 +1,11 @@
 // מעטפת האתר - ניווט בין דשבורד/יומן/סיכומים/החלטות דרך תפריט צד
 
-const SECTIONS = ["dashboard", "journal", "summaries", "decisions", "emotional"];
+const SECTIONS = ["dashboard", "journal", "summaries", "decisions", "emotional", "tasks"];
 const LAZY_SECTION_INIT = {
   summaries: initSummariesView,
   decisions: initDecisionsView,
-  emotional: initEmotionalView
+  emotional: initEmotionalView,
+  tasks: renderTasksView
 };
 let sectionsInitialized = {};
 

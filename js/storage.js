@@ -13,7 +13,8 @@ const STORE_KEYS = {
   emotionalDraft: "emotional_draft_v1",
   paymentLedger: "summary_payment_ledger_v1",
   affirmationState: "daily_affirmation_state_v1",
-  selfWorthBonusState: "self_worth_bonus_state_v1"
+  selfWorthBonusState: "self_worth_bonus_state_v1",
+  taskManagement: "daily_tasks_v1"
 };
 
 const PERIODS = ["morning", "evening"];

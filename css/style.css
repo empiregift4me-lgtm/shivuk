@@ -732,6 +732,56 @@ select.field-input:focus {
 .row-remove:hover { background: var(--c-highlight); color: #231942; }
 .dynamic-list-count { margin: 8px 0 0; font-size: 0.85rem; color: var(--text-submuted); opacity: 0.75; }
 
+/* ===== ניהול משימות היום ===== */
+.task-start-row { display: flex; align-items: center; gap: 10px; margin: var(--space) 0; }
+.task-start-label { font-weight: 600; color: var(--text-light); }
+.task-start-input { max-width: 140px; }
+.task-summary { color: var(--c-highlight); font-weight: 600; font-size: 0.95rem; margin: 0 0 var(--space); min-height: 1.2em; }
+.task-add-row { display: flex; gap: 8px; margin-bottom: var(--space); }
+.task-list { display: flex; flex-direction: column; gap: 8px; }
+.task-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--c-panel);
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius-sm);
+  padding: 10px 14px;
+}
+.task-row.is-break { background: var(--c-field); border-color: var(--c-accent); }
+.task-row.is-done .task-text-input { text-decoration: line-through; opacity: 0.6; }
+.task-checkbox { width: 18px; height: 18px; flex: 0 0 auto; cursor: pointer; }
+.task-range {
+  flex: 0 0 auto;
+  font-family: inherit;
+  border: 1.5px solid var(--c-border);
+  background: transparent;
+  color: var(--c-highlight);
+  border-radius: 999px;
+  padding: 6px 14px;
+  font-size: 0.9rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.task-text-input { flex: 1 1 auto; min-width: 120px; }
+.task-hours-input { flex: 0 0 74px; text-align: center; }
+.task-hours-suffix { flex: 0 0 auto; color: var(--text-submuted); font-size: 0.85rem; }
+.task-row-controls { display: flex; align-items: center; gap: 2px; flex: 0 0 auto; }
+.task-move-btn,
+.task-delete-btn {
+  border: none;
+  background: transparent;
+  color: var(--text-submuted);
+  font-size: 0.9rem;
+  cursor: pointer;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+}
+.task-move-btn:hover:not(:disabled),
+.task-delete-btn:hover { background: var(--c-field); color: var(--c-highlight); }
+.task-move-btn:disabled { opacity: 0.3; cursor: default; }
+
 /* ===== משפטי שפע ===== */
 .quotes-grid { display: flex; flex-direction: column; gap: var(--space-sm); }
 .quote-card {
