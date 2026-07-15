@@ -272,13 +272,25 @@ function renderTasksView(container) {
       done: false,
       isBreak: !!isBreak
     });
+    const focusIdx = state.tasks.length - 1;
+    if (isBreak) {
+      // אין יותר כפתור "+ משימה", אז אחרי הפסקה תמיד נוספת שורת משימה ריקה מתחתיה
+      state.tasks.push({
+        id: "task_" + Date.now() + "_" + Math.random().toString(36).slice(2, 7),
+        text: "",
+        hours: "",
+        minutes: "",
+        done: false,
+        isBreak: false
+      });
+    }
     persist();
     renderList();
     requestAnimationFrame(() => {
-      const focusSelector = isBreak ? ".task-hours-input" : ".task-text-input";
-      const inputs = list.querySelectorAll(focusSelector);
-      const last = inputs[inputs.length - 1];
-      if (last) last.focus();
+      const rows = list.querySelectorAll(".task-row");
+      const targetRow = rows[focusIdx];
+      const focusEl = targetRow && targetRow.querySelector(isBreak ? ".task-hours-input" : ".task-text-input");
+      if (focusEl) focusEl.focus();
     });
   }
 
