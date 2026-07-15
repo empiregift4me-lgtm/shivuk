@@ -750,14 +750,14 @@ select.field-input:focus {
   gap: var(--space);
   flex-wrap: wrap;
   width: 100vw;
-  max-width: 1320px;
+  max-width: 1600px;
   position: relative;
   left: 50%;
   transform: translateX(-50%);
   padding: 0 var(--space);
 }
 .task-main-panel { flex: 1 1 520px; min-width: 320px; }
-.task-goals-panel { flex: 0 0 360px; max-width: 100%; }
+.task-goals-panel { flex: 0 0 480px; max-width: 100%; }
 .task-date-nav { display: flex; align-items: center; gap: 10px; margin-bottom: var(--space-sm); }
 .task-date-label { font-weight: 700; color: var(--text-light); min-width: 160px; text-align: center; }
 .task-progress-track {
@@ -769,10 +769,7 @@ select.field-input:focus {
 }
 .task-progress-fill { height: 100%; background: var(--c-highlight); border-radius: 4px; transition: width 0.4s ease; width: 0%; }
 .task-goal-add-row { display: flex; gap: 8px; margin-bottom: var(--space); }
-.task-goal-columns { display: flex; gap: var(--space-sm); }
-.task-goal-col {
-  flex: 1 1 50%;
-  min-width: 0;
+.task-goal-box {
   height: 680px;
   overflow-y: auto;
   background: var(--c-panel);
@@ -780,7 +777,6 @@ select.field-input:focus {
   border-radius: var(--radius-sm);
   padding: var(--space-sm);
 }
-.task-goal-col-title { font-size: 0.9rem; color: var(--text-submuted); margin: 0 0 8px; text-align: center; }
 .task-goal-list { display: flex; flex-direction: column; gap: 6px; }
 .task-goal-row {
   display: flex;

@@ -444,36 +444,33 @@ function renderTasksView(container) {
   renderList();
 }
 
-// ---- יעדים גדולים - רשימה קבועה (לא תלוית תאריך), עם ריבוע פעילים וריבוע שהושלמו ----
+// ---- יעדים גדולים - רשימה קבועה (לא תלוית תאריך), פאנל פעילים בצד ימין ופאנל שהושלמו בצד שמאל ----
 function renderBigGoalsPanel(layout) {
-  const panel = el("div", { class: "panel task-goals-panel" });
-  panel.appendChild(el("h2", { class: "panel-title", text: "יעדים גדולים" }));
-  panel.appendChild(
-    el("p", { class: "panel-subtitle", text: "רשימת היעדים הגדולים שלך - סמני ✓ כשמשלימים יעד, ותוכלי לפרק כל יעד למשימות קטנות ביומן." })
-  );
+  const activePanel = el("div", { class: "panel task-goals-panel" });
+  activePanel.appendChild(el("h2", { class: "panel-title", text: "יעדים גדולים - פעילים" }));
 
   const addRow = el("div", { class: "task-goal-add-row" });
   const input = el("input", { type: "text", class: "field-input", placeholder: "יעד חדש...", autocomplete: "off" });
   const addBtn = el("button", { type: "button", class: "btn btn-primary btn-small", text: "+" });
   addRow.appendChild(input);
   addRow.appendChild(addBtn);
-  panel.appendChild(addRow);
+  activePanel.appendChild(addRow);
 
-  const columns = el("div", { class: "task-goal-columns" });
-  const activeCol = el("div", { class: "task-goal-col" });
-  activeCol.appendChild(el("h3", { class: "task-goal-col-title", text: "פעילים" }));
+  const activeBox = el("div", { class: "task-goal-box" });
   const activeList = el("div", { class: "task-goal-list" });
-  activeCol.appendChild(activeList);
+  activeBox.appendChild(activeList);
+  activePanel.appendChild(activeBox);
 
-  const doneCol = el("div", { class: "task-goal-col" });
-  doneCol.appendChild(el("h3", { class: "task-goal-col-title", text: "הושלמו" }));
+  const donePanel = el("div", { class: "panel task-goals-panel" });
+  donePanel.appendChild(el("h2", { class: "panel-title", text: "יעדים גדולים - הושלמו" }));
+  const doneBox = el("div", { class: "task-goal-box" });
   const doneList = el("div", { class: "task-goal-list" });
-  doneCol.appendChild(doneList);
+  doneBox.appendChild(doneList);
+  donePanel.appendChild(doneBox);
 
-  columns.appendChild(activeCol);
-  columns.appendChild(doneCol);
-  panel.appendChild(columns);
-  layout.appendChild(panel);
+  // ריבוע הפעילים נכנס ראשון ב-DOM => מוצג בצד ימין (RTL); ריבוע ההושלמו נכנס אחרון => מוצג בצד שמאל
+  layout.insertBefore(activePanel, layout.firstChild);
+  layout.appendChild(donePanel);
 
   function persist(goals) {
     saveBigGoals(goals);
