@@ -74,14 +74,6 @@ function toggleChecklistOnSelection(editableEl) {
   });
 }
 
-// מסמנים ב-DOM checked כ-attribute ולא רק כ-property, אחרת innerHTML "שוכח" תיבות סימון שסומנו
-function syncCheckboxAttributes(root) {
-  root.querySelectorAll('input[type="checkbox"]').forEach((cb) => {
-    if (cb.checked) cb.setAttribute("checked", "");
-    else cb.removeAttribute("checked");
-  });
-}
-
 // מנקה עיצוב גופן שהודבק מבחוץ ומחזירה הכל לרוביק
 function forceRubikFont(editableEl) {
   editableEl.style.fontFamily = "";
@@ -101,6 +93,20 @@ function attachPlainTextPaste(editableEl) {
     const text = (e.clipboardData || window.clipboardData).getData("text/plain");
     document.execCommand("insertText", false, text);
   });
+}
+
+// סרגל כלים מצומצם לתיבות כתיבה חופשית קטנות (רק מודגש/קו תחתון/צביעה) - למשל בתוך "עניינים" בסיכומים
+function createMiniRichToolbar(editableEl) {
+  attachPlainTextPaste(editableEl);
+  function exec(cmd, value) {
+    editableEl.focus();
+    document.execCommand(cmd, false, value);
+  }
+  return el("div", { class: "rt-toolbar rt-toolbar-mini" }, [
+    richTextButton("B", "מודגש", () => exec("bold")),
+    richTextButton("U", "קו תחתון", () => exec("underline")),
+    richTextButton("🖍", "צביעת טקסט", () => exec("hiliteColor", "#e0b1cb"))
+  ]);
 }
 
 function createRichToolbar(editableEl) {
