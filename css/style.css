@@ -756,14 +756,14 @@ select.field-input:focus {
   gap: var(--space);
   flex-wrap: wrap;
   width: 100%;
-  max-width: 1600px;
+  max-width: 1760px;
   margin: 0 auto;
   box-sizing: border-box;
   padding: 0 var(--space);
 }
-.task-main-panel { flex: 1 1 520px; min-width: 320px; }
+.task-main-panel { flex: 1 1 700px; min-width: 360px; }
 .task-goals-panel { flex: 0 0 480px; max-width: 100%; }
-.task-date-nav { display: flex; align-items: center; gap: 10px; margin-bottom: var(--space-sm); }
+.task-date-nav { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: var(--space-sm); }
 .task-date-label { font-weight: 700; color: var(--text-light); min-width: 160px; text-align: center; }
 .task-progress-track {
   height: 6px;
@@ -804,9 +804,8 @@ select.field-input:focus {
 .task-timer-hours,
 .task-timer-minutes { flex: 0 0 42px; text-align: center; }
 .task-timer-colon { color: var(--text-submuted); font-weight: 700; }
-.task-timer-display { font-variant-numeric: tabular-nums; font-weight: 700; color: var(--c-highlight); min-width: 60px; text-align: center; }
+.task-timer-display { font-variant-numeric: tabular-nums; font-weight: 700; color: var(--c-highlight); min-width: 0; text-align: center; }
 .task-timer-btn { width: 34px; height: 34px; padding: 0; }
-.task-add-row { display: flex; gap: 8px; margin-bottom: var(--space); }
 .task-list { display: flex; flex-direction: column; }
 .task-row {
   display: flex;
@@ -843,7 +842,7 @@ select.field-input:focus {
   font-weight: 700;
   white-space: nowrap;
 }
-.task-text-input { flex: 1 1 auto; min-width: 120px; }
+.task-text-input { flex: 1 1 auto; min-width: 220px; }
 .task-text-input:disabled { opacity: 0.8; cursor: default; }
 .task-duration-group { display: flex; align-items: center; gap: 6px; flex: 0 0 auto; }
 .task-hours-input,

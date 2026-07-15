@@ -109,10 +109,12 @@ function renderTasksView(container) {
   const dateLabel = el("span", { class: "task-date-label" });
   const nextDayBtn = el("button", { type: "button", class: "util-btn", text: "▶", title: "יום הבא" });
   const todayBtn = el("button", { type: "button", class: "btn btn-ghost btn-small", text: "היום" });
-  dateNavRow.appendChild(prevDayBtn);
-  dateNavRow.appendChild(dateLabel);
+  const addBreakBtn = el("button", { class: "btn btn-secondary btn-small", type: "button", text: "☕ הפסקה" });
   dateNavRow.appendChild(nextDayBtn);
+  dateNavRow.appendChild(dateLabel);
+  dateNavRow.appendChild(prevDayBtn);
   dateNavRow.appendChild(todayBtn);
+  dateNavRow.appendChild(addBreakBtn);
   wrap.appendChild(dateNavRow);
 
   const summaryLine = el("p", { class: "task-summary" });
@@ -221,13 +223,6 @@ function renderTasksView(container) {
   timerResetBtn.addEventListener("click", resetTimer);
   renderTimer();
 
-  const addRow = el("div", { class: "task-add-row" });
-  const addTaskBtn = el("button", { class: "btn btn-primary btn-small", type: "button", text: "+ משימה" });
-  const addBreakBtn = el("button", { class: "btn btn-secondary btn-small", type: "button", text: "☕ הפסקה" });
-  addRow.appendChild(addTaskBtn);
-  addRow.appendChild(addBreakBtn);
-  wrap.appendChild(addRow);
-
   const list = el("div", { class: "task-list" });
   wrap.appendChild(list);
 
@@ -296,12 +291,12 @@ function renderTasksView(container) {
   }
 
   function renderList() {
+    if (state.tasks.length === 0) {
+      addTask(false);
+      return;
+    }
     list.innerHTML = "";
     const schedule = computeTaskSchedule(state);
-
-    if (state.tasks.length === 0) {
-      list.appendChild(el("div", { class: "empty-state", text: "עדיין לא נוספו משימות. לחצי על + משימה כדי להתחיל." }));
-    }
 
     schedule.forEach((task, idx) => {
       const row = el("div", { class: "task-row" + (task.isBreak ? " is-break" : "") + (task.done ? " is-done" : "") });
@@ -430,7 +425,6 @@ function renderTasksView(container) {
     renderList();
   }
 
-  addTaskBtn.addEventListener("click", () => addTask(false));
   addBreakBtn.addEventListener("click", () => addTask(true));
   startInput.addEventListener("change", () => {
     state.startTime = startInput.value || "09:00";
