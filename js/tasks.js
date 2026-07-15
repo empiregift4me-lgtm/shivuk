@@ -302,6 +302,19 @@ function renderTasksView(container) {
     renderList();
   }
 
+  // renderList בונה מחדש את כל השורות (כדי לעדכן טווחי שעות תלויי-משך), אז אחרי הקלדת ספרה
+  // צריך להחזיר את הפוקוס והסמן לאותו שדה בדיוק, אחרת אפשר להקליד רק ספרה אחת ברצף
+  function refocusDurationInput(idx, field) {
+    requestAnimationFrame(() => {
+      const rows = list.querySelectorAll(".task-row");
+      const targetInput = rows[idx] && rows[idx].querySelector(field === "hours" ? ".task-hours-input" : ".task-minutes-input");
+      if (!targetInput) return;
+      targetInput.focus();
+      const pos = targetInput.value.length;
+      targetInput.setSelectionRange(pos, pos);
+    });
+  }
+
   function renderList() {
     if (state.tasks.length === 0) {
       addTask(false);
@@ -385,6 +398,7 @@ function renderTasksView(container) {
         state.tasks[idx].minutes = digits === "" ? "" : Math.min(59, Number(digits));
         persist();
         renderList();
+        refocusDurationInput(idx, "minutes");
       });
       const hoursInput = el("input", {
         type: "text",
@@ -400,6 +414,7 @@ function renderTasksView(container) {
         state.tasks[idx].hours = digits === "" ? "" : Number(digits);
         persist();
         renderList();
+        refocusDurationInput(idx, "hours");
       });
       durationGroup.appendChild(minutesInput);
       durationGroup.appendChild(hoursInput);
