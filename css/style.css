@@ -353,7 +353,7 @@ body {
 .gauge-track {
   position: relative;
   width: 42px;
-  height: min(72vh, 760px);
+  height: min(68vh, 680px);
   border-radius: 24px;
   overflow: hidden;
   border: 2px solid var(--c-border);
