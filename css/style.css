@@ -744,16 +744,21 @@ select.field-input:focus {
 .dynamic-list-count { margin: 8px 0 0; font-size: 0.85rem; color: var(--text-submuted); opacity: 0.75; }
 
 /* ===== ניהול משימות היום ===== */
+.task-layout-breakout {
+  margin-left: calc(50% - 50vw);
+  margin-right: calc(50% - 50vw);
+  overflow-x: hidden;
+}
 .task-layout {
   display: flex;
   align-items: flex-start;
+  justify-content: center;
   gap: var(--space);
   flex-wrap: wrap;
-  width: 100vw;
+  width: 100%;
   max-width: 1600px;
-  position: relative;
-  left: 50%;
-  transform: translateX(-50%);
+  margin: 0 auto;
+  box-sizing: border-box;
   padding: 0 var(--space);
 }
 .task-main-panel { flex: 1 1 520px; min-width: 320px; }

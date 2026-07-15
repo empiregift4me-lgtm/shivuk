@@ -94,6 +94,7 @@ function renderTasksView(container) {
   container.innerHTML = "";
   let currentDate = todayISO();
 
+  const breakout = el("div", { class: "task-layout-breakout" });
   const layout = el("div", { class: "task-layout" });
 
   const wrap = el("div", { class: "panel task-main-panel" });
@@ -231,7 +232,8 @@ function renderTasksView(container) {
   wrap.appendChild(list);
 
   layout.appendChild(wrap);
-  container.appendChild(layout);
+  breakout.appendChild(layout);
+  container.appendChild(breakout);
   renderBigGoalsPanel(layout);
 
   // ---- מצב היום המוצג כרגע ----
