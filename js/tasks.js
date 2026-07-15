@@ -132,14 +132,14 @@ function renderTasksView(container) {
     type: "text",
     inputmode: "numeric",
     class: "field-input task-timer-hours",
-    placeholder: "שע",
+    placeholder: "00",
     autocomplete: "off"
   });
   const timerMinutesInput = el("input", {
     type: "text",
     inputmode: "numeric",
     class: "field-input task-timer-minutes",
-    placeholder: "דק",
+    placeholder: "00",
     autocomplete: "off"
   });
   timerInputs.appendChild(timerHoursInput);
@@ -388,7 +388,7 @@ function renderTasksView(container) {
         type: "text",
         inputmode: "numeric",
         class: "field-input task-minutes-input",
-        placeholder: "דק",
+        placeholder: "00",
         autocomplete: "off"
       });
       minutesInput.value = task.minutes === 0 || task.minutes === "" ? "" : task.minutes;
@@ -404,7 +404,7 @@ function renderTasksView(container) {
         type: "text",
         inputmode: "numeric",
         class: "field-input task-hours-input",
-        placeholder: "שע",
+        placeholder: "00",
         autocomplete: "off"
       });
       hoursInput.value = task.hours === 0 || task.hours === "" ? "" : task.hours;
