@@ -793,7 +793,7 @@ select.field-input:focus {
 }
 .task-goal-row.is-done { opacity: 0.65; }
 .task-goal-row.is-done .task-goal-text { text-decoration: line-through; }
-.task-goal-text { flex: 1 1 auto; color: var(--text-light); font-size: 0.9rem; word-break: break-word; }
+.task-goal-text { flex: 1 1 auto; color: var(--text-light); font-size: 1.15rem; word-break: break-word; }
 .task-summary { color: var(--c-highlight); font-weight: 600; font-size: 0.95rem; margin: 0 0 6px; min-height: 1.2em; }
 .task-start-row { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px; margin: 0 0 var(--space); }
 .task-start-group { display: flex; align-items: center; gap: 10px; }
