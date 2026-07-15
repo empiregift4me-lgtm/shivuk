@@ -738,18 +738,29 @@ select.field-input:focus {
 .task-start-input { max-width: 140px; }
 .task-summary { color: var(--c-highlight); font-weight: 600; font-size: 0.95rem; margin: 0 0 var(--space); min-height: 1.2em; }
 .task-add-row { display: flex; gap: 8px; margin-bottom: var(--space); }
-.task-list { display: flex; flex-direction: column; gap: 8px; }
+.task-list { display: flex; flex-direction: column; }
 .task-row {
   display: flex;
   align-items: center;
   gap: 10px;
-  background: var(--c-panel);
-  border: 1px solid var(--c-border);
-  border-radius: var(--radius-sm);
-  padding: 10px 14px;
+  padding: 9px 4px;
+  border-bottom: 1px solid var(--c-border);
+  transition: background 0.15s ease;
 }
-.task-row.is-break { background: var(--c-field); border-color: var(--c-accent); }
+.task-list .task-row:last-child { border-bottom: none; }
+.task-row.is-break { background: rgba(224, 177, 203, 0.16); border-radius: var(--radius-sm); }
 .task-row.is-done .task-text-input { text-decoration: line-through; opacity: 0.6; }
+.task-row.is-dragging { opacity: 0.4; }
+.task-row.drag-over { background: rgba(224, 177, 203, 0.25); border-radius: var(--radius-sm); }
+.task-drag-handle {
+  flex: 0 0 auto;
+  cursor: grab;
+  color: var(--text-submuted);
+  font-size: 1.1rem;
+  padding: 0 2px;
+  user-select: none;
+}
+.task-drag-handle:active { cursor: grabbing; }
 .task-checkbox { width: 18px; height: 18px; flex: 0 0 auto; cursor: pointer; }
 .task-range {
   flex: 0 0 auto;
@@ -764,8 +775,11 @@ select.field-input:focus {
   white-space: nowrap;
 }
 .task-text-input { flex: 1 1 auto; min-width: 120px; }
-.task-hours-input { flex: 0 0 74px; text-align: center; }
-.task-hours-suffix { flex: 0 0 auto; color: var(--text-submuted); font-size: 0.85rem; }
+.task-text-input:disabled { opacity: 0.8; cursor: default; }
+.task-duration-group { display: flex; align-items: center; gap: 4px; flex: 0 0 auto; }
+.task-hours-input,
+.task-minutes-input { flex: 0 0 52px; text-align: center; }
+.task-duration-suffix { flex: 0 0 auto; color: var(--text-submuted); font-size: 0.8rem; }
 .task-row-controls { display: flex; align-items: center; gap: 2px; flex: 0 0 auto; }
 .task-move-btn,
 .task-delete-btn {
