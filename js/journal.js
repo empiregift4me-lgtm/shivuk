@@ -183,8 +183,50 @@ function buildArchiveCard(date, period) {
         onclick: () => exportDayToPDF(root, `${date}_${PERIOD_LABELS[period]}`)
       })
     );
-    header.appendChild(actions);
-    root.appendChild(header);
+    if (!isLocked) {
+      const addExBtn = el("button", { class: "btn btn-secondary btn-small", type: "button", text: "+ הוספת תרגיל" });
+      const addExDropdown = el("div", { class: "exercises-dropdown is-collapsed" });
+
+      function closeAddMenu() {
+        addExDropdown.classList.add("is-collapsed");
+      }
+      function openAddMenu() {
+        addExDropdown.innerHTML = "";
+        PERIODS.forEach((p) => {
+          addExDropdown.appendChild(el("div", { class: "dropdown-section-label", text: PERIOD_LABELS[p] }));
+          EXERCISES.filter((e) => e.period === p).forEach((ex) => {
+            addExDropdown.appendChild(
+              el("button", {
+                type: "button",
+                class: "dropdown-item",
+                text: ex.name,
+                onclick: () => {
+                  addExerciseToDay(date, period, ex.id);
+                  closeAddMenu();
+                  render();
+                }
+              })
+            );
+          });
+        });
+        addExDropdown.classList.remove("is-collapsed");
+      }
+      addExBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        if (addExDropdown.classList.contains("is-collapsed")) openAddMenu();
+        else closeAddMenu();
+      });
+      document.addEventListener("click", (e) => {
+        if (!addExDropdown.contains(e.target) && e.target !== addExBtn) closeAddMenu();
+      });
+      actions.appendChild(addExBtn);
+      header.appendChild(actions);
+      root.appendChild(header);
+      root.appendChild(addExDropdown);
+    } else {
+      header.appendChild(actions);
+      root.appendChild(header);
+    }
 
     const cardBody = el("div", { class: "day-body" });
     root.appendChild(cardBody);
