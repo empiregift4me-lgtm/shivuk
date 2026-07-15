@@ -269,8 +269,8 @@ function buildTopicsEditor(root, topics, persist, opts) {
       });
       requestAnimationFrame(autoGrow);
       const notesRow = el("div", { class: "summary-item-notes-row" });
-      notesRow.appendChild(notesEditable);
       notesRow.appendChild(createMiniRichToolbar(notesEditable));
+      notesRow.appendChild(notesEditable);
       notesWrap.appendChild(notesRow);
     }
 
