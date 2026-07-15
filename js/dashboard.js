@@ -124,19 +124,20 @@ function renderDashboard(container) {
 
   const gaugeSection = el("div", { class: "gauge-section" });
 
+  const gaugeWrap = el("div", { class: "gauge-wrap" });
   const gaugeTrack = el("div", { class: "gauge-track" });
   const gaugeMask = el("div", { class: "gauge-mask" });
   gaugeMask.style.height = `${100 - progress.percent}%`;
   gaugeTrack.appendChild(gaugeMask);
+  gaugeWrap.appendChild(gaugeTrack);
 
-  [50, 80, 100].forEach((mark) => {
-    const tick = el("div", { class: "gauge-tick" });
-    tick.style.bottom = `${mark}%`;
-    tick.appendChild(el("span", { class: "gauge-tick-label", text: `${mark}%` }));
-    gaugeTrack.appendChild(tick);
+  [30, 50, 80].forEach((mark) => {
+    const label = el("span", { class: "gauge-mark", text: `${mark}%` });
+    label.style.bottom = `${mark}%`;
+    gaugeWrap.appendChild(label);
   });
 
-  gaugeSection.appendChild(gaugeTrack);
+  gaugeSection.appendChild(gaugeWrap);
 
   const statsBox = el("div", { class: "gauge-stats" }, [
     el("div", { class: "gauge-percent", text: `${Math.round(progress.percent)}%` }),
