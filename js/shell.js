@@ -4,8 +4,7 @@ const SECTIONS = ["dashboard", "journal", "summaries", "decisions", "emotional",
 const LAZY_SECTION_INIT = {
   summaries: initSummariesView,
   decisions: initDecisionsView,
-  emotional: initEmotionalView,
-  tasks: renderTasksView
+  emotional: initEmotionalView
 };
 let sectionsInitialized = {};
 
@@ -16,6 +15,9 @@ function showSection(name) {
   if (name === "dashboard") {
     // מתעדכן בכל כניסה, לא רק פעם אחת - כדי שהמד תמיד ישקף נתונים טריים
     renderDashboard(document.getElementById("dashboard-view"));
+  } else if (name === "tasks") {
+    // מתעדכן בכל כניסה, כדי שהתאריך המוצג תמיד יתחיל מ"היום" האמיתי
+    renderTasksView(document.getElementById("tasks-view"));
   } else if (LAZY_SECTION_INIT[name] && !sectionsInitialized[name]) {
     LAZY_SECTION_INIT[name](document.getElementById(`${name}-view`));
     sectionsInitialized[name] = true;

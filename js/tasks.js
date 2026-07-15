@@ -1,26 +1,57 @@
 // ניהול משימות היום - רשימת משימות עם חישוב אוטומטי של טווחי שעות, החל משעת התחלה שנקבעת מראש.
-// כל משימה/הפסקה תופסת זמן אמיתי בלוח (מחושב בשרשור), וסדר המשימות ניתן לשינוי (חיצים או גרירה) עם עדכון מיידי של השעות.
+// כל יום מקבל רשימה משלו (ניתן לנווט קדימה/אחורה ולתכנן מראש), וכל משימה/הפסקה תופסת זמן אמיתי בלוח.
 
 function loadTaskState() {
-  let state;
   try {
-    state = JSON.parse(localStorage.getItem(STORE_KEYS.taskManagement)) || { startTime: "09:00", tasks: [] };
+    return JSON.parse(localStorage.getItem(STORE_KEYS.taskManagement)) || {};
   } catch (e) {
-    state = { startTime: "09:00", tasks: [] };
+    return {};
   }
-  // מיגרציה חד-פעמית ממשך זמן בשעות עשרוניות (פורמט ישן) לשעות+דקות נפרדות
-  state.tasks.forEach((t) => {
+}
+
+function saveTaskState(all) {
+  localStorage.setItem(STORE_KEYS.taskManagement, JSON.stringify(all));
+}
+
+// שולפת את המצב של תאריך ספציפי, כולל מיגרציה חד-פעמית מהפורמט הישן (רשומה שטוחה אחת בלי תאריכים,
+// ומשך זמן בשעות עשרוניות) לפורמט החדש
+function getDayTaskState(all, dateISO) {
+  let bucket = all[dateISO];
+  if (!bucket && all.tasks && !all[todayISO()]) {
+    // פורמט ישן: אובייקט שטוח יחיד - מיגרציה לתאריך של היום
+    bucket = { startTime: all.startTime || "09:00", tasks: all.tasks };
+    all[todayISO()] = bucket;
+    delete all.tasks;
+    delete all.startTime;
+    saveTaskState(all);
+    if (dateISO !== todayISO()) bucket = null;
+  }
+  if (!bucket) bucket = { startTime: "09:00", tasks: [] };
+  bucket.tasks.forEach((t) => {
     if (t.minutes === undefined) {
       const totalH = Number(t.hours) || 0;
       t.hours = Math.floor(totalH);
       t.minutes = Math.round((totalH - Math.floor(totalH)) * 60);
     }
   });
-  return state;
+  return bucket;
 }
 
-function saveTaskState(state) {
-  localStorage.setItem(STORE_KEYS.taskManagement, JSON.stringify(state));
+function setDayTaskState(all, dateISO, dayState) {
+  all[dateISO] = dayState;
+  saveTaskState(all);
+}
+
+function loadBigGoals() {
+  try {
+    return JSON.parse(localStorage.getItem(STORE_KEYS.bigGoals)) || [];
+  } catch (e) {
+    return [];
+  }
+}
+
+function saveBigGoals(goals) {
+  localStorage.setItem(STORE_KEYS.bigGoals, JSON.stringify(goals));
 }
 
 function parseTimeToMinutes(hhmm) {
@@ -61,24 +92,36 @@ function playLongAlarm() {
 
 function renderTasksView(container) {
   container.innerHTML = "";
-  const state = loadTaskState();
+  let currentDate = todayISO();
 
-  const wrap = el("div", { class: "panel" });
+  const layout = el("div", { class: "task-layout" });
+
+  const wrap = el("div", { class: "panel task-main-panel" });
   wrap.appendChild(el("h2", { class: "panel-title", text: "ניהול משימות היום" }));
   wrap.appendChild(
     el("p", { class: "panel-subtitle", text: "כתבי משימה, הגדירי כמה זמן היא תיקח, והמערכת תחשב לך את טווח השעות אוטומטית." })
   );
 
+  // ---- ניווט בין ימים ----
+  const dateNavRow = el("div", { class: "task-date-nav" });
+  const prevDayBtn = el("button", { type: "button", class: "util-btn", text: "◀", title: "יום קודם" });
+  const dateLabel = el("span", { class: "task-date-label" });
+  const nextDayBtn = el("button", { type: "button", class: "util-btn", text: "▶", title: "יום הבא" });
+  const todayBtn = el("button", { type: "button", class: "btn btn-ghost btn-small", text: "היום" });
+  dateNavRow.appendChild(prevDayBtn);
+  dateNavRow.appendChild(dateLabel);
+  dateNavRow.appendChild(nextDayBtn);
+  dateNavRow.appendChild(todayBtn);
+  wrap.appendChild(dateNavRow);
+
   const summaryLine = el("p", { class: "task-summary" });
   wrap.appendChild(summaryLine);
+  const progressTrack = el("div", { class: "task-progress-track" });
+  const progressFill = el("div", { class: "task-progress-fill" });
+  progressTrack.appendChild(progressFill);
+  wrap.appendChild(progressTrack);
 
   const startRow = el("div", { class: "task-start-row" });
-
-  const startGroup = el("div", { class: "task-start-group" });
-  startGroup.appendChild(el("label", { class: "task-start-label", text: "שעת התחלה:" }));
-  const startInput = el("input", { type: "time", class: "field-input task-start-input" });
-  startInput.value = state.startTime || "09:00";
-  startGroup.appendChild(startInput);
 
   const timerGroup = el("div", { class: "task-timer-group" });
   const timerInputs = el("div", { class: "task-timer-inputs" });
@@ -107,8 +150,13 @@ function renderTasksView(container) {
   timerGroup.appendChild(timerToggleBtn);
   timerGroup.appendChild(timerResetBtn);
 
-  startRow.appendChild(timerGroup);
+  const startGroup = el("div", { class: "task-start-group" });
+  startGroup.appendChild(el("label", { class: "task-start-label", text: "שעת התחלה:" }));
+  const startInput = el("input", { type: "time", class: "field-input task-start-input" });
+  startGroup.appendChild(startInput);
+
   startRow.appendChild(startGroup);
+  startRow.appendChild(timerGroup);
   wrap.appendChild(startRow);
 
   let timerRemaining = 0;
@@ -182,8 +230,22 @@ function renderTasksView(container) {
   const list = el("div", { class: "task-list" });
   wrap.appendChild(list);
 
+  layout.appendChild(wrap);
+  container.appendChild(layout);
+  renderBigGoalsPanel(layout);
+
+  // ---- מצב היום המוצג כרגע ----
+  let all = loadTaskState();
+  let state = getDayTaskState(all, currentDate);
+
   function persist() {
-    saveTaskState(state);
+    setDayTaskState(all, currentDate, state);
+  }
+
+  function updateDateLabel() {
+    const isToday = currentDate === todayISO();
+    dateLabel.textContent = isToday ? `היום, ${formatDateHe(currentDate)}` : formatDateHe(currentDate);
+    todayBtn.style.display = isToday ? "none" : "inline-block";
   }
 
   function updateSummary() {
@@ -194,10 +256,14 @@ function renderTasksView(container) {
     const m = totalMinutes % 60;
     if (state.tasks.length === 0) {
       summaryLine.textContent = "";
+      progressFill.style.width = "0%";
       return;
     }
     const finish = schedule[schedule.length - 1].rangeLabel.split("-")[1];
     summaryLine.textContent = `${realTasks.length} משימות, ${h} שעות ו-${m} דקות בסך הכול | סיום משוער: ${finish}`;
+    const doneCount = realTasks.filter((t) => t.done).length;
+    const percent = realTasks.length ? Math.round((doneCount / realTasks.length) * 100) : 0;
+    progressFill.style.width = `${percent}%`;
   }
 
   function addTask(isBreak) {
@@ -354,6 +420,14 @@ function renderTasksView(container) {
     updateSummary();
   }
 
+  function activateDate(dateISO) {
+    currentDate = dateISO;
+    state = getDayTaskState(all, currentDate);
+    startInput.value = state.startTime || "09:00";
+    updateDateLabel();
+    renderList();
+  }
+
   addTaskBtn.addEventListener("click", () => addTask(false));
   addBreakBtn.addEventListener("click", () => addTask(true));
   startInput.addEventListener("change", () => {
@@ -361,7 +435,110 @@ function renderTasksView(container) {
     persist();
     renderList();
   });
+  prevDayBtn.addEventListener("click", () => activateDate(addDaysISO(currentDate, -1)));
+  nextDayBtn.addEventListener("click", () => activateDate(addDaysISO(currentDate, 1)));
+  todayBtn.addEventListener("click", () => activateDate(todayISO()));
 
+  startInput.value = state.startTime || "09:00";
+  updateDateLabel();
   renderList();
-  container.appendChild(wrap);
+}
+
+// ---- יעדים גדולים - רשימה קבועה (לא תלוית תאריך), עם ריבוע פעילים וריבוע שהושלמו ----
+function renderBigGoalsPanel(layout) {
+  const panel = el("div", { class: "panel task-goals-panel" });
+  panel.appendChild(el("h2", { class: "panel-title", text: "יעדים גדולים" }));
+  panel.appendChild(
+    el("p", { class: "panel-subtitle", text: "רשימת היעדים הגדולים שלך - סמני ✓ כשמשלימים יעד, ותוכלי לפרק כל יעד למשימות קטנות ביומן." })
+  );
+
+  const addRow = el("div", { class: "task-goal-add-row" });
+  const input = el("input", { type: "text", class: "field-input", placeholder: "יעד חדש...", autocomplete: "off" });
+  const addBtn = el("button", { type: "button", class: "btn btn-primary btn-small", text: "+" });
+  addRow.appendChild(input);
+  addRow.appendChild(addBtn);
+  panel.appendChild(addRow);
+
+  const columns = el("div", { class: "task-goal-columns" });
+  const activeCol = el("div", { class: "task-goal-col" });
+  activeCol.appendChild(el("h3", { class: "task-goal-col-title", text: "פעילים" }));
+  const activeList = el("div", { class: "task-goal-list" });
+  activeCol.appendChild(activeList);
+
+  const doneCol = el("div", { class: "task-goal-col" });
+  doneCol.appendChild(el("h3", { class: "task-goal-col-title", text: "הושלמו" }));
+  const doneList = el("div", { class: "task-goal-list" });
+  doneCol.appendChild(doneList);
+
+  columns.appendChild(activeCol);
+  columns.appendChild(doneCol);
+  panel.appendChild(columns);
+  layout.appendChild(panel);
+
+  function persist(goals) {
+    saveBigGoals(goals);
+  }
+
+  function render() {
+    const goals = loadBigGoals();
+    activeList.innerHTML = "";
+    doneList.innerHTML = "";
+
+    const active = goals.filter((g) => !g.done);
+    const done = goals.filter((g) => g.done);
+
+    if (active.length === 0) activeList.appendChild(el("div", { class: "empty-state", text: "אין עדיין יעדים פעילים." }));
+    if (done.length === 0) doneList.appendChild(el("div", { class: "empty-state", text: "עדיין לא הושלם יעד." }));
+
+    active.forEach((goal) => {
+      const row = buildGoalRow(goal, goals);
+      activeList.appendChild(row);
+    });
+    done.forEach((goal) => {
+      const row = buildGoalRow(goal, goals);
+      doneList.appendChild(row);
+    });
+  }
+
+  function buildGoalRow(goal, goals) {
+    const row = el("div", { class: "task-goal-row" + (goal.done ? " is-done" : "") });
+    const checkbox = el("input", { type: "checkbox", class: "task-checkbox" });
+    checkbox.checked = !!goal.done;
+    checkbox.addEventListener("change", () => {
+      const fresh = loadBigGoals();
+      const match = fresh.find((g) => g.id === goal.id);
+      if (match) match.done = checkbox.checked;
+      persist(fresh);
+      render();
+    });
+    row.appendChild(checkbox);
+    row.appendChild(el("span", { class: "task-goal-text", text: goal.text }));
+    const delBtn = el("button", { type: "button", class: "task-delete-btn", text: "🗑", title: "מחיקה" });
+    delBtn.addEventListener("click", () => {
+      persist(loadBigGoals().filter((g) => g.id !== goal.id));
+      render();
+    });
+    row.appendChild(delBtn);
+    return row;
+  }
+
+  function addGoal() {
+    const text = input.value.trim();
+    if (!text) return;
+    const goals = loadBigGoals();
+    goals.push({ id: "goal_" + Date.now() + "_" + Math.random().toString(36).slice(2, 7), text, done: false });
+    persist(goals);
+    input.value = "";
+    render();
+  }
+
+  addBtn.addEventListener("click", addGoal);
+  input.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      addGoal();
+    }
+  });
+
+  render();
 }

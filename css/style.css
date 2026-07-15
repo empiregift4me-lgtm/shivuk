@@ -23,6 +23,17 @@
   --shadow-hover: 0 6px 18px rgba(0, 0, 0, 0.35);
 }
 
+/* ===== פס גלילה מותאם לעיצוב ===== */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--c-border) var(--c-panel);
+}
+*::-webkit-scrollbar { width: 10px; height: 10px; }
+*::-webkit-scrollbar-track { background: var(--c-panel); border-radius: 8px; }
+*::-webkit-scrollbar-thumb { background: var(--c-border); border-radius: 8px; border: 2px solid var(--c-panel); }
+*::-webkit-scrollbar-thumb:hover { background: var(--c-highlight); }
+*::-webkit-scrollbar-corner { background: var(--c-panel); }
+
 /* ===== מסך נעילה ===== */
 .lock-overlay {
   position: fixed;
@@ -733,7 +744,56 @@ select.field-input:focus {
 .dynamic-list-count { margin: 8px 0 0; font-size: 0.85rem; color: var(--text-submuted); opacity: 0.75; }
 
 /* ===== ניהול משימות היום ===== */
-.task-summary { color: var(--c-highlight); font-weight: 600; font-size: 0.95rem; margin: 0 0 var(--space); min-height: 1.2em; }
+.task-layout {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space);
+  flex-wrap: wrap;
+  width: 100vw;
+  max-width: 1320px;
+  position: relative;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 0 var(--space);
+}
+.task-main-panel { flex: 1 1 520px; min-width: 320px; }
+.task-goals-panel { flex: 0 0 360px; max-width: 100%; }
+.task-date-nav { display: flex; align-items: center; gap: 10px; margin-bottom: var(--space-sm); }
+.task-date-label { font-weight: 700; color: var(--text-light); min-width: 160px; text-align: center; }
+.task-progress-track {
+  height: 6px;
+  border-radius: 4px;
+  background: var(--c-panel);
+  overflow: hidden;
+  margin-bottom: var(--space);
+}
+.task-progress-fill { height: 100%; background: var(--c-highlight); border-radius: 4px; transition: width 0.4s ease; width: 0%; }
+.task-goal-add-row { display: flex; gap: 8px; margin-bottom: var(--space); }
+.task-goal-columns { display: flex; gap: var(--space-sm); }
+.task-goal-col {
+  flex: 1 1 50%;
+  min-width: 0;
+  height: 680px;
+  overflow-y: auto;
+  background: var(--c-panel);
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius-sm);
+  padding: var(--space-sm);
+}
+.task-goal-col-title { font-size: 0.9rem; color: var(--text-submuted); margin: 0 0 8px; text-align: center; }
+.task-goal-list { display: flex; flex-direction: column; gap: 6px; }
+.task-goal-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--c-field);
+  border-radius: var(--radius-sm);
+  padding: 8px 10px;
+}
+.task-goal-row.is-done { opacity: 0.65; }
+.task-goal-row.is-done .task-goal-text { text-decoration: line-through; }
+.task-goal-text { flex: 1 1 auto; color: var(--text-light); font-size: 0.9rem; word-break: break-word; }
+.task-summary { color: var(--c-highlight); font-weight: 600; font-size: 0.95rem; margin: 0 0 6px; min-height: 1.2em; }
 .task-start-row { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px; margin: 0 0 var(--space); }
 .task-start-group { display: flex; align-items: center; gap: 10px; }
 .task-start-label { font-weight: 600; color: var(--text-light); }
