@@ -32,6 +32,11 @@ function energyTypeByKey(key) {
   return ENERGY_TYPES.find((t) => t.key === key);
 }
 
+function energyFilterLabel() {
+  if (energyFilter.size === 0) return "כללי";
+  return ENERGY_TYPES.filter((t) => energyFilter.has(t.key)).map((t) => t.label).join(" ו-");
+}
+
 function formatDurationHe(totalMinutes) {
   const total = Math.max(0, Number(totalMinutes) || 0);
   const h = Math.floor(total / 60);
@@ -370,9 +375,10 @@ function buildEnergyEntryCard(entry, container) {
 }
 
 function exportEnergyLogToPDF(list) {
+  const filterLabel = energyFilterLabel();
   const printRoot = el("div", { class: "day-card summary-print-root" });
   const header = el("div", { class: "day-header" });
-  header.appendChild(el("div", { class: "day-date", text: "ניהול אנרגיה" }));
+  header.appendChild(el("div", { class: "day-date", text: `ניהול אנרגיה ${filterLabel}` }));
   printRoot.appendChild(header);
 
   if (list.length === 0) {
@@ -393,5 +399,5 @@ function exportEnergyLogToPDF(list) {
 
   printRoot.style.width = "700px";
   const cleanup = mountOffscreenForExport(printRoot);
-  exportElementToPDF(printRoot, `ניהול-אנרגיה-${todayISO()}`, null, cleanup);
+  exportElementToPDF(printRoot, `ניהול-אנרגיה-${filterLabel.replace(/\s+/g, "-")}-${todayISO()}`, null, cleanup);
 }

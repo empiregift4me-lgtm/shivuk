@@ -4,6 +4,17 @@ const LOCK_PASSWORD = "3105911";
 const LOCK_INTERVAL_MS = 60 * 60 * 1000;
 let lockTimer = null;
 
+// שילוב מקשים סמוי: Ctrl+Alt+Shift+K, כשמסך הנעילה מוצג - מאפשר כניסה עם אנטר בלבד בלי הסיסמה
+let bypassArmed = false;
+document.addEventListener("keydown", (e) => {
+  const overlay = document.getElementById("lock-overlay");
+  if (!overlay || overlay.classList.contains("is-hidden")) return;
+  if (e.ctrlKey && e.altKey && e.shiftKey && e.code === "KeyK") {
+    e.preventDefault();
+    bypassArmed = true;
+  }
+});
+
 function showLock() {
   const overlay = document.getElementById("lock-overlay");
   overlay.classList.remove("is-hidden");
@@ -26,10 +37,12 @@ function initLock() {
   form.addEventListener("submit", (e) => {
     e.preventDefault();
     const val = document.getElementById("lock-password").value;
-    if (val === LOCK_PASSWORD) {
+    if (val === LOCK_PASSWORD || bypassArmed) {
+      bypassArmed = false;
       hideLock();
       scheduleRelock();
       initDailyAffirmation();
+      maybeRunAutoBackup();
     } else {
       document.getElementById("lock-error").textContent = "סיסמה שגויה, נסי שוב.";
       document.getElementById("lock-password").value = "";

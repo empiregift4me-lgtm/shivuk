@@ -18,6 +18,22 @@ function exportBackup() {
   URL.revokeObjectURL(url);
 }
 
+// גיבוי אוטומטי תקופתי - פעם ביום, בכניסה הראשונה לאתר באותו יום, מוריד לבד קובץ גיבוי
+// כדי שגם אם המטמון/הדפדפן יימחקו, יהיה גיבוי עדכני יחסית שכבר יושב בתיקיית ההורדות
+const AUTO_BACKUP_LAST_DATE_KEY = "auto_backup_last_date_v1";
+
+function hasAnyStoredData() {
+  return Object.values(STORE_KEYS).some((key) => localStorage.getItem(key) !== null);
+}
+
+function maybeRunAutoBackup() {
+  if (!hasAnyStoredData()) return;
+  const today = todayISO();
+  if (localStorage.getItem(AUTO_BACKUP_LAST_DATE_KEY) === today) return;
+  exportBackup();
+  localStorage.setItem(AUTO_BACKUP_LAST_DATE_KEY, today);
+}
+
 function importBackupFile(file) {
   const reader = new FileReader();
   reader.onload = () => {
