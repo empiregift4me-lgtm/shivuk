@@ -1,18 +1,12 @@
 // גיבוי ושחזור - הורדת/העלאת כל הנתונים כקובץ JSON אחד, כדי שלא ילכו לאיבוד
+// עובר גנרית על כל STORE_KEYS (ולא רשימה קבועה בקוד), כדי שלא יישכח מפתח חדש שנוסף בעתיד
 
 function exportBackup() {
-  const payload = {
-    version: 4,
-    exportedAt: new Date().toISOString(),
-    entries: loadEntries(),
-    habits: loadHabits(),
-    prefs: loadPrefs(),
-    summaries: loadSummaries(),
-    decisions: loadChatList(STORE_KEYS.decisions),
-    emotional: loadChatList(STORE_KEYS.emotional),
-    paymentLedger: loadPaymentLedger(),
-    taskManagement: loadTaskState()
-  };
+  const payload = { version: 5, exportedAt: new Date().toISOString(), data: {} };
+  Object.entries(STORE_KEYS).forEach(([name, storageKey]) => {
+    const raw = localStorage.getItem(storageKey);
+    if (raw !== null) payload.data[name] = raw;
+  });
   const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
@@ -30,14 +24,22 @@ function importBackupFile(file) {
     try {
       const payload = JSON.parse(reader.result);
       if (!payload || typeof payload !== "object") throw new Error("invalid backup file");
-      if (payload.entries) saveEntries(payload.entries);
-      if (payload.habits) saveHabits(payload.habits);
-      if (payload.prefs) savePrefs(payload.prefs);
-      if (payload.summaries) saveSummaries(payload.summaries);
-      if (payload.decisions) saveChatList(STORE_KEYS.decisions, payload.decisions);
-      if (payload.emotional) saveChatList(STORE_KEYS.emotional, payload.emotional);
-      if (payload.paymentLedger) savePaymentLedger(payload.paymentLedger);
-      if (payload.taskManagement) saveTaskState(payload.taskManagement);
+      if (payload.data) {
+        Object.entries(payload.data).forEach(([name, raw]) => {
+          const storageKey = STORE_KEYS[name];
+          if (storageKey) localStorage.setItem(storageKey, raw);
+        });
+      } else {
+        // תאימות לאחור לקבצי גיבוי ישנים (גרסה 4 ומטה) עם מבנה קבוע שכיסה רק חלק מהנתונים
+        if (payload.entries) saveEntries(payload.entries);
+        if (payload.habits) saveHabits(payload.habits);
+        if (payload.prefs) savePrefs(payload.prefs);
+        if (payload.summaries) saveSummaries(payload.summaries);
+        if (payload.decisions) saveChatList(STORE_KEYS.decisions, payload.decisions);
+        if (payload.emotional) saveChatList(STORE_KEYS.emotional, payload.emotional);
+        if (payload.paymentLedger) savePaymentLedger(payload.paymentLedger);
+        if (payload.taskManagement) saveTaskState(payload.taskManagement);
+      }
       alert("השחזור הושלם בהצלחה! העמוד ייטען מחדש.");
       location.reload();
     } catch (e) {
