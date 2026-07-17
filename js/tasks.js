@@ -519,6 +519,7 @@ function renderTasksView(container) {
     if (!entry) return null;
 
     const box = el("div", { class: "task-energy-box" });
+    const inner = el("div", { class: "task-energy-box-inner" });
     const textarea = el("textarea", {
       class: "field-textarea task-energy-textarea",
       placeholder: openType.placeholder,
@@ -530,7 +531,25 @@ function renderTasksView(container) {
       entry.text = textarea.value;
       debouncedEnergySave(log);
     });
-    box.appendChild(textarea);
+    inner.appendChild(textarea);
+
+    // כפתור אישור שסוגר את התיבה מהעין (השמירה כבר קורית תוך כדי הקלדה) - כדי שההפסקה
+    // האחרונה של היום לא תישאר פתוחה לצמיתות
+    const confirmBtn = el("button", {
+      type: "button",
+      class: "task-energy-confirm-btn",
+      text: "✓",
+      title: "שמירה וסגירה - התיעוד עבר ל\"ניהול אנרגיה\""
+    });
+    confirmBtn.addEventListener("click", () => {
+      entry.text = textarea.value;
+      saveEnergyLog(log);
+      openEnergyBoxKey = null;
+      renderList();
+    });
+    inner.appendChild(confirmBtn);
+
+    box.appendChild(inner);
     return box;
   }
 

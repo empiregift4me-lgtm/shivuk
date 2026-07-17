@@ -16,7 +16,7 @@ const ENERGY_TYPES = [
   },
   {
     key: "nightSleep",
-    emoji: "🛏",
+    emoji: "🛌",
     label: "שנת לילה",
     placeholder: "איך היתה שנת הלילה? כמה את ערנית עכשיו? כמה חשק ומוטיבציה יש לך להתחיל את היום ולעבוד על משימות?"
   },
@@ -191,10 +191,8 @@ function buildEnergyEntryCard(entry, container) {
     title: "מחיקה לצמיתות",
     onclick: (e) => {
       e.stopPropagation();
-      if (confirm("למחוק את התיעוד הזה לצמיתות?")) {
-        deleteEnergyEntry(entry.id);
-        renderEnergyView(container);
-      }
+      deleteEnergyEntry(entry.id);
+      renderEnergyView(container);
     }
   });
 
