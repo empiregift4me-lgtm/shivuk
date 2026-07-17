@@ -22,4 +22,7 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   document.getElementById("export-all-btn").addEventListener("click", exportAllToPDF);
+
+  document.getElementById("drive-save-btn").addEventListener("click", driveSaveBackup);
+  document.getElementById("drive-restore-btn").addEventListener("click", driveRestoreBackup);
 });
