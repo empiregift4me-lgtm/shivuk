@@ -76,6 +76,45 @@ function exportElementToPDF(root, filename, hideSelector, onDone) {
   });
 }
 
+// כמו exportElementToPDF, אבל מחזירה את קובץ ה-PDF כ-Blob (Promise) במקום להוריד אותו לדפדפן -
+// משמשת להעלאת PDF ישירות לגוגל דרייב בלי לעבור דרך הורדה מקומית
+function exportElementToPDFBlob(root, hideSelector) {
+  const hideEl = hideSelector ? root.querySelector(hideSelector) : null;
+  const prevDisplay = hideEl ? hideEl.style.display : null;
+  if (hideEl) hideEl.style.display = "none";
+
+  const opt = {
+    margin: 10,
+    image: { type: "jpeg", quality: 0.98 },
+    html2canvas: { scale: 2, useCORS: true, backgroundColor: "#ffffff", letterRendering: true, scrollX: 0, scrollY: 0 },
+    jsPDF: { unit: "mm", format: "a4", orientation: "portrait" }
+  };
+
+  function restoreUI() {
+    if (hideEl) hideEl.style.display = prevDisplay || "";
+  }
+
+  const ready = document.fonts && document.fonts.ready ? document.fonts.ready : Promise.resolve();
+
+  return ready.then(() => {
+    const restoreSpaces = swapSpacesForCapture(root);
+    return html2pdf()
+      .set(opt)
+      .from(root)
+      .outputPdf("blob")
+      .then((blob) => {
+        restoreSpaces();
+        restoreUI();
+        return blob;
+      })
+      .catch((err) => {
+        restoreSpaces();
+        restoreUI();
+        throw err;
+      });
+  });
+}
+
 function exportDayToPDF(dayCardRoot, date) {
   exportElementToPDF(dayCardRoot, `יומן-${date}`, ".day-actions");
 }

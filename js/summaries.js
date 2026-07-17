@@ -58,6 +58,15 @@ function summaryNotesHasContent(html) {
 }
 
 // נושא "ריק" הוא רק שלד ממתין להקלדה (למשל השורה הראשונה שנוצרת אוטומטית) - לא באמת תוכן
+function persistSummaryItem(item) {
+  const all = loadSummaries();
+  const idx = all.findIndex((s) => s.id === item.id);
+  if (idx !== -1) {
+    all[idx] = item;
+    saveSummaries(all);
+  }
+}
+
 function isBlankSummaryTopic(topic) {
   return (
     (topic.title || "").trim() === "" &&
@@ -340,18 +349,20 @@ function renderSummaryWriteTab(content) {
           return;
         }
         const list = loadSummaries();
-        list.push({
+        const newItem = {
           id: "sum_" + Date.now(),
           topics,
           sessionDate: dateInput.value || todayISO(),
           paid: false,
           createdAt: Date.now(),
           updatedAt: Date.now()
-        });
+        };
+        list.push(newItem);
         saveSummaries(list);
         saveSummaryDraft({ topics: [], sessionDate: todayISO() });
         celebrateSave();
         renderSummaryWriteTab(content);
+        driveUploadSummaryPDF(newItem, () => persistSummaryItem(newItem));
       }
     })
   );
@@ -428,12 +439,7 @@ function renderSummaryArchiveTab(content, goToWriteTab) {
     let editing = false;
 
     function persistItem() {
-      const all = loadSummaries();
-      const idx = all.findIndex((s) => s.id === item.id);
-      if (idx !== -1) {
-        all[idx] = item;
-        saveSummaries(all);
-      }
+      persistSummaryItem(item);
     }
 
     function buildEditToggle(label) {
@@ -445,6 +451,7 @@ function renderSummaryArchiveTab(content, goToWriteTab) {
           if (editing) {
             item.updatedAt = Date.now();
             persistItem();
+            driveUploadSummaryPDF(item, persistItem);
           }
           editing = !editing;
           buildBody();
@@ -596,7 +603,7 @@ function renderPaymentsTab(content) {
   content.appendChild(wrap);
 }
 
-function exportSummaryToPDF(item) {
+function buildSummaryPrintRoot(item) {
   const printRoot = el("div", { class: "day-card summary-print-root" });
   const header = el("div", { class: "day-header" });
   header.appendChild(el("div", { class: "day-date", text: item.sessionDate ? formatDateHe(item.sessionDate) : formatTimestamp(item.createdAt) }));
@@ -605,8 +612,17 @@ function exportSummaryToPDF(item) {
   printRoot.appendChild(body);
   buildTopicsEditor(body, normalizeSummaryTopics(item.topics), () => {}, { readOnly: true });
   printRoot.style.width = "700px";
+  return printRoot;
+}
+
+function summaryPdfFilename(item) {
+  return `סיכום-${item.sessionDate || todayISO()}`;
+}
+
+function exportSummaryToPDF(item) {
+  const printRoot = buildSummaryPrintRoot(item);
   const cleanup = mountOffscreenForExport(printRoot);
-  exportElementToPDF(printRoot, `סיכום-${item.sessionDate || todayISO()}`, null, cleanup);
+  exportElementToPDF(printRoot, summaryPdfFilename(item), null, cleanup);
 }
 
 function hasUncheckedItems(item) {
