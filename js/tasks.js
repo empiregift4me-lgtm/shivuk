@@ -93,12 +93,25 @@ function playLongAlarm() {
 function renderTasksView(container) {
   container.innerHTML = "";
   let currentDate = todayISO();
+  // מפתח (taskId|type) של תיבת הכתיבה של אנרגיה שפתוחה כרגע - נשמר בזיכרון בלבד, כדי לשרוד רינדור מחדש של הרשימה
+  let openEnergyBoxKey = null;
+  const debouncedEnergySave = debounce((log) => saveEnergyLog(log), 400);
 
   const breakout = el("div", { class: "task-layout-breakout" });
   const layout = el("div", { class: "task-layout" });
 
   const wrap = el("div", { class: "panel task-main-panel" });
-  wrap.appendChild(el("h2", { class: "panel-title", text: "ניהול משימות היום" }));
+  const titleRow = el("div", { class: "task-title-row" });
+  titleRow.appendChild(el("h2", { class: "panel-title", text: "ניהול משימות היום" }));
+  titleRow.appendChild(
+    el("button", {
+      type: "button",
+      class: "btn btn-secondary btn-small",
+      text: "⚡ ניהול אנרגיה",
+      onclick: () => showSection("energy")
+    })
+  );
+  wrap.appendChild(titleRow);
   wrap.appendChild(
     el("p", { class: "panel-subtitle", text: "כתבי משימה, הגדירי כמה זמן היא תיקח, והמערכת תחשב לך את טווח השעות אוטומטית." })
   );
@@ -358,30 +371,33 @@ function renderTasksView(container) {
 
       row.appendChild(el("span", { class: "task-range", text: task.rangeLabel }));
 
-      const textInput = el("input", {
-        type: "text",
-        class: "field-input task-text-input",
-        placeholder: task.isBreak ? "הפסקה" : "משימה...",
-        autocomplete: "off"
-      });
-      textInput.value = task.text || "";
-      textInput.disabled = !!task.isBreak;
-      textInput.addEventListener("input", () => {
-        state.tasks[idx].text = textInput.value;
-        persist();
-        updateSummary();
-      });
-      textInput.addEventListener("keydown", (e) => {
-        if (e.key !== "Enter") return;
-        e.preventDefault();
-        if (idx === state.tasks.length - 1) {
-          addTask(false);
-        } else {
-          const nextInput = list.children[idx + 1] && list.children[idx + 1].querySelector(".task-text-input");
-          if (nextInput) nextInput.focus();
-        }
-      });
-      row.appendChild(textInput);
+      if (task.isBreak) {
+        row.appendChild(buildEnergyMarkers(task, idx));
+      } else {
+        const textInput = el("input", {
+          type: "text",
+          class: "field-input task-text-input",
+          placeholder: "משימה...",
+          autocomplete: "off"
+        });
+        textInput.value = task.text || "";
+        textInput.addEventListener("input", () => {
+          state.tasks[idx].text = textInput.value;
+          persist();
+          updateSummary();
+        });
+        textInput.addEventListener("keydown", (e) => {
+          if (e.key !== "Enter") return;
+          e.preventDefault();
+          if (idx === state.tasks.length - 1) {
+            addTask(false);
+          } else {
+            const nextItem = list.children[idx + 1] && list.children[idx + 1].querySelector(".task-text-input");
+            if (nextItem) nextItem.focus();
+          }
+        });
+        row.appendChild(textInput);
+      }
 
       const durationGroup = el("div", { class: "task-duration-group" });
       const minutesInput = el("input", {
@@ -438,10 +454,84 @@ function renderTasksView(container) {
       controls.appendChild(delBtn);
       row.appendChild(controls);
 
-      list.appendChild(row);
+      const itemWrap = el("div", { class: "task-item-wrap" });
+      itemWrap.appendChild(row);
+      if (task.isBreak) {
+        const inlineBox = buildEnergyInlineBox(task);
+        if (inlineBox) itemWrap.appendChild(inlineBox);
+      }
+      list.appendChild(itemWrap);
     });
 
     updateSummary();
+  }
+
+  function buildEnergyMarkers(task, idx) {
+    const wrap = el("div", { class: "task-energy-markers" });
+
+    ENERGY_TYPES.forEach((typeDef) => {
+      const key = task.id + "|" + typeDef.key;
+      const isActive = task.energyMarks && task.energyMarks[typeDef.key];
+      const btn = el("button", {
+        type: "button",
+        class: "task-energy-mark-btn" + (isActive ? " is-active" : "") + (openEnergyBoxKey === key ? " is-open" : ""),
+        text: typeDef.emoji,
+        title: typeDef.label
+      });
+      btn.addEventListener("click", () => {
+        let entryId = state.tasks[idx].energyMarks && state.tasks[idx].energyMarks[typeDef.key];
+        if (!entryId) {
+          const log = loadEnergyLog();
+          const [startTime, endTime] = (task.rangeLabel || "").split("-");
+          const entry = {
+            id: "energy_" + Date.now() + "_" + Math.random().toString(36).slice(2, 7),
+            type: typeDef.key,
+            date: currentDate,
+            startTime: startTime || "",
+            endTime: endTime || "",
+            durationMinutes: taskDurationMinutes(task),
+            text: "",
+            createdAt: Date.now()
+          };
+          log.push(entry);
+          saveEnergyLog(log);
+          entryId = entry.id;
+          if (!state.tasks[idx].energyMarks) state.tasks[idx].energyMarks = {};
+          state.tasks[idx].energyMarks[typeDef.key] = entryId;
+          persist();
+        }
+        openEnergyBoxKey = openEnergyBoxKey === key ? null : key;
+        renderList();
+      });
+      wrap.appendChild(btn);
+    });
+
+    return wrap;
+  }
+
+  // תיבת הכתיבה החופשית של סימון האנרגיה שפתוח כרגע לשורת ההפסקה הזו (אם יש) - עם פיינהולד שמזכיר את שאלות ההנחיה
+  function buildEnergyInlineBox(task) {
+    const openType = ENERGY_TYPES.find((t) => openEnergyBoxKey === task.id + "|" + t.key);
+    if (!openType || !task.energyMarks) return null;
+    const entryId = task.energyMarks[openType.key];
+    const log = loadEnergyLog();
+    const entry = log.find((e) => e.id === entryId);
+    if (!entry) return null;
+
+    const box = el("div", { class: "task-energy-box" });
+    const textarea = el("textarea", {
+      class: "field-textarea task-energy-textarea",
+      placeholder: openType.placeholder,
+      rows: "3",
+      autocomplete: "off"
+    });
+    textarea.value = entry.text || "";
+    textarea.addEventListener("input", () => {
+      entry.text = textarea.value;
+      debouncedEnergySave(log);
+    });
+    box.appendChild(textarea);
+    return box;
   }
 
   function activateDate(dateISO) {

@@ -1,6 +1,6 @@
 // מעטפת האתר - ניווט בין דשבורד/יומן/סיכומים/החלטות דרך תפריט צד
 
-const SECTIONS = ["dashboard", "journal", "summaries", "decisions", "emotional", "tasks"];
+const SECTIONS = ["dashboard", "journal", "summaries", "decisions", "emotional", "tasks", "energy"];
 const LAZY_SECTION_INIT = {
   summaries: initSummariesView,
   decisions: initDecisionsView,
@@ -18,6 +18,9 @@ function showSection(name) {
   } else if (name === "tasks") {
     // מתעדכן בכל כניסה, כדי שהתאריך המוצג תמיד יתחיל מ"היום" האמיתי
     renderTasksView(document.getElementById("tasks-view"));
+  } else if (name === "energy") {
+    // מתעדכן בכל כניסה, כדי לשקף תיעודי אנרגיה חדשים שנוספו מאז
+    renderEnergyView(document.getElementById("energy-view"));
   } else if (LAZY_SECTION_INIT[name] && !sectionsInitialized[name]) {
     LAZY_SECTION_INIT[name](document.getElementById(`${name}-view`));
     sectionsInitialized[name] = true;

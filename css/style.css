@@ -815,7 +815,7 @@ select.field-input:focus {
   border-bottom: 1px solid var(--c-border);
   transition: background 0.15s ease;
 }
-.task-list .task-row:last-child { border-bottom: none; }
+.task-list > .task-item-wrap:last-child .task-row { border-bottom: none; }
 .task-row.is-break { background: rgba(224, 177, 203, 0.16); border-radius: var(--radius-sm); }
 .task-row.is-done .task-text-input { text-decoration: line-through; opacity: 0.6; }
 .task-row.is-dragging { opacity: 0.4; }
@@ -862,6 +862,76 @@ select.field-input:focus {
 .task-move-btn:hover:not(:disabled),
 .task-delete-btn:hover { background: var(--c-field); color: var(--c-highlight); }
 .task-move-btn:disabled { opacity: 0.3; cursor: default; }
+.task-title-row { display: flex; align-items: center; justify-content: space-between; gap: var(--space-sm); flex-wrap: wrap; }
+.task-title-row .panel-title { margin: 0; }
+.task-item-wrap { display: flex; flex-direction: column; }
+.task-energy-markers { flex: 1 1 220px; display: flex; align-items: center; gap: 6px; }
+.task-energy-mark-btn {
+  flex: 0 0 auto;
+  border: 1.5px solid var(--c-border);
+  background: var(--c-field);
+  border-radius: var(--radius-sm);
+  width: 34px;
+  height: 34px;
+  font-size: 1.1rem;
+  line-height: 1;
+  cursor: pointer;
+}
+.task-energy-mark-btn:hover { border-color: var(--c-highlight); }
+.task-energy-mark-btn.is-active { background: var(--c-muted-btn); border-color: var(--c-highlight); }
+.task-energy-mark-btn.is-open { box-shadow: 0 0 0 2px var(--c-highlight); }
+.task-energy-box { padding: 4px 4px 8px 40px; }
+.task-energy-textarea { resize: vertical; }
+
+/* ===== ניהול אנרגיה ===== */
+.energy-header-row { display: flex; align-items: center; gap: var(--space-sm); margin-bottom: 6px; }
+.energy-header-row .panel-title { margin: 0; }
+.energy-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--space-sm);
+  background: var(--c-panel);
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius-sm);
+  padding: 8px;
+  position: sticky;
+  top: 8px;
+  z-index: 20;
+  margin: var(--space) 0;
+}
+.energy-filter-group { display: flex; gap: 6px; flex-wrap: wrap; }
+.energy-filter-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  border: 1.5px solid var(--c-border);
+  background: var(--c-field);
+  border-radius: 999px;
+  padding: 5px 10px;
+  cursor: pointer;
+}
+.energy-filter-btn:hover { border-color: var(--c-highlight); }
+.energy-filter-btn.is-active { background: var(--c-muted-btn); border-color: var(--c-highlight); }
+.energy-filter-emoji { font-size: 1.05rem; }
+.energy-filter-count { font-size: 0.75rem; color: var(--text-submuted); }
+.energy-actions-group { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+.energy-bulk-toggle-btn {
+  font-family: inherit;
+  border: 1.5px solid var(--c-border);
+  background: var(--c-field);
+  color: var(--text-light);
+  border-radius: 999px;
+  padding: 7px 14px;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+.energy-bulk-toggle-btn:hover { border-color: var(--c-highlight); }
+.energy-list { display: flex; flex-direction: column; gap: var(--space-sm); }
+.energy-entry-label { font-weight: 600; }
+.energy-entry-time { color: var(--text-submuted); font-size: 0.9rem; }
+.energy-entry-text-view { color: var(--text-light); white-space: pre-wrap; }
 
 /* ===== משפטי שפע ===== */
 .quotes-grid { display: flex; flex-direction: column; gap: var(--space-sm); }
