@@ -1127,6 +1127,7 @@ select.field-input:focus {
 }
 .archive-item-toggle:hover { background: var(--c-field); }
 .archive-date { font-weight: 600; }
+.archive-with-name { font-weight: 600; color: var(--c-highlight); }
 .archive-count { color: var(--text-submuted); font-size: 0.9rem; margin-inline-start: auto; }
 .archive-chevron { color: var(--c-highlight); }
 .archive-delete {

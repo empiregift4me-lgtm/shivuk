@@ -309,6 +309,13 @@ function renderSummaryWriteTab(content) {
   const topRow = el("div", { class: "summary-top-row" });
   const addTopicBtn = el("button", { type: "button", class: "btn btn-primary btn-small summary-add-topic-btn", text: "+ נושא חדש" });
   topRow.appendChild(addTopicBtn);
+  const withNameInput = el("input", {
+    type: "text",
+    class: "field-input session-withname-input",
+    placeholder: "עם מי? (שם הלקוחה/חברה)"
+  });
+  withNameInput.value = draft.withName || "";
+  topRow.appendChild(withNameInput);
   const dateRow = el("div", { class: "session-date-row" });
   dateRow.appendChild(el("label", { class: "session-date-label", text: "תאריך הפגישה:" }));
   const dateInput = el("input", { type: "date", class: "field-input session-date-input" });
@@ -318,7 +325,7 @@ function renderSummaryWriteTab(content) {
   wrap.appendChild(topRow);
 
   function persistDraft() {
-    saveSummaryDraft({ topics, sessionDate: dateInput.value || todayISO() });
+    saveSummaryDraft({ topics, sessionDate: dateInput.value || todayISO(), withName: withNameInput.value });
     draftStatus.textContent = "✓ טיוטה נשמרה אוטומטית";
   }
 
@@ -334,6 +341,7 @@ function renderSummaryWriteTab(content) {
 
   wrap.appendChild(draftStatus);
   dateInput.addEventListener("change", persistDraft);
+  withNameInput.addEventListener("input", persistDraft);
 
   wrap.appendChild(
     el("button", {
@@ -353,13 +361,14 @@ function renderSummaryWriteTab(content) {
           id: "sum_" + Date.now(),
           topics,
           sessionDate: dateInput.value || todayISO(),
+          withName: withNameInput.value.trim(),
           paid: false,
           createdAt: Date.now(),
           updatedAt: Date.now()
         };
         list.push(newItem);
         saveSummaries(list);
-        saveSummaryDraft({ topics: [], sessionDate: todayISO() });
+        saveSummaryDraft({ topics: [], sessionDate: todayISO(), withName: "" });
         celebrateSave();
         renderSummaryWriteTab(content);
         driveUploadSummaryPDF(newItem, () => persistSummaryItem(newItem));
@@ -402,6 +411,7 @@ function renderSummaryArchiveTab(content, goToWriteTab) {
 
   list.forEach((item) => {
     const toggleBtn = el("button", { class: "archive-item-toggle", type: "button" }, [
+      item.withName ? el("span", { class: "archive-with-name", text: `עם ${item.withName}` }) : null,
       el("span", { class: "archive-date", text: item.sessionDate ? formatDateHe(item.sessionDate) : formatTimestamp(item.createdAt) }),
       el("span", { class: "paid-badge" + (item.paid ? " is-paid" : ""), text: item.paid ? "💰 שולם" : "לא שולם" }),
       el("span", { class: "archive-chevron", text: "︿" })
@@ -467,6 +477,20 @@ function renderSummaryArchiveTab(content, goToWriteTab) {
       if (editing) {
         if (item.topics.length === 0) item.topics.push(newSummaryTopic());
         body.appendChild(buildEditToggle("סיום עריכה ✓"));
+        const withNameEditRow = el("div", { class: "session-date-row" });
+        withNameEditRow.appendChild(el("label", { class: "session-date-label", text: "עם מי:" }));
+        const withNameEditInput = el("input", {
+          type: "text",
+          class: "field-input session-withname-input",
+          placeholder: "שם הלקוחה/חברה"
+        });
+        withNameEditInput.value = item.withName || "";
+        withNameEditInput.addEventListener("input", () => {
+          item.withName = withNameEditInput.value.trim();
+          persistItem();
+        });
+        withNameEditRow.appendChild(withNameEditInput);
+        body.appendChild(withNameEditRow);
         const editorRoot = el("div", { class: "summary-topics-wrap" });
         body.appendChild(editorRoot);
         buildTopicsEditor(
@@ -603,10 +627,18 @@ function renderPaymentsTab(content) {
   content.appendChild(wrap);
 }
 
+function summaryTitleText(item) {
+  return item.withName && item.withName.trim() ? `סיכום שיחה עם ${item.withName.trim()}` : "סיכום שיחה";
+}
+
 function buildSummaryPrintRoot(item) {
   const printRoot = el("div", { class: "day-card summary-print-root" });
   const header = el("div", { class: "day-header" });
-  header.appendChild(el("div", { class: "day-date", text: item.sessionDate ? formatDateHe(item.sessionDate) : formatTimestamp(item.createdAt) }));
+  const titleCol = el("div", {}, [
+    el("div", { class: "day-date", text: summaryTitleText(item) }),
+    el("div", { class: "streak-note", text: item.sessionDate ? formatDateHe(item.sessionDate) : formatTimestamp(item.createdAt) })
+  ]);
+  header.appendChild(titleCol);
   printRoot.appendChild(header);
   const body = el("div", { class: "summary-topics-wrap" });
   printRoot.appendChild(body);
@@ -616,7 +648,8 @@ function buildSummaryPrintRoot(item) {
 }
 
 function summaryPdfFilename(item) {
-  return `סיכום-${item.sessionDate || todayISO()}`;
+  const namePart = item.withName && item.withName.trim() ? `-${item.withName.trim().replace(/\s+/g, "-")}` : "";
+  return `סיכום${namePart}-${item.sessionDate || todayISO()}`;
 }
 
 function exportSummaryToPDF(item) {
