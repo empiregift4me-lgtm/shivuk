@@ -208,11 +208,21 @@ function buildManualEntryForm(container) {
     btn.addEventListener("click", () => {
       selectedType = typeDef.key;
       typeBtnEls.forEach(({ el: b, key }) => b.classList.toggle("is-active", key === selectedType));
+      textArea.placeholder = typeDef.placeholder;
     });
     typeBtnEls.push({ el: btn, key: typeDef.key });
     typeRow.appendChild(btn);
   });
   form.appendChild(typeRow);
+
+  // כתיבה חופשית ישירות בטופס - כדי שאפשר יהיה להזין את התיעוד תוך כדי מילוי השעות, בלי עוד שלב אחר כך
+  const textArea = el("textarea", {
+    class: "field-textarea task-energy-textarea",
+    placeholder: ENERGY_TYPES[0].placeholder,
+    rows: "3",
+    autocomplete: "off"
+  });
+  form.appendChild(textArea);
 
   function labeledField(labelText, inputEl) {
     const fieldWrap = el("div", { class: "energy-manual-field" });
@@ -249,7 +259,7 @@ function buildManualEntryForm(container) {
           startTime: startInput.value || "",
           endTime: endInput.value || "",
           durationMinutes,
-          text: "",
+          text: textArea.value || "",
           createdAt: Date.now()
         });
         saveEnergyLog(log);
@@ -381,10 +391,7 @@ function exportEnergyLogToPDF(list) {
     printRoot.appendChild(row);
   });
 
-  printRoot.style.position = "absolute";
-  printRoot.style.left = "-9999px";
-  printRoot.style.top = "0";
   printRoot.style.width = "700px";
-  document.body.appendChild(printRoot);
-  exportElementToPDF(printRoot, `ניהול-אנרגיה-${todayISO()}`, null, () => printRoot.remove());
+  const cleanup = mountOffscreenForExport(printRoot);
+  exportElementToPDF(printRoot, `ניהול-אנרגיה-${todayISO()}`, null, cleanup);
 }

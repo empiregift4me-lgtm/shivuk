@@ -16,6 +16,25 @@ function swapSpacesForCapture(root) {
   return () => originals.forEach(({ node, value }) => (node.nodeValue = value));
 }
 
+// מכניסה אלמנט "בלתי נראה" לעמוד לצורך צילום PDF, בלי להזיז אותו למיקום שלילי רחוק (שגורם ל-html2canvas
+// לפעמים לצלם עמוד ריק) - עוטפים אותו בתיבה 0x0 עם overflow:hidden במקום, כך שהאלמנט עצמו יושב במיקום
+// "רגיל" (0,0) בזרימת המסמך וניתן למדידה תקינה, אבל לא נראה למשתמשת ולא תופס מקום
+function mountOffscreenForExport(printRoot) {
+  const clip = document.createElement("div");
+  clip.style.position = "fixed";
+  clip.style.top = "0";
+  clip.style.left = "0";
+  clip.style.width = "0";
+  clip.style.height = "0";
+  clip.style.overflow = "hidden";
+  printRoot.style.position = "static";
+  clip.appendChild(printRoot);
+  document.body.appendChild(clip);
+  // כפיית reflow סינכרוני, כדי שהמידות של printRoot יהיו מחושבות במלואן לפני שה-html2canvas מתחיל למדוד אותו
+  void printRoot.offsetHeight;
+  return () => clip.remove();
+}
+
 // גרסה גנרית של ייצוא PDF - משמשת גם ליומן ההערכה וגם לסיכומים
 function exportElementToPDF(root, filename, hideSelector, onDone) {
   const hideEl = hideSelector ? root.querySelector(hideSelector) : null;
@@ -26,7 +45,7 @@ function exportElementToPDF(root, filename, hideSelector, onDone) {
     margin: 10,
     filename: `${filename}.pdf`,
     image: { type: "jpeg", quality: 0.98 },
-    html2canvas: { scale: 2, useCORS: true, backgroundColor: "#ffffff", letterRendering: true },
+    html2canvas: { scale: 2, useCORS: true, backgroundColor: "#ffffff", letterRendering: true, scrollX: 0, scrollY: 0 },
     jsPDF: { unit: "mm", format: "a4", orientation: "portrait" }
   };
 
@@ -96,10 +115,7 @@ function exportAllToPDF() {
     });
   }
 
-  printRoot.style.position = "absolute";
-  printRoot.style.left = "-9999px";
-  printRoot.style.top = "0";
   printRoot.style.width = "700px";
-  document.body.appendChild(printRoot);
-  exportElementToPDF(printRoot, `יצוא-מלא-${todayISO()}`, null, () => printRoot.remove());
+  const cleanup = mountOffscreenForExport(printRoot);
+  exportElementToPDF(printRoot, `יצוא-מלא-${todayISO()}`, null, cleanup);
 }
