@@ -4,12 +4,12 @@ const LOCK_PASSWORD = "3105911";
 const LOCK_INTERVAL_MS = 60 * 60 * 1000;
 let lockTimer = null;
 
-// שילוב מקשים סמוי: Ctrl+Alt+Shift+K, כשמסך הנעילה מוצג - מאפשר כניסה עם אנטר בלבד בלי הסיסמה
+// שילוב מקשים סמוי: Ctrl+Alt+Shift+L (קיצור של LOCK), כשמסך הנעילה מוצג - מאפשר כניסה עם אנטר בלבד בלי הסיסמה
 let bypassArmed = false;
 document.addEventListener("keydown", (e) => {
   const overlay = document.getElementById("lock-overlay");
   if (!overlay || overlay.classList.contains("is-hidden")) return;
-  if (e.ctrlKey && e.altKey && e.shiftKey && e.code === "KeyK") {
+  if (e.ctrlKey && e.altKey && e.shiftKey && e.code === "KeyL") {
     e.preventDefault();
     bypassArmed = true;
   }
