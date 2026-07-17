@@ -604,7 +604,7 @@ function exportSummaryToPDF(item) {
   const body = el("div", { class: "summary-topics-wrap" });
   printRoot.appendChild(body);
   buildTopicsEditor(body, normalizeSummaryTopics(item.topics), () => {}, { readOnly: true });
-  printRoot.style.position = "fixed";
+  printRoot.style.position = "absolute";
   printRoot.style.left = "-9999px";
   printRoot.style.top = "0";
   printRoot.style.width = "700px";

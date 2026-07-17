@@ -47,6 +47,7 @@ let energyFilter = new Set();
 let energySortOrder = "desc";
 let energyExpandedIds = new Set();
 let energyAllExpanded = false;
+let energyManualFormOpen = false;
 
 function renderEnergyView(container) {
   container.innerHTML = "";
@@ -146,8 +147,25 @@ function renderEnergyView(container) {
     onclick: () => exportEnergyLogToPDF(visibleList())
   });
   actionsGroup.appendChild(pdfBtn);
+
+  // הוספה ידנית - לכל מקרה שלא נוצרה הפסקה בניהול משימות, אפשר להוסיף תיעוד ישירות מכאן
+  const manualBtn = el("button", {
+    type: "button",
+    class: "btn btn-primary btn-small",
+    text: "+ הוספה ידנית",
+    onclick: () => {
+      energyManualFormOpen = !energyManualFormOpen;
+      renderEnergyView(container);
+    }
+  });
+  actionsGroup.appendChild(manualBtn);
+
   toolbar.appendChild(actionsGroup);
   wrap.appendChild(toolbar);
+
+  if (energyManualFormOpen) {
+    wrap.appendChild(buildManualEntryForm(container));
+  }
 
   function visibleList() {
     let list = allLog.slice();
@@ -169,6 +187,91 @@ function renderEnergyView(container) {
   }
   wrap.appendChild(listEl);
   container.appendChild(wrap);
+}
+
+// טופס הוספה ידנית - למקרה שלא סימנו דרך שורת הפסקה בניהול משימות
+function buildManualEntryForm(container) {
+  const form = el("div", { class: "energy-manual-form" });
+  form.appendChild(el("h3", { class: "panel-title", text: "הוספת תיעוד ידנית" }));
+
+  let selectedType = ENERGY_TYPES[0].key;
+  const typeRow = el("div", { class: "energy-filter-group" });
+  const typeBtnEls = [];
+  ENERGY_TYPES.forEach((typeDef) => {
+    const btn = el("button", {
+      type: "button",
+      class: "energy-filter-btn" + (typeDef.key === selectedType ? " is-active" : ""),
+      title: typeDef.label
+    });
+    btn.appendChild(el("span", { class: "energy-filter-emoji", text: typeDef.emoji }));
+    btn.appendChild(el("span", { class: "energy-filter-count", text: typeDef.label }));
+    btn.addEventListener("click", () => {
+      selectedType = typeDef.key;
+      typeBtnEls.forEach(({ el: b, key }) => b.classList.toggle("is-active", key === selectedType));
+    });
+    typeBtnEls.push({ el: btn, key: typeDef.key });
+    typeRow.appendChild(btn);
+  });
+  form.appendChild(typeRow);
+
+  function labeledField(labelText, inputEl) {
+    const fieldWrap = el("div", { class: "energy-manual-field" });
+    fieldWrap.appendChild(el("label", { class: "session-date-label", text: labelText }));
+    fieldWrap.appendChild(inputEl);
+    return fieldWrap;
+  }
+
+  const fieldsRow = el("div", { class: "energy-manual-fields" });
+  const dateInput = el("input", { type: "date", class: "field-input" });
+  dateInput.value = todayISO();
+  const startInput = el("input", { type: "time", class: "field-input" });
+  startInput.value = "09:00";
+  const endInput = el("input", { type: "time", class: "field-input" });
+  endInput.value = "09:30";
+  fieldsRow.appendChild(labeledField("תאריך:", dateInput));
+  fieldsRow.appendChild(labeledField("משעה:", startInput));
+  fieldsRow.appendChild(labeledField("עד שעה:", endInput));
+  form.appendChild(fieldsRow);
+
+  const actionsRow = el("div", { class: "energy-manual-actions" });
+  actionsRow.appendChild(
+    el("button", {
+      type: "button",
+      class: "btn btn-primary btn-small",
+      text: "הוספה",
+      onclick: () => {
+        const durationMinutes = ((parseTimeToMinutes(endInput.value) - parseTimeToMinutes(startInput.value)) % 1440 + 1440) % 1440;
+        const log = loadEnergyLog();
+        log.push({
+          id: "energy_" + Date.now() + "_" + Math.random().toString(36).slice(2, 7),
+          type: selectedType,
+          date: dateInput.value || todayISO(),
+          startTime: startInput.value || "",
+          endTime: endInput.value || "",
+          durationMinutes,
+          text: "",
+          createdAt: Date.now()
+        });
+        saveEnergyLog(log);
+        energyManualFormOpen = false;
+        renderEnergyView(container);
+      }
+    })
+  );
+  actionsRow.appendChild(
+    el("button", {
+      type: "button",
+      class: "btn btn-ghost btn-small",
+      text: "ביטול",
+      onclick: () => {
+        energyManualFormOpen = false;
+        renderEnergyView(container);
+      }
+    })
+  );
+  form.appendChild(actionsRow);
+
+  return form;
 }
 
 function persistEnergyEntry(entry) {
@@ -278,7 +381,7 @@ function exportEnergyLogToPDF(list) {
     printRoot.appendChild(row);
   });
 
-  printRoot.style.position = "fixed";
+  printRoot.style.position = "absolute";
   printRoot.style.left = "-9999px";
   printRoot.style.top = "0";
   printRoot.style.width = "700px";

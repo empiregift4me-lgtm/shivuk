@@ -605,6 +605,9 @@ body {
   padding-bottom: 6px;
   margin: var(--space) 0 var(--space-sm);
 }
+.energy-print-row { margin-bottom: var(--space); }
+.energy-print-head { font-weight: 700; color: var(--c-highlight); margin-bottom: 4px; }
+.energy-print-text { color: var(--text-light); white-space: pre-wrap; }
 
 /* ===== מחווני בוקר/ערב ===== */
 .period-pills {
@@ -964,6 +967,18 @@ select.field-input:focus {
 .energy-entry-label { font-weight: 600; }
 .energy-entry-time { color: var(--text-submuted); font-size: 0.9rem; }
 .energy-entry-text-view { color: var(--text-light); white-space: pre-wrap; }
+.energy-manual-form {
+  background: var(--c-panel);
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius-sm);
+  padding: var(--space);
+  margin-bottom: var(--space);
+}
+.energy-manual-form .panel-title { font-size: 1.1rem; margin: 0 0 var(--space-sm); }
+.energy-manual-fields { display: flex; gap: var(--space); flex-wrap: wrap; margin: var(--space-sm) 0; }
+.energy-manual-field { display: flex; flex-direction: column; gap: 4px; }
+.energy-manual-field .field-input { width: auto; }
+.energy-manual-actions { display: flex; gap: var(--space-sm); }
 
 /* ===== משפטי שפע ===== */
 .quotes-grid { display: flex; flex-direction: column; gap: var(--space-sm); }
