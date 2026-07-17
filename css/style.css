@@ -591,6 +591,21 @@ body {
 
 .day-body { display: flex; flex-direction: column; gap: var(--space); }
 
+.export-section-title {
+  font-size: 1.4rem;
+  color: var(--text-light);
+  border-bottom: 3px solid var(--c-highlight);
+  padding-bottom: 8px;
+  margin: var(--space-lg) 0 var(--space);
+}
+.export-entry-title {
+  font-size: 1.1rem;
+  color: var(--c-highlight);
+  border-bottom: 1px solid var(--c-border);
+  padding-bottom: 6px;
+  margin: var(--space) 0 var(--space-sm);
+}
+
 /* ===== מחווני בוקר/ערב ===== */
 .period-pills {
   display: flex;
@@ -918,6 +933,7 @@ select.field-input:focus {
   margin: var(--space) 0;
 }
 .energy-filter-group { display: flex; gap: 6px; flex-wrap: wrap; }
+.energy-filter-all-btn { margin-inline-end: 10px; }
 .energy-filter-btn {
   display: flex;
   align-items: center;

@@ -20,4 +20,6 @@ document.addEventListener("DOMContentLoaded", () => {
     }
     e.target.value = "";
   });
+
+  document.getElementById("export-all-btn").addEventListener("click", exportAllToPDF);
 });

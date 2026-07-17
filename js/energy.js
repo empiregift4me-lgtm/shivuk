@@ -71,6 +71,20 @@ function renderEnergyView(container) {
   const filterGroup = el("div", { class: "energy-filter-group" });
   const allLog = loadEnergyLog();
 
+  // כפתור "הכול" - מציג שוב את התצוגה המלאה, בצד ימין (ראשון) עם מרווח קטן יותר מיתר הסינונים
+  const allBtn = el("button", {
+    type: "button",
+    class: "energy-filter-btn energy-filter-all-btn" + (energyFilter.size === 0 ? " is-active" : ""),
+    title: "הצגת הכול"
+  });
+  allBtn.appendChild(el("span", { class: "energy-filter-emoji", text: "↺" }));
+  allBtn.appendChild(el("span", { class: "energy-filter-count", text: "הכול" }));
+  allBtn.addEventListener("click", () => {
+    energyFilter.clear();
+    renderEnergyView(container);
+  });
+  filterGroup.appendChild(allBtn);
+
   ENERGY_TYPES.forEach((typeDef) => {
     const count = allLog.filter((e) => e.type === typeDef.key).length;
     const btn = el("button", {

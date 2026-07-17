@@ -60,3 +60,46 @@ function exportElementToPDF(root, filename, hideSelector, onDone) {
 function exportDayToPDF(dayCardRoot, date) {
   exportElementToPDF(dayCardRoot, `יומן-${date}`, ".day-actions");
 }
+
+// ייצוא מרוכז - כל הסיכומים השמורים וכל רשומות היומן השמורות, למסמך PDF אחד עם חלוקה פנימית בין שני הארכיונים
+function exportAllToPDF() {
+  const printRoot = el("div", { class: "day-card summary-print-root" });
+  printRoot.appendChild(el("div", { class: "day-header" }, [el("div", { class: "day-date", text: `ייצוא מלא - ${formatDateHe(todayISO())}` })]));
+
+  printRoot.appendChild(el("h2", { class: "export-section-title", text: "📝 סיכומים" }));
+  const summaries = loadSummaries()
+    .slice()
+    .sort((a, b) => (a.sessionDate || "").localeCompare(b.sessionDate || ""));
+  if (summaries.length === 0) {
+    printRoot.appendChild(el("p", { text: "אין סיכומים שמורים." }));
+  } else {
+    summaries.forEach((item) => {
+      printRoot.appendChild(
+        el("h3", { class: "export-entry-title", text: item.sessionDate ? formatDateHe(item.sessionDate) : formatTimestamp(item.createdAt) })
+      );
+      const body = el("div", { class: "summary-topics-wrap" });
+      buildTopicsEditor(body, normalizeSummaryTopics(item.topics), () => {}, { readOnly: true });
+      printRoot.appendChild(body);
+    });
+  }
+
+  printRoot.appendChild(el("h2", { class: "export-section-title", text: "📔 יומן הערכה" }));
+  const entries = allEntriesSorted("asc").filter((e) => e.saved);
+  if (entries.length === 0) {
+    printRoot.appendChild(el("p", { text: "אין רשומות יומן שמורות." }));
+  } else {
+    entries.forEach((entry) => {
+      printRoot.appendChild(el("h3", { class: "export-entry-title", text: `${formatDateHe(entry.date)} · ${PERIOD_LABELS[entry.period]}` }));
+      const body = el("div", { class: "day-body" });
+      renderExerciseBlocks(entry, body, true, []);
+      printRoot.appendChild(body);
+    });
+  }
+
+  printRoot.style.position = "fixed";
+  printRoot.style.left = "-9999px";
+  printRoot.style.top = "0";
+  printRoot.style.width = "700px";
+  document.body.appendChild(printRoot);
+  exportElementToPDF(printRoot, `יצוא-מלא-${todayISO()}`, null, () => printRoot.remove());
+}
