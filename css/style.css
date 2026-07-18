@@ -769,7 +769,7 @@ select.field-input:focus {
 .field-textarea { resize: vertical; min-height: 60px; }
 
 /* מחליף זמנית textarea בזמן צילום PDF (html2canvas לא מצייר נכון טקסט רב-שורתי בתוך textarea) */
-.pdf-textarea-substitute { white-space: pre-wrap; word-wrap: break-word; overflow-wrap: break-word; }
+.pdf-textarea-line { word-wrap: break-word; overflow-wrap: break-word; }
 
 .line-input { margin-bottom: var(--space-sm); }
 .line-input:last-child { margin-bottom: 0; }

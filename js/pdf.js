@@ -18,17 +18,24 @@ function swapSpacesForCapture(root) {
 
 // html2canvas לא יודע לצלם נכון תוכן של <textarea> (במיוחד עם ירידות שורה) - זה מה שגרם לטקסט
 // חופשי רב-שורתי לצאת כשורה אחת דחוסה ולא קריאה ב-PDF. הפתרון: לפני הצילום, מחליפים כל textarea
-// שנמצא בתוך root ב-div רגיל עם אותו טקסט (עם white-space: pre-wrap כדי לשמור על ירידות השורה),
-// ומחזירים את ה-textarea המקורי בחזרה מיד אחרי הצילום.
+// שנמצא בתוך root ב-div שמכיל בתוכו div נפרד לכל שורה (פיצול לפי ירידת שורה בפועל), ומחזירים
+// את ה-textarea המקורי בחזרה מיד אחרי הצילום.
+// חשוב: לא להשתמש כאן ב-white-space: pre-wrap על גוש טקסט אחד - זה גורם ל-html2canvas לעבור
+// למצב רינדור "גולמי" שלא מיישם נכון כיווניות (bidi) כשיש בתוך המשפט העברי מספרים/אותיות
+// לועזיות (למשל שעות כמו "00:10"). לכן כל שורה היא div נפרד עם white-space רגיל (default),
+// שגם גולש כרגיל בתוך רוחב התיבה אם השורה ארוכה מדי (בדיוק כמו textarea אמיתי).
 function swapTextareasForCapture(root) {
   const textareas = Array.from(root.querySelectorAll("textarea"));
   const replacements = textareas.map((ta) => {
     const rect = ta.getBoundingClientRect();
-    const div = el("div", { class: "field-textarea pdf-textarea-substitute", text: ta.value });
-    div.style.width = rect.width + "px";
-    div.style.minHeight = rect.height + "px";
-    ta.replaceWith(div);
-    return { ta, div };
+    const container = el("div", { class: "field-textarea pdf-textarea-substitute" });
+    container.style.width = rect.width + "px";
+    container.style.minHeight = rect.height + "px";
+    ta.value.split("\n").forEach((line) => {
+      container.appendChild(el("div", { class: "pdf-textarea-line", text: line || " " }));
+    });
+    ta.replaceWith(container);
+    return { ta, div: container };
   });
   return () => replacements.forEach(({ ta, div }) => div.replaceWith(ta));
 }
