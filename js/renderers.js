@@ -21,6 +21,10 @@ function pickRandom(bank, count) {
   return idx.slice(0, count);
 }
 
+// היחס המקסימלי מגובה המסך שבו מרשים לשורת ההקלדה האחרונה להגיע - כדי שהיא לא תידבק ממש
+// לקצה התחתון של המסך (שזו התנהגות ברירת המחדל של הדפדפן כשתיבת טקסט גדלה תוך כדי הקלדה)
+const AUTO_TEXTAREA_MAX_BOTTOM_RATIO = 0.6;
+
 function makeAutoTextarea(value, placeholder, rows, readOnly) {
   const ta = el("textarea", { class: "field-textarea", rows: String(rows), placeholder: placeholder || "" });
   ta.value = value || "";
@@ -28,6 +32,13 @@ function makeAutoTextarea(value, placeholder, rows, readOnly) {
   ta.addEventListener("input", () => {
     ta.style.height = "auto";
     ta.style.height = ta.scrollHeight + "px";
+    // גוברים על גלילת ברירת המחדל של הדפדפן (שדוחפת את שורת הסמן ממש לקצה התחתון) - במקום זה
+    // משאירים תמיד מרווח נשימה מתחת לשורה הנוכחית
+    const bottomLimit = window.innerHeight * AUTO_TEXTAREA_MAX_BOTTOM_RATIO;
+    const rect = ta.getBoundingClientRect();
+    if (rect.bottom > bottomLimit) {
+      window.scrollBy(0, rect.bottom - bottomLimit);
+    }
   });
   return ta;
 }

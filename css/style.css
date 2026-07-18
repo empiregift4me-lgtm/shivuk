@@ -95,6 +95,9 @@ body {
   position: relative;
 }
 
+/* מרווח נשימה בתחתית העמוד, כדי שתמיד אפשר לגלול מעבר לסוף התוכן */
+.site-main { padding-bottom: 20vh; }
+
 /* ===== סרגל עליון + תפריט צד ===== */
 .top-bar {
   display: flex;
