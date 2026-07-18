@@ -95,7 +95,8 @@ function showAffirmationSplash(sentence) {
     el("div", { class: "affirmation-glow" }),
     ...particles,
     closeBtn,
-    el("p", { class: "affirmation-text", text: sentence })
+    el("p", { class: "affirmation-text", text: sentence }),
+    el("input", { type: "text", class: "affirmation-input", autocomplete: "off" })
   ]);
   overlay.appendChild(card);
   document.body.appendChild(overlay);
