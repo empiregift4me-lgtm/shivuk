@@ -3,6 +3,9 @@
 // פרק הזמן (בוקר/ערב) שמוצג כרגע בלשונית "יומן" - כדי שתפריט התרגילים תמיד יוסיף בדיוק לשם
 let activeJournalPeriod = null;
 
+// היום שמוצג כרגע בלשונית "יומן" - מאפשר לדפדף אחורה ולהשלים יומן חסר (למשל אם ממלאים אחרי חצות)
+let journalViewDate = todayISO();
+
 function currentActivePeriod(date) {
   const status = dayStatus(date);
   if (!status.morning || !status.morning.saved) return "morning";
@@ -12,18 +15,40 @@ function currentActivePeriod(date) {
 
 function renderJournalTab(container) {
   container.innerHTML = "";
-  const date = todayISO();
+  const date = journalViewDate;
+  const isToday = date === todayISO();
   const wrap = el("div", { class: "day-card" });
 
   const header = el("div", { class: "day-header" });
-  header.appendChild(el("div", { class: "day-date", text: formatDateHe(date) }));
+  header.appendChild(el("div", { class: "day-date", text: isToday ? `היום, ${formatDateHe(date)}` : formatDateHe(date) }));
   const streakNote = el("div", { class: "streak-note" });
   header.appendChild(streakNote);
   wrap.appendChild(header);
 
+  // ---- ניווט בין ימים - כדי לאפשר להשלים יומן חסר של יום קודם ----
+  const dateNavRow = el("div", { class: "task-date-nav" });
+  const prevDayBtn = el("button", { type: "button", class: "util-btn", text: "◀", title: "יום הבא" });
+  const nextDayBtn = el("button", { type: "button", class: "util-btn", text: "▶", title: "יום קודם" });
+  const todayBtn = el("button", { type: "button", class: "btn btn-ghost btn-small", text: "היום" });
+  dateNavRow.appendChild(nextDayBtn);
+  dateNavRow.appendChild(todayBtn);
+  dateNavRow.appendChild(prevDayBtn);
+  wrap.appendChild(dateNavRow);
+
+  function goToDate(dateISO) {
+    journalViewDate = dateISO;
+    renderJournalTab(container);
+  }
+  // הכפתורים נשארים באותו מיקום/צורה כמו בניהול משימות - "יום הבא" מהצד השמאלי (◀) ו"יום קודם" מהצד הימני (▶)
+  prevDayBtn.addEventListener("click", () => goToDate(addDaysISO(date, 1)));
+  nextDayBtn.addEventListener("click", () => goToDate(addDaysISO(date, -1)));
+  todayBtn.addEventListener("click", () => goToDate(todayISO()));
+
   function renderStreak() {
     const streakN = computeJournalStreak();
-    streakNote.textContent = streakN > 0 ? `✍️ ${formatStreakLabel(streakN)} ברצף שאת כותבת` : "היום זה מתחיל 🌱";
+    streakNote.textContent = isToday
+      ? (streakN > 0 ? `✍️ ${formatStreakLabel(streakN)} ברצף שאת כותבת` : "היום זה מתחיל 🌱")
+      : "";
   }
 
   const pillsRow = el("div", { class: "period-pills" });
@@ -65,7 +90,12 @@ function renderJournalTab(container) {
     editorHost.innerHTML = "";
     if (editorInstance && editorInstance.destroy) editorInstance.destroy();
     if (!activePeriod) {
-      editorHost.appendChild(el("div", { class: "empty-state", text: "שני היומנים של היום נשמרו. מתראים מחר 🎉" }));
+      editorHost.appendChild(
+        el("div", {
+          class: "empty-state",
+          text: isToday ? "שני היומנים של היום נשמרו. מתראים מחר 🎉" : "שני היומנים של היום הזה כבר נשמרו."
+        })
+      );
       return;
     }
     editorInstance = buildDraftEditor(date, activePeriod, () => {
@@ -221,7 +251,7 @@ function buildExercisesMenu(nav, exBtn) {
 
   function openMenu() {
     dropdown.innerHTML = "";
-    const date = todayISO();
+    const date = journalViewDate;
     PERIODS.forEach((p) => {
       dropdown.appendChild(el("div", { class: "dropdown-section-label", text: PERIOD_LABELS[p] }));
       EXERCISES.filter((e) => e.period === p).forEach((ex) => {
