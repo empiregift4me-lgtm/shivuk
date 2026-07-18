@@ -23,7 +23,7 @@ function pickRandom(bank, count) {
 
 // היחס המקסימלי מגובה המסך שבו מרשים לשורת ההקלדה האחרונה להגיע - כדי שהיא לא תידבק ממש
 // לקצה התחתון של המסך (שזו התנהגות ברירת המחדל של הדפדפן כשתיבת טקסט גדלה תוך כדי הקלדה)
-const AUTO_TEXTAREA_MAX_BOTTOM_RATIO = 0.6;
+const AUTO_TEXTAREA_MAX_BOTTOM_RATIO = 0.72;
 
 function makeAutoTextarea(value, placeholder, rows, readOnly) {
   const ta = el("textarea", { class: "field-textarea", rows: String(rows), placeholder: placeholder || "" });

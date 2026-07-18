@@ -16,6 +16,23 @@ function swapSpacesForCapture(root) {
   return () => originals.forEach(({ node, value }) => (node.nodeValue = value));
 }
 
+// html2canvas לא יודע לצלם נכון תוכן של <textarea> (במיוחד עם ירידות שורה) - זה מה שגרם לטקסט
+// חופשי רב-שורתי לצאת כשורה אחת דחוסה ולא קריאה ב-PDF. הפתרון: לפני הצילום, מחליפים כל textarea
+// שנמצא בתוך root ב-div רגיל עם אותו טקסט (עם white-space: pre-wrap כדי לשמור על ירידות השורה),
+// ומחזירים את ה-textarea המקורי בחזרה מיד אחרי הצילום.
+function swapTextareasForCapture(root) {
+  const textareas = Array.from(root.querySelectorAll("textarea"));
+  const replacements = textareas.map((ta) => {
+    const rect = ta.getBoundingClientRect();
+    const div = el("div", { class: "field-textarea pdf-textarea-substitute", text: ta.value });
+    div.style.width = rect.width + "px";
+    div.style.minHeight = rect.height + "px";
+    ta.replaceWith(div);
+    return { ta, div };
+  });
+  return () => replacements.forEach(({ ta, div }) => div.replaceWith(ta));
+}
+
 // מכניסה אלמנט "בלתי נראה" לעמוד לצורך צילום PDF, בלי להזיז אותו למיקום שלילי רחוק (שגורם ל-html2canvas
 // לפעמים לצלם עמוד ריק) - עוטפים אותו בתיבה 0x0 עם overflow:hidden במקום, כך שהאלמנט עצמו יושב במיקום
 // "רגיל" (0,0) בזרימת המסמך וניתן למדידה תקינה, אבל לא נראה למשתמשת ולא תופס מקום
@@ -59,6 +76,7 @@ function exportElementToPDF(root, filename, hideSelector, onDone) {
   const ready = document.fonts && document.fonts.ready ? document.fonts.ready : Promise.resolve();
 
   ready.then(() => {
+    const restoreTextareas = swapTextareasForCapture(root);
     const restoreSpaces = swapSpacesForCapture(root);
     html2pdf()
       .set(opt)
@@ -66,11 +84,13 @@ function exportElementToPDF(root, filename, hideSelector, onDone) {
       .save()
       .then(() => {
         restoreSpaces();
+        restoreTextareas();
         restoreUI();
       })
       .catch((err) => {
         console.error("PDF export failed", err);
         restoreSpaces();
+        restoreTextareas();
         restoreUI();
       });
   });
@@ -97,6 +117,7 @@ function exportElementToPDFBlob(root, hideSelector) {
   const ready = document.fonts && document.fonts.ready ? document.fonts.ready : Promise.resolve();
 
   return ready.then(() => {
+    const restoreTextareas = swapTextareasForCapture(root);
     const restoreSpaces = swapSpacesForCapture(root);
     return html2pdf()
       .set(opt)
@@ -104,11 +125,13 @@ function exportElementToPDFBlob(root, hideSelector) {
       .outputPdf("blob")
       .then((blob) => {
         restoreSpaces();
+        restoreTextareas();
         restoreUI();
         return blob;
       })
       .catch((err) => {
         restoreSpaces();
+        restoreTextareas();
         restoreUI();
         throw err;
       });
