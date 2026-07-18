@@ -269,17 +269,18 @@ body {
   position: relative;
   z-index: 2;
   display: block;
-  width: min(420px, 80%);
+  width: min(640px, 92%);
   margin: var(--space-lg) auto 0;
-  padding: 10px 4px;
-  background: transparent;
-  border: none;
-  border-bottom: 2px solid rgba(255, 255, 255, 0.5);
+  padding: 10px 14px;
+  background: var(--c-field);
+  border: 1.5px solid var(--c-border);
+  border-radius: var(--radius-sm);
   color: var(--text-light);
-  font-size: 1.1rem;
-  text-align: center;
+  font-family: "Rubik", sans-serif;
+  font-size: 13px;
+  text-align: right;
 }
-.affirmation-input:focus { outline: none; border-bottom-color: var(--c-highlight); }
+.affirmation-input:focus { outline: none; border-color: var(--c-highlight); box-shadow: 0 0 0 3px rgba(224, 177, 203, 0.2); }
 
 .affirmation-close {
   position: absolute;
