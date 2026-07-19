@@ -154,9 +154,10 @@ function createRichToolbar(editableEl) {
     document.execCommand(cmd, false, value);
   }
 
-  // Ctrl+D כקיצור מקלדת לצביעת טקסט - אותה פעולה כמו כפתור 🖍
+  // Ctrl+Shift+D כקיצור מקלדת לצביעת טקסט - אותה פעולה כמו כפתור 🖍
+  // (לא Ctrl+D בלבד - זה מתנגש עם קיצור עריכת סימניה בדפדפן)
   editableEl.addEventListener("keydown", (e) => {
-    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "d") {
+    if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === "d") {
       e.preventDefault();
       exec("hiliteColor", "#e0b1cb");
     }
@@ -166,7 +167,7 @@ function createRichToolbar(editableEl) {
     richTextButton("B", "מודגש", () => exec("bold")),
     richTextButton("I", "נטוי", () => exec("italic")),
     richTextButton("U", "קו תחתון", () => exec("underline")),
-    richTextButton("🖍 (Ctrl+D)", "צביעת טקסט", () => exec("hiliteColor", "#e0b1cb")),
+    richTextButton("🖍", "צביעת טקסט (Ctrl+Shift+D)", () => exec("hiliteColor", "#e0b1cb")),
     richTextButton("• רשימה", "רשימת בולטים", () => exec("insertUnorderedList")),
     richTextButton("1. רשימה", "רשימה ממוספרת", () => exec("insertOrderedList")),
     richTextButton("☑ רשימה", "הוספת וי לתחילת השורה/השורות הנבחרות", () => toggleChecklistOnSelection(editableEl)),
