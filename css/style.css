@@ -1506,6 +1506,24 @@ select.field-input:focus {
   outline: none;
 }
 
+/* ===== "הגנה" - הודעות מוסתרות בתיעוד רגשי ===== */
+.chat-protect-btn.is-active { background: var(--c-highlight); color: #231942; border-color: var(--c-highlight); }
+.chat-bubble-protected { border: 1px dashed var(--c-border); background: var(--c-field); }
+.protected-box { display: flex; flex-direction: column; gap: 8px; }
+.protected-label { font-weight: 700; color: var(--c-highlight); }
+.protected-topic-input { font-size: 0.95rem; }
+.protected-unlock-btn {
+  align-self: flex-start;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-size: 1.3rem;
+  padding: 2px;
+}
+.protected-unlock-row { display: flex; gap: 6px; align-items: center; }
+.protected-unlock-input { flex: 1 1 auto; }
+.protected-unlock-error { color: #e0708a; font-size: 0.85rem; }
+
 /* ===== חגיגת שמירה ===== */
 .confetti-layer {
   position: fixed;
