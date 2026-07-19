@@ -109,7 +109,12 @@ function savePrefs(prefs) {
 
 function loadSummaries() {
   try {
-    return JSON.parse(localStorage.getItem(STORE_KEYS.summaries)) || [];
+    const list = JSON.parse(localStorage.getItem(STORE_KEYS.summaries)) || [];
+    // תאימות לאחור: סיכומים ישנים ששמרו "עם מי" בשדה withName - עוברים לשדה topic החדש
+    list.forEach((item) => {
+      if (item.topic === undefined && item.withName !== undefined) item.topic = item.withName;
+    });
+    return list;
   } catch (e) {
     return [];
   }

@@ -309,13 +309,13 @@ function renderSummaryWriteTab(content) {
   const topRow = el("div", { class: "summary-top-row" });
   const addTopicBtn = el("button", { type: "button", class: "btn btn-primary btn-small summary-add-topic-btn", text: "+ נושא חדש" });
   topRow.appendChild(addTopicBtn);
-  const withNameInput = el("input", {
+  const topicInput = el("input", {
     type: "text",
-    class: "field-input session-withname-input",
-    placeholder: "עם מי? (שם הלקוחה/חברה)"
+    class: "field-input session-topic-input",
+    placeholder: "הנושא העיקרי של הפגישה הוא...."
   });
-  withNameInput.value = draft.withName || "";
-  topRow.appendChild(withNameInput);
+  topicInput.value = draft.topic || "";
+  topRow.appendChild(topicInput);
   const dateRow = el("div", { class: "session-date-row" });
   dateRow.appendChild(el("label", { class: "session-date-label", text: "תאריך הפגישה:" }));
   const dateInput = el("input", { type: "date", class: "field-input session-date-input" });
@@ -325,7 +325,7 @@ function renderSummaryWriteTab(content) {
   wrap.appendChild(topRow);
 
   function persistDraft() {
-    saveSummaryDraft({ topics, sessionDate: dateInput.value || todayISO(), withName: withNameInput.value });
+    saveSummaryDraft({ topics, sessionDate: dateInput.value || todayISO(), topic: topicInput.value });
     draftStatus.textContent = "✓ טיוטה נשמרה אוטומטית";
   }
 
@@ -341,7 +341,7 @@ function renderSummaryWriteTab(content) {
 
   wrap.appendChild(draftStatus);
   dateInput.addEventListener("change", persistDraft);
-  withNameInput.addEventListener("input", persistDraft);
+  topicInput.addEventListener("input", persistDraft);
 
   wrap.appendChild(
     el("button", {
@@ -361,14 +361,14 @@ function renderSummaryWriteTab(content) {
           id: "sum_" + Date.now(),
           topics,
           sessionDate: dateInput.value || todayISO(),
-          withName: withNameInput.value.trim(),
+          topic: topicInput.value.trim(),
           paid: false,
           createdAt: Date.now(),
           updatedAt: Date.now()
         };
         list.push(newItem);
         saveSummaries(list);
-        saveSummaryDraft({ topics: [], sessionDate: todayISO(), withName: "" });
+        saveSummaryDraft({ topics: [], sessionDate: todayISO(), topic: "" });
         celebrateSave();
         renderSummaryWriteTab(content);
         driveUploadSummaryPDF(newItem, () => persistSummaryItem(newItem));
@@ -410,8 +410,8 @@ function renderSummaryArchiveTab(content, goToWriteTab) {
   }
 
   list.forEach((item) => {
-    const toggleBtn = el("button", { class: "archive-item-toggle", type: "button" }, [
-      item.withName ? el("span", { class: "archive-with-name", text: `עם ${item.withName}` }) : null,
+    const toggleBtn = el("button", { class: "archive-item-toggle summary-archive-toggle", type: "button" }, [
+      el("span", { class: "archive-topic-badge", text: item.topic || "" }),
       el("span", { class: "archive-date", text: item.sessionDate ? formatDateHe(item.sessionDate) : formatTimestamp(item.createdAt) }),
       el("span", { class: "paid-badge" + (item.paid ? " is-paid" : ""), text: item.paid ? "💰 שולם" : "לא שולם" }),
       el("span", { class: "archive-chevron", text: "︿" })
@@ -477,20 +477,20 @@ function renderSummaryArchiveTab(content, goToWriteTab) {
       if (editing) {
         if (item.topics.length === 0) item.topics.push(newSummaryTopic());
         body.appendChild(buildEditToggle("סיום עריכה ✓"));
-        const withNameEditRow = el("div", { class: "session-date-row" });
-        withNameEditRow.appendChild(el("label", { class: "session-date-label", text: "עם מי:" }));
-        const withNameEditInput = el("input", {
+        const topicEditRow = el("div", { class: "session-date-row" });
+        topicEditRow.appendChild(el("label", { class: "session-date-label", text: "נושא הפגישה:" }));
+        const topicEditInput = el("input", {
           type: "text",
-          class: "field-input session-withname-input",
-          placeholder: "שם הלקוחה/חברה"
+          class: "field-input session-topic-input",
+          placeholder: "הנושא העיקרי של הפגישה הוא...."
         });
-        withNameEditInput.value = item.withName || "";
-        withNameEditInput.addEventListener("input", () => {
-          item.withName = withNameEditInput.value.trim();
+        topicEditInput.value = item.topic || "";
+        topicEditInput.addEventListener("input", () => {
+          item.topic = topicEditInput.value.trim();
           persistItem();
         });
-        withNameEditRow.appendChild(withNameEditInput);
-        body.appendChild(withNameEditRow);
+        topicEditRow.appendChild(topicEditInput);
+        body.appendChild(topicEditRow);
         const editorRoot = el("div", { class: "summary-topics-wrap" });
         body.appendChild(editorRoot);
         buildTopicsEditor(
@@ -627,15 +627,14 @@ function renderPaymentsTab(content) {
   content.appendChild(wrap);
 }
 
-function summaryTitleText(item) {
-  return item.withName && item.withName.trim() ? `סיכום שיחה עם ${item.withName.trim()}` : "סיכום שיחה";
-}
+const SUMMARY_FIXED_TITLE = "סיכום פגישה עם ציפי";
 
 function buildSummaryPrintRoot(item) {
   const printRoot = el("div", { class: "day-card summary-print-root" });
   const header = el("div", { class: "day-header" });
   const titleCol = el("div", {}, [
-    el("div", { class: "day-date", text: summaryTitleText(item) }),
+    el("div", { class: "day-date", text: SUMMARY_FIXED_TITLE }),
+    item.topic && item.topic.trim() ? el("div", { class: "streak-note", text: item.topic.trim() }) : null,
     el("div", { class: "streak-note", text: item.sessionDate ? formatDateHe(item.sessionDate) : formatTimestamp(item.createdAt) })
   ]);
   header.appendChild(titleCol);
@@ -648,8 +647,8 @@ function buildSummaryPrintRoot(item) {
 }
 
 function summaryPdfFilename(item) {
-  const namePart = item.withName && item.withName.trim() ? `-${item.withName.trim().replace(/\s+/g, "-")}` : "";
-  return `סיכום${namePart}-${item.sessionDate || todayISO()}`;
+  const topicPart = item.topic && item.topic.trim() ? `-${item.topic.trim().replace(/\s+/g, "-")}` : "";
+  return `סיכום${topicPart}-${item.sessionDate || todayISO()}`;
 }
 
 function exportSummaryToPDF(item) {

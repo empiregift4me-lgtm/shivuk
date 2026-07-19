@@ -1151,7 +1151,16 @@ select.field-input:focus {
 }
 .archive-item-toggle:hover { background: var(--c-field); }
 .archive-date { font-weight: 600; }
-.archive-with-name { font-weight: 600; color: var(--c-highlight); }
+/* שורות הארכיון בסיכומים - עמודות ברוחב קבוע כדי שהתאריך תמיד יעמוד באותו מקום,
+   בין אם יש טקסט נושא ובין אם לא (ולא זז בהתאם לאורך הטקסט כמו ב-flex רגיל) */
+.summary-archive-toggle { display: grid; grid-template-columns: minmax(0, 1fr) 210px 92px 22px; gap: var(--space); }
+.archive-topic-badge {
+  font-weight: 600;
+  color: var(--c-highlight);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 .archive-count { color: var(--text-submuted); font-size: 0.9rem; margin-inline-start: auto; }
 .archive-chevron { color: var(--c-highlight); }
 .archive-delete {
