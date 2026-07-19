@@ -14,24 +14,21 @@ function initChatView(container, listKey, draftKey, options) {
   const toolbar = createRichToolbar(editable);
   const sendBtn = el("button", { class: "btn btn-primary", type: "button", text: "שליחה (או Ctrl+Enter)" });
 
-  // מצב "הגנה" - כשפעיל, ההודעה הבאה שנשלחת נשמרת כרגיל אבל מוצגת מוסתרת בפיד עד הזנת סיסמת היומן
-  let protectMode = false;
-  const topRow = el("div", { class: "chat-compose-top-row" });
+  // כפתור "הגנה" יושב בתוך סרגל הכלים עצמו (כמו שאר כפתורי העיצוב), בצד ימין - לחיצה עליו
+  // גם מסמנת את ההודעה כמוגנת וגם שולחת אותה במכה אחת
   if (protectable) {
     const protectBtn = el("button", {
       type: "button",
-      class: "btn btn-secondary btn-small chat-protect-btn",
+      class: "rt-btn chat-protect-btn",
       text: "הגנה🔐",
-      title: "ההודעה הבאה שתישלח תוצג מוסתרת עד הזנת סיסמת היומן",
-      onclick: () => {
-        protectMode = !protectMode;
-        protectBtn.classList.toggle("is-active", protectMode);
-      }
+      title: "שליחת ההודעה כשמוצגת מוסתרת עד הזנת סיסמת היומן"
     });
-    topRow.appendChild(protectBtn);
+    protectBtn.addEventListener("mousedown", (e) => e.preventDefault());
+    protectBtn.addEventListener("click", () => sendMessage(true));
+    toolbar.prepend(protectBtn);
   }
-  topRow.appendChild(toolbar);
-  composeArea.appendChild(topRow);
+
+  composeArea.appendChild(toolbar);
   composeArea.appendChild(editable);
   composeArea.appendChild(sendBtn);
   wrap.appendChild(composeArea);
@@ -229,12 +226,12 @@ function initChatView(container, listKey, draftKey, options) {
     feed.scrollTop = feed.scrollHeight;
   }
 
-  function sendMessage() {
+  function sendMessage(protect) {
     const html = editable.innerHTML.trim();
     if (!html || html === "<br>") return;
     const list = loadChatList(listKey);
     const msg = { id: "msg_" + Date.now(), html, createdAt: Date.now() };
-    if (protectable && protectMode) {
+    if (protectable && protect) {
       msg.protected = true;
       msg.topic = "";
     }
@@ -246,11 +243,11 @@ function initChatView(container, listKey, draftKey, options) {
     renderFeed();
   }
 
-  sendBtn.addEventListener("click", sendMessage);
+  sendBtn.addEventListener("click", () => sendMessage(false));
   editable.addEventListener("keydown", (e) => {
     if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
       e.preventDefault();
-      sendMessage();
+      sendMessage(false);
     }
   });
   const persistDraft = debounce(() => saveChatDraft(draftKey, editable.innerHTML), 400);

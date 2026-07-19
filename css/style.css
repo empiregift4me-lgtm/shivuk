@@ -1494,9 +1494,6 @@ select.field-input:focus {
   flex-direction: column;
   gap: var(--space-sm);
 }
-.chat-compose-top-row { display: flex; align-items: flex-start; gap: var(--space-sm); }
-.chat-compose-top-row .rt-toolbar { flex: 1 1 auto; }
-.chat-protect-btn { flex: 0 0 auto; white-space: nowrap; }
 .chat-editable {
   min-height: 90px;
   background: #fdfbff;
@@ -1510,7 +1507,6 @@ select.field-input:focus {
 }
 
 /* ===== "הגנה" - הודעות מוסתרות בתיעוד רגשי ===== */
-.chat-protect-btn.is-active { background: var(--c-highlight); color: #231942; border-color: var(--c-highlight); }
 .chat-bubble-protected { border: 1px dashed var(--c-border); background: var(--c-field); }
 .protected-box { display: flex; flex-direction: column; gap: 8px; }
 .protected-label { font-weight: 700; color: var(--c-highlight); }
