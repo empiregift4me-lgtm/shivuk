@@ -411,11 +411,39 @@ function renderSummaryArchiveTab(content, goToWriteTab) {
 
   list.forEach((item) => {
     const toggleBtn = el("button", { class: "archive-item-toggle summary-archive-toggle", type: "button" }, [
-      el("span", { class: "archive-topic-badge", text: item.topic || "" }),
       el("span", { class: "archive-date", text: item.sessionDate ? formatDateHe(item.sessionDate) : formatTimestamp(item.createdAt) }),
       el("span", { class: "paid-badge" + (item.paid ? " is-paid" : ""), text: item.paid ? "💰 שולם" : "לא שולם" }),
       el("span", { class: "archive-chevron", text: "︿" })
     ]);
+
+    // שדה נושא ניתן לעריכה ישירות משורת הארכיון עצמה, בלי צורך להיכנס ל"עריכה ושינוי" -
+    // לחיצה בתוך השדה כותבים, ולחיצה על ✓ שומרת מיד
+    const topicInput = el("input", {
+      type: "text",
+      class: "field-input archive-topic-input",
+      placeholder: "הנושא העיקרי של הפגישה הוא...."
+    });
+    topicInput.value = item.topic || "";
+    function saveTopicInline() {
+      item.topic = topicInput.value.trim();
+      persistSummaryItem(item);
+    }
+    topicInput.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        saveTopicInline();
+        topicInput.blur();
+      }
+    });
+    const topicConfirmBtn = el("button", {
+      type: "button",
+      class: "archive-topic-confirm-btn",
+      title: "שמירת נושא הפגישה",
+      text: "✓",
+      onclick: saveTopicInline
+    });
+    const topicWrap = el("div", { class: "archive-topic-inline-wrap" }, [topicInput, topicConfirmBtn]);
+
     toggleBtn.querySelector(".paid-badge").addEventListener("click", (e) => {
       e.stopPropagation();
       const becamePaid = !item.paid;
@@ -443,7 +471,7 @@ function renderSummaryArchiveTab(content, goToWriteTab) {
         }
       }
     });
-    const head = el("div", { class: "archive-item-head" }, [toggleBtn, deleteBtn]);
+    const head = el("div", { class: "archive-item-head" }, [topicWrap, toggleBtn, deleteBtn]);
     const body = el("div", { class: "archive-item-body is-collapsed" });
     let built = false;
     let editing = false;
@@ -477,20 +505,6 @@ function renderSummaryArchiveTab(content, goToWriteTab) {
       if (editing) {
         if (item.topics.length === 0) item.topics.push(newSummaryTopic());
         body.appendChild(buildEditToggle("סיום עריכה ✓"));
-        const topicEditRow = el("div", { class: "session-date-row" });
-        topicEditRow.appendChild(el("label", { class: "session-date-label", text: "נושא הפגישה:" }));
-        const topicEditInput = el("input", {
-          type: "text",
-          class: "field-input session-topic-input",
-          placeholder: "הנושא העיקרי של הפגישה הוא...."
-        });
-        topicEditInput.value = item.topic || "";
-        topicEditInput.addEventListener("input", () => {
-          item.topic = topicEditInput.value.trim();
-          persistItem();
-        });
-        topicEditRow.appendChild(topicEditInput);
-        body.appendChild(topicEditRow);
         const editorRoot = el("div", { class: "summary-topics-wrap" });
         body.appendChild(editorRoot);
         buildTopicsEditor(

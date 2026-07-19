@@ -15,7 +15,7 @@ function getOrCreateDraft(date, period) {
 function addExerciseToDay(date, period, exerciseId) {
   const entry = getOrCreateDraft(date, period);
   if (!entry.exerciseIds.includes(exerciseId)) {
-    entry.exerciseIds.push(exerciseId);
+    entry.exerciseIds.unshift(exerciseId);
     upsertEntry(entry);
     document.dispatchEvent(new CustomEvent("entries-changed", { detail: { date, period } }));
   }

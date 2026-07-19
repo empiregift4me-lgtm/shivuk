@@ -1151,16 +1151,43 @@ select.field-input:focus {
 }
 .archive-item-toggle:hover { background: var(--c-field); }
 .archive-date { font-weight: 600; }
-/* שורות הארכיון בסיכומים - עמודות ברוחב קבוע כדי שהתאריך תמיד יעמוד באותו מקום,
-   בין אם יש טקסט נושא ובין אם לא (ולא זז בהתאם לאורך הטקסט כמו ב-flex רגיל) */
-.summary-archive-toggle { display: grid; grid-template-columns: minmax(0, 1fr) 210px 92px 22px; gap: var(--space); }
-.archive-topic-badge {
-  font-weight: 600;
-  color: var(--c-highlight);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+/* בסיכומים, שדה הנושא יצא מתוך archive-item-toggle לאלמנט נפרד לצידו - כך שהתאריך/תגית
+   התשלום/החץ תמיד נשארים בגודל קבוע (לא זזים בגלל אורך הטקסט של הנושא), ושדה הנושא
+   מקבל שורת הזנה ארוכה שמתחילה צמוד לקצה הימני של השורה */
+.summary-archive-toggle { flex: 0 0 auto; }
+.archive-topic-inline-wrap {
+  flex: 1 1 auto;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 var(--space);
+  min-width: 0;
 }
+.archive-topic-input {
+  flex: 1 1 auto;
+  min-width: 0;
+  background: transparent;
+  border: none;
+  color: var(--text-light);
+  font-weight: 600;
+  font-size: 1.05rem;
+  padding: 8px 4px;
+  outline: none;
+}
+.archive-topic-input::placeholder { color: var(--text-submuted); opacity: 0.75; font-weight: 400; }
+.archive-topic-input:focus { background: var(--c-field); border-radius: var(--radius-sm); }
+.archive-topic-confirm-btn {
+  flex: 0 0 auto;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 1px solid var(--c-border);
+  background: var(--c-muted-btn);
+  color: var(--text-light);
+  cursor: pointer;
+  font-size: 13px;
+}
+.archive-topic-confirm-btn:hover { filter: brightness(1.15); }
 .archive-count { color: var(--text-submuted); font-size: 0.9rem; margin-inline-start: auto; }
 .archive-chevron { color: var(--c-highlight); }
 .archive-delete {
