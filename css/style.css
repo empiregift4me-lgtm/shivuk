@@ -1154,7 +1154,7 @@ select.field-input:focus {
 /* בסיכומים, שדה הנושא יצא מתוך archive-item-toggle לאלמנט נפרד לצידו - כך שהתאריך/תגית
    התשלום/החץ תמיד נשארים בגודל קבוע (לא זזים בגלל אורך הטקסט של הנושא), ושדה הנושא
    מקבל שורת הזנה ארוכה שמתחילה צמוד לקצה הימני של השורה */
-.summary-archive-toggle { flex: 0 0 auto; }
+.summary-archive-toggle { flex: 0 0 auto; gap: 22px; }
 .archive-topic-inline-wrap {
   flex: 1 1 auto;
   display: flex;
@@ -1176,6 +1176,7 @@ select.field-input:focus {
 }
 .archive-topic-input::placeholder { color: var(--text-submuted); opacity: 0.75; font-weight: 400; }
 .archive-topic-input:focus { background: var(--c-field); border-radius: var(--radius-sm); }
+/* כפתור ה-✓ מוצג רק כשעורכים בפועל את שדה הנושא (פוקוס בתוכו), כדי לא לבלגן את התצוגה הרגילה */
 .archive-topic-confirm-btn {
   flex: 0 0 auto;
   width: 28px;
@@ -1186,7 +1187,11 @@ select.field-input:focus {
   color: var(--text-light);
   cursor: pointer;
   font-size: 13px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.15s ease;
 }
+.archive-topic-inline-wrap:focus-within .archive-topic-confirm-btn { opacity: 1; pointer-events: auto; }
 .archive-topic-confirm-btn:hover { filter: brightness(1.15); }
 .archive-count { color: var(--text-submuted); font-size: 0.9rem; margin-inline-start: auto; }
 .archive-chevron { color: var(--c-highlight); }
