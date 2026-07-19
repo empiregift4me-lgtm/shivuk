@@ -97,6 +97,7 @@ function attachPlainTextPaste(editableEl) {
 
 // צבע הדגשה עמוק מספיק שהטקסט הבהיר של האפליקציה נשאר קריא מעליו (בניגוד לוורוד הבהיר שדומה מדי לצבע הטקסט)
 const MINI_TOOLBAR_HIGHLIGHT_COLOR = "#5e548e";
+const MAIN_TOOLBAR_HIGHLIGHT_COLOR = "#e0b1cb";
 
 function colorsMatch(a, b) {
   if (!a || !b) return false;
@@ -114,20 +115,20 @@ function hexToRgbString(hex) {
 
 // queryCommandValue("hiliteColor") לא אמין (מחזיר מחרוזת ריקה בדפדפנים רבים), אז בודקים ישירות
 // את ה-DOM: אם תחילת הבחירה כבר יושבת בתוך אלמנט עם רקע בצבע שלנו, זה סימן שהיא מודגשת
-function isSelectionHighlighted(editableEl) {
+function isSelectionHighlighted(editableEl, color) {
   const sel = window.getSelection();
   if (!sel.rangeCount) return false;
   let node = sel.getRangeAt(0).startContainer;
   if (node.nodeType === 3) node = node.parentElement;
   if (!node || !editableEl.contains(node)) return false;
-  return colorsMatch(getComputedStyle(node).backgroundColor, hexToRgbString(MINI_TOOLBAR_HIGHLIGHT_COLOR));
+  return colorsMatch(getComputedStyle(node).backgroundColor, hexToRgbString(color));
 }
 
-// טוגל אמיתי להדגשה - אם הבחירה כבר מודגשת בצבע שלנו מסירים אותה, אחרת מוסיפים
-function toggleHighlight(editableEl) {
-  const isHighlighted = isSelectionHighlighted(editableEl);
+// טוגל אמיתי להדגשה - אם הבחירה כבר מודגשת באותו צבע מסירים אותה, אחרת מוסיפים
+function toggleHighlight(editableEl, color) {
+  const isHighlighted = isSelectionHighlighted(editableEl, color);
   editableEl.focus();
-  document.execCommand("hiliteColor", false, isHighlighted ? "transparent" : MINI_TOOLBAR_HIGHLIGHT_COLOR);
+  document.execCommand("hiliteColor", false, isHighlighted ? "transparent" : color);
 }
 
 // סרגל כלים מצומצם לתיבות כתיבה חופשית קטנות (רק מודגש/קו תחתון/צביעה) - למשל בתוך "עניינים" בסיכומים
@@ -140,7 +141,7 @@ function createMiniRichToolbar(editableEl) {
   return el("div", { class: "rt-toolbar rt-toolbar-mini" }, [
     richTextButton("B", "מודגש", () => exec("bold")),
     richTextButton("U", "קו תחתון", () => exec("underline")),
-    richTextButton("🖍", "צביעת טקסט (לחיצה נוספת על טקסט מודגש מסירה את ההדגשה)", () => toggleHighlight(editableEl))
+    richTextButton("🖍", "צביעת טקסט (לחיצה נוספת על טקסט מודגש מסירה את ההדגשה)", () => toggleHighlight(editableEl, MINI_TOOLBAR_HIGHLIGHT_COLOR))
   ]);
 }
 
@@ -154,12 +155,12 @@ function createRichToolbar(editableEl) {
     document.execCommand(cmd, false, value);
   }
 
-  // Ctrl+Shift+D כקיצור מקלדת לצביעת טקסט - אותה פעולה כמו כפתור 🖍
-  // (לא Ctrl+D בלבד - זה מתנגש עם קיצור עריכת סימניה בדפדפן)
+  // Ctrl+Shift+D כקיצור מקלדת לצביעת טקסט - אותה פעולה כמו כפתור 🖍, וגם טוגל: לחיצה נוספת
+  // על טקסט שכבר מודגש מסירה את ההדגשה (לא Ctrl+D בלבד - זה מתנגש עם קיצור עריכת סימניה בדפדפן)
   editableEl.addEventListener("keydown", (e) => {
     if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === "d") {
       e.preventDefault();
-      exec("hiliteColor", "#e0b1cb");
+      toggleHighlight(editableEl, MAIN_TOOLBAR_HIGHLIGHT_COLOR);
     }
   });
 
@@ -167,7 +168,7 @@ function createRichToolbar(editableEl) {
     richTextButton("B", "מודגש", () => exec("bold")),
     richTextButton("I", "נטוי", () => exec("italic")),
     richTextButton("U", "קו תחתון", () => exec("underline")),
-    richTextButton("🖍", "צביעת טקסט (Ctrl+Shift+D)", () => exec("hiliteColor", "#e0b1cb")),
+    richTextButton("🖍", "צביעת טקסט (Ctrl+Shift+D, לחיצה נוספת מסירה)", () => toggleHighlight(editableEl, MAIN_TOOLBAR_HIGHLIGHT_COLOR)),
     richTextButton("• רשימה", "רשימת בולטים", () => exec("insertUnorderedList")),
     richTextButton("1. רשימה", "רשימה ממוספרת", () => exec("insertOrderedList")),
     richTextButton("☑ רשימה", "הוספת וי לתחילת השורה/השורות הנבחרות", () => toggleChecklistOnSelection(editableEl)),
