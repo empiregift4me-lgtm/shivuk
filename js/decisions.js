@@ -13,11 +13,10 @@ function initChatView(container, listKey, draftKey, options) {
   editable.innerHTML = loadChatDraft(draftKey);
   const toolbar = createRichToolbar(editable);
   const sendBtn = el("button", { class: "btn btn-primary", type: "button", text: "שליחה (או Ctrl+Enter)" });
-  composeArea.appendChild(toolbar);
-  composeArea.appendChild(editable);
 
   // מצב "הגנה" - כשפעיל, ההודעה הבאה שנשלחת נשמרת כרגיל אבל מוצגת מוסתרת בפיד עד הזנת סיסמת היומן
   let protectMode = false;
+  const topRow = el("div", { class: "chat-compose-top-row" });
   if (protectable) {
     const protectBtn = el("button", {
       type: "button",
@@ -29,15 +28,20 @@ function initChatView(container, listKey, draftKey, options) {
         protectBtn.classList.toggle("is-active", protectMode);
       }
     });
-    composeArea.appendChild(protectBtn);
+    topRow.appendChild(protectBtn);
   }
-
+  topRow.appendChild(toolbar);
+  composeArea.appendChild(topRow);
+  composeArea.appendChild(editable);
   composeArea.appendChild(sendBtn);
   wrap.appendChild(composeArea);
   container.appendChild(wrap);
 
-  // אילו הודעות מוסתרות שוחררו זמנית לצפייה - מתאפס בכל כניסה מחדש לתצוגה, בלי להישמר
+  // אילו הודעות מוסתרות שוחררו זמנית לצפייה - מתאפס בכל כניסה מחדש לתצוגה, בלי להישמר.
+  // כל חשיפה נעולה מחדש אוטומטית אחרי 5 דקות (revealTimers שומר את מזהי הטיימר לביטול בסגירה ידנית)
   const revealedIds = new Set();
+  const revealTimers = new Map();
+  const AUTO_RELOCK_MS = 5 * 60 * 1000;
 
   function renderFeed() {
     feed.innerHTML = "";
@@ -67,7 +71,7 @@ function initChatView(container, listKey, draftKey, options) {
         const topicInput = el("input", {
           type: "text",
           class: "field-input protected-topic-input",
-          placeholder: "נושא קצר (לזיכרון בלבד)"
+          placeholder: "נושא התוכן"
         });
         topicInput.value = msg.topic || "";
         topicInput.addEventListener("input", () => {
@@ -78,12 +82,19 @@ function initChatView(container, listKey, draftKey, options) {
 
         if (unlocking) {
           const unlockRow = el("div", { class: "protected-unlock-row" });
-          const pwInput = el("input", { type: "password", class: "field-input protected-unlock-input", placeholder: "סיסמת היומן" });
+          const pwInput = el("input", { type: "password", class: "field-input protected-unlock-input", placeholder: "הזן סיסמא" });
           const confirmUnlock = () => {
             if (pwInput.value === LOCK_PASSWORD) {
               revealedIds.add(msg.id);
               editing = false;
               unlocking = false;
+              const timerId = setTimeout(() => {
+                revealedIds.delete(msg.id);
+                revealTimers.delete(msg.id);
+                editing = false;
+                buildBubble();
+              }, AUTO_RELOCK_MS);
+              revealTimers.set(msg.id, timerId);
               buildBubble();
             } else {
               unlockError = "סיסמה שגויה.";
@@ -175,6 +186,25 @@ function initChatView(container, listKey, draftKey, options) {
             }
           })
         );
+        if (msg.protected && revealedIds.has(msg.id)) {
+          actions.appendChild(
+            el("button", {
+              type: "button",
+              class: "bubble-icon-btn",
+              text: "🔐",
+              title: "סגירת ההודעה בחזרה (הגנה ידנית)",
+              onclick: () => {
+                if (revealTimers.has(msg.id)) {
+                  clearTimeout(revealTimers.get(msg.id));
+                  revealTimers.delete(msg.id);
+                }
+                revealedIds.delete(msg.id);
+                editing = false;
+                buildBubble();
+              }
+            })
+          );
+        }
         actions.appendChild(
           el("button", {
             type: "button",

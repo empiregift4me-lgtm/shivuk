@@ -1494,6 +1494,9 @@ select.field-input:focus {
   flex-direction: column;
   gap: var(--space-sm);
 }
+.chat-compose-top-row { display: flex; align-items: flex-start; gap: var(--space-sm); }
+.chat-compose-top-row .rt-toolbar { flex: 1 1 auto; }
+.chat-protect-btn { flex: 0 0 auto; white-space: nowrap; }
 .chat-editable {
   min-height: 90px;
   background: #fdfbff;

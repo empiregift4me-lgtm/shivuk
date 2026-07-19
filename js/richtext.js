@@ -154,11 +154,19 @@ function createRichToolbar(editableEl) {
     document.execCommand(cmd, false, value);
   }
 
+  // Ctrl+D כקיצור מקלדת לצביעת טקסט - אותה פעולה כמו כפתור 🖍
+  editableEl.addEventListener("keydown", (e) => {
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "d") {
+      e.preventDefault();
+      exec("hiliteColor", "#e0b1cb");
+    }
+  });
+
   const toolbar = el("div", { class: "rt-toolbar" }, [
     richTextButton("B", "מודגש", () => exec("bold")),
     richTextButton("I", "נטוי", () => exec("italic")),
     richTextButton("U", "קו תחתון", () => exec("underline")),
-    richTextButton("🖍", "צביעת טקסט", () => exec("hiliteColor", "#e0b1cb")),
+    richTextButton("🖍 (Ctrl+D)", "צביעת טקסט", () => exec("hiliteColor", "#e0b1cb")),
     richTextButton("• רשימה", "רשימת בולטים", () => exec("insertUnorderedList")),
     richTextButton("1. רשימה", "רשימה ממוספרת", () => exec("insertOrderedList")),
     richTextButton("☑ רשימה", "הוספת וי לתחילת השורה/השורות הנבחרות", () => toggleChecklistOnSelection(editableEl)),
