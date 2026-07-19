@@ -26,7 +26,7 @@ function loadSelfWorthBonusState() {
 }
 
 function saveSelfWorthBonusState(state) {
-  localStorage.setItem(STORE_KEYS.selfWorthBonusState, JSON.stringify(state));
+  safeSetItem(STORE_KEYS.selfWorthBonusState, JSON.stringify(state));
 }
 
 function totalSelfWorthLines() {

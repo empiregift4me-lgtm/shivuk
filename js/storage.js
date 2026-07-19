@@ -22,6 +22,53 @@ const STORE_KEYS = {
 const PERIODS = ["morning", "evening"];
 const PERIOD_LABELS = { morning: "בוקר", evening: "ערב" };
 
+// עוטפת כל localStorage.setItem באפליקציה - אם האחסון מלא (QuotaExceededError), מציגה התראה ברורה
+// במקום לתת לשמירה להיכשל בשקט ולאבד תוכן
+function showStorageFullWarning() {
+  alert(
+    "האחסון של הדפדפן מלא ולא ניתן לשמור את התוכן החדש 😔\n\nכדאי למחוק תמונות ישנות מהודעות/סיכומים, לייצא גיבוי ולפנות מקום, ואז לנסות שוב."
+  );
+}
+
+function safeSetItem(key, value) {
+  try {
+    localStorage.setItem(key, value);
+    return true;
+  } catch (e) {
+    if (e && (e.name === "QuotaExceededError" || e.code === 22 || e.code === 1014)) {
+      showStorageFullWarning();
+      return false;
+    }
+    throw e;
+  }
+}
+
+// הערכת נפח האחסון הכולל שהאפליקציה תופסת (כל המפתחות ב-localStorage), לפי מכסה שמרנית של 5MB -
+// המכסה המובטחת הנמוכה ביותר בין הדפדפנים הנפוצים
+const STORAGE_SOFT_LIMIT_BYTES = 5 * 1024 * 1024;
+
+function computeStorageUsageBytes() {
+  let total = 0;
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i);
+    const value = localStorage.getItem(key) || "";
+    total += (key.length + value.length) * 2; // הערכת בתים לפי קידוד UTF-16
+  }
+  return total;
+}
+
+// סופרת כמה תמונות שמורות בכל נתוני האפליקציה (הודעות מוגנות/רגילות, פירוט סיכומים וכו')
+function countStoredImages() {
+  let count = 0;
+  Object.values(STORE_KEYS).forEach((key) => {
+    const raw = localStorage.getItem(key);
+    if (!raw) return;
+    const matches = raw.match(/data:image\//g);
+    if (matches) count += matches.length;
+  });
+  return count;
+}
+
 function todayISO() {
   const d = new Date();
   const tz = d.getTimezoneOffset() * 60000;
@@ -48,7 +95,7 @@ function loadEntries() {
 }
 
 function saveEntries(entries) {
-  localStorage.setItem(STORE_KEYS.entries, JSON.stringify(entries));
+  safeSetItem(STORE_KEYS.entries, JSON.stringify(entries));
 }
 
 function getEntry(date, period) {
@@ -92,7 +139,7 @@ function loadHabits() {
 }
 
 function saveHabits(habits) {
-  localStorage.setItem(STORE_KEYS.habits, JSON.stringify(habits));
+  safeSetItem(STORE_KEYS.habits, JSON.stringify(habits));
 }
 
 function loadPrefs() {
@@ -104,7 +151,7 @@ function loadPrefs() {
 }
 
 function savePrefs(prefs) {
-  localStorage.setItem(STORE_KEYS.prefs, JSON.stringify(prefs));
+  safeSetItem(STORE_KEYS.prefs, JSON.stringify(prefs));
 }
 
 function loadSummaries() {
@@ -121,7 +168,7 @@ function loadSummaries() {
 }
 
 function saveSummaries(list) {
-  localStorage.setItem(STORE_KEYS.summaries, JSON.stringify(list));
+  safeSetItem(STORE_KEYS.summaries, JSON.stringify(list));
 }
 
 function loadSummaryDraft() {
@@ -133,7 +180,7 @@ function loadSummaryDraft() {
 }
 
 function saveSummaryDraft(draft) {
-  localStorage.setItem(STORE_KEYS.summaryDraft, JSON.stringify(draft));
+  safeSetItem(STORE_KEYS.summaryDraft, JSON.stringify(draft));
 }
 
 function loadEnergyLog() {
@@ -145,7 +192,7 @@ function loadEnergyLog() {
 }
 
 function saveEnergyLog(list) {
-  localStorage.setItem(STORE_KEYS.energyLog, JSON.stringify(list));
+  safeSetItem(STORE_KEYS.energyLog, JSON.stringify(list));
 }
 
 // אחסון גנרי לפי מפתח - משמש גם ל"החלטות עסקיות חשובות" וגם ל"תיעוד רגשי" (אותו מנגנון, שני יומני-צ'אט נפרדים)
@@ -158,7 +205,7 @@ function loadChatList(key) {
 }
 
 function saveChatList(key, list) {
-  localStorage.setItem(key, JSON.stringify(list));
+  safeSetItem(key, JSON.stringify(list));
 }
 
 function loadChatDraft(key) {
@@ -166,7 +213,7 @@ function loadChatDraft(key) {
 }
 
 function saveChatDraft(key, html) {
-  localStorage.setItem(key, html);
+  safeSetItem(key, html);
 }
 
 function formatTimestamp(ms) {

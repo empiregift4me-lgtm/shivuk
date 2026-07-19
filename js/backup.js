@@ -15,7 +15,7 @@ function applyBackupPayload(payload) {
   if (payload.data) {
     Object.entries(payload.data).forEach(([name, raw]) => {
       const storageKey = STORE_KEYS[name];
-      if (storageKey) localStorage.setItem(storageKey, raw);
+      if (storageKey) safeSetItem(storageKey, raw);
     });
   } else {
     // תאימות לאחור לקבצי גיבוי ישנים (גרסה 4 ומטה) עם מבנה קבוע שכיסה רק חלק מהנתונים
@@ -56,7 +56,7 @@ function maybeRunAutoBackup() {
   const today = todayISO();
   if (localStorage.getItem(AUTO_BACKUP_LAST_DATE_KEY) === today) return;
   exportBackup();
-  localStorage.setItem(AUTO_BACKUP_LAST_DATE_KEY, today);
+  safeSetItem(AUTO_BACKUP_LAST_DATE_KEY, today);
 }
 
 function importBackupFile(file) {

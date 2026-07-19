@@ -28,9 +28,25 @@ function showSection(name) {
   closeSidebar();
 }
 
+// מציגה בתפריט הצד כמה מקום נוצל מתוך מכסת אחסון שמרנית, כדי שיהיה ברור מראש כמה עוד אפשר להעלות
+function renderStorageMeter() {
+  const fill = document.getElementById("storage-meter-fill");
+  const text = document.getElementById("storage-meter-text");
+  if (!fill || !text) return;
+  const used = computeStorageUsageBytes();
+  const pct = Math.min(100, Math.round((used / STORAGE_SOFT_LIMIT_BYTES) * 100));
+  fill.style.width = pct + "%";
+  fill.classList.toggle("is-warning", pct >= 75 && pct < 92);
+  fill.classList.toggle("is-danger", pct >= 92);
+  const usedMB = (used / (1024 * 1024)).toFixed(1);
+  const imgCount = countStoredImages();
+  text.textContent = `${usedMB}MB מתוך כ-5MB בשימוש (${pct}%)${imgCount ? ` · ${imgCount} תמונות שמורות` : ""}`;
+}
+
 function openSidebar() {
   document.getElementById("sidebar-panel").classList.remove("is-hidden");
   document.getElementById("sidebar-overlay").classList.remove("is-hidden");
+  renderStorageMeter();
 }
 
 function closeSidebar() {

@@ -12,7 +12,7 @@ function loadPaymentLedger() {
 }
 
 function savePaymentLedger(ledger) {
-  localStorage.setItem(STORE_KEYS.paymentLedger, JSON.stringify(ledger));
+  safeSetItem(STORE_KEYS.paymentLedger, JSON.stringify(ledger));
 }
 
 // פגישות שלא שולמו, מהישנה לחדשה - כדי לסלק קודם את החוב הוותיק ביותר

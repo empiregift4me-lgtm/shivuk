@@ -120,7 +120,7 @@ async function driveEnsureSummariesFolderId() {
     const created = await createRes.json();
     driveSummariesFolderId = created.id;
   }
-  localStorage.setItem(DRIVE_SUMMARIES_FOLDER_ID_KEY, driveSummariesFolderId);
+  safeSetItem(DRIVE_SUMMARIES_FOLDER_ID_KEY, driveSummariesFolderId);
   return driveSummariesFolderId;
 }
 

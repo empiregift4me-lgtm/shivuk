@@ -10,7 +10,7 @@ function loadTaskState() {
 }
 
 function saveTaskState(all) {
-  localStorage.setItem(STORE_KEYS.taskManagement, JSON.stringify(all));
+  safeSetItem(STORE_KEYS.taskManagement, JSON.stringify(all));
 }
 
 // שולפת את המצב של תאריך ספציפי, כולל מיגרציה חד-פעמית מהפורמט הישן (רשומה שטוחה אחת בלי תאריכים,
@@ -51,7 +51,7 @@ function loadBigGoals() {
 }
 
 function saveBigGoals(goals) {
-  localStorage.setItem(STORE_KEYS.bigGoals, JSON.stringify(goals));
+  safeSetItem(STORE_KEYS.bigGoals, JSON.stringify(goals));
 }
 
 function parseTimeToMinutes(hhmm) {

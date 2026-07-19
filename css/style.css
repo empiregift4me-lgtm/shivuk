@@ -358,6 +358,30 @@ body {
 }
 .sidebar-item:hover { background: var(--c-field); color: var(--c-highlight); }
 
+.storage-meter {
+  margin-top: auto;
+  padding-top: var(--space-sm);
+  border-top: 1px solid var(--c-border);
+}
+.storage-meter-label { font-size: 0.8rem; color: var(--text-submuted); margin-bottom: 6px; }
+.storage-meter-bar {
+  width: 100%;
+  height: 8px;
+  background: var(--c-panel);
+  border: 1px solid var(--c-border);
+  border-radius: 5px;
+  overflow: hidden;
+}
+.storage-meter-fill {
+  height: 100%;
+  width: 0%;
+  background: var(--c-highlight);
+  transition: width 0.3s ease;
+}
+.storage-meter-fill.is-warning { background: #e8b13a; }
+.storage-meter-fill.is-danger { background: #d9534f; }
+.storage-meter-text { font-size: 0.75rem; color: var(--text-submuted); margin-top: 6px; }
+
 .app-section.is-hidden { display: none; }
 
 .dashboard-empty {
@@ -1506,6 +1530,7 @@ select.field-input:focus {
   line-height: 1.8;
   outline: none;
 }
+.chat-image { max-width: 100%; border-radius: 8px; margin: 8px 0; display: block; }
 
 /* ===== "הגנה" - הודעות מוסתרות בתיעוד רגשי ===== */
 .chat-bubble-protected { border: 1px dashed var(--c-border); background: var(--c-field); }

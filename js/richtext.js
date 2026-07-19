@@ -131,18 +131,79 @@ function toggleHighlight(editableEl, color) {
   document.execCommand("hiliteColor", false, isHighlighted ? "transparent" : color);
 }
 
-// סרגל כלים מצומצם לתיבות כתיבה חופשית קטנות (רק מודגש/קו תחתון/צביעה) - למשל בתוך "עניינים" בסיכומים
+// דוחסת תמונה שהועלתה לפני שמירתה (מקטינה מידות ומייצאת כ-JPEG) כדי לחסוך מקום באחסון המקומי
+const IMAGE_MAX_DIMENSION = 1280;
+const IMAGE_JPEG_QUALITY = 0.72;
+
+function compressImageFile(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = () => reject(reader.error);
+    reader.onload = () => {
+      const img = new Image();
+      img.onerror = () => reject(new Error("invalid image"));
+      img.onload = () => {
+        let { width, height } = img;
+        if (width > IMAGE_MAX_DIMENSION || height > IMAGE_MAX_DIMENSION) {
+          const scale = IMAGE_MAX_DIMENSION / Math.max(width, height);
+          width = Math.round(width * scale);
+          height = Math.round(height * scale);
+        }
+        const canvas = document.createElement("canvas");
+        canvas.width = width;
+        canvas.height = height;
+        canvas.getContext("2d").drawImage(img, 0, 0, width, height);
+        resolve(canvas.toDataURL("image/jpeg", IMAGE_JPEG_QUALITY));
+      };
+      img.src = reader.result;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+// מוסיפה תמונה דחוסה לסוף תיבת עריכה, ומשגרת אירוע input כדי שמנגנוני השמירה/הטיוטה הקיימים
+// (שמאזינים ל-input) ישמרו אותה כמו כל שינוי אחר - בלי לגעת בקוד השמירה של כל תיבה בנפרד
+function insertCompressedImage(editableEl, file) {
+  compressImageFile(file)
+    .then((dataUrl) => {
+      const img = document.createElement("img");
+      img.src = dataUrl;
+      img.className = "chat-image";
+      editableEl.appendChild(img);
+      editableEl.dispatchEvent(new Event("input", { bubbles: true }));
+    })
+    .catch(() => alert("לא הצלחתי לטעון את התמונה הזו. נסי קובץ אחר."));
+}
+
+// כפתור + input קובץ מוסתר להוספת תמונה (עם דחיסה אוטומטית) - משמש גם בסרגל הצ'אט וגם בסרגל המצומצם
+function buildImageUploadButton(editableEl) {
+  const fileInput = el("input", { type: "file", accept: "image/*", hidden: "hidden" });
+  fileInput.addEventListener("change", () => {
+    const file = fileInput.files[0];
+    if (!file) return;
+    insertCompressedImage(editableEl, file);
+    fileInput.value = "";
+  });
+  const btn = richTextButton("📷", "הוספת תמונה (נדחסת אוטומטית לחיסכון במקום)", () => fileInput.click());
+  return { btn, fileInput };
+}
+
+// סרגל כלים מצומצם לתיבות כתיבה חופשית קטנות (מודגש/קו תחתון/צביעה/תמונה) - למשל בתוך "עניינים" בסיכומים
 function createMiniRichToolbar(editableEl) {
   attachPlainTextPaste(editableEl);
   function exec(cmd, value) {
     editableEl.focus();
     document.execCommand(cmd, false, value);
   }
-  return el("div", { class: "rt-toolbar rt-toolbar-mini" }, [
+  const imageUpload = buildImageUploadButton(editableEl);
+  const toolbar = el("div", { class: "rt-toolbar rt-toolbar-mini" }, [
     richTextButton("B", "מודגש", () => exec("bold")),
     richTextButton("U", "קו תחתון", () => exec("underline")),
-    richTextButton("🖍", "צביעת טקסט (לחיצה נוספת על טקסט מודגש מסירה את ההדגשה)", () => toggleHighlight(editableEl, MINI_TOOLBAR_HIGHLIGHT_COLOR))
+    richTextButton("🖍", "צביעת טקסט (לחיצה נוספת על טקסט מודגש מסירה את ההדגשה)", () => toggleHighlight(editableEl, MINI_TOOLBAR_HIGHLIGHT_COLOR)),
+    imageUpload.btn
   ]);
+  toolbar.appendChild(imageUpload.fileInput);
+  return toolbar;
 }
 
 function createRichToolbar(editableEl) {
@@ -164,6 +225,8 @@ function createRichToolbar(editableEl) {
     }
   });
 
+  const imageUpload = buildImageUploadButton(editableEl);
+
   const toolbar = el("div", { class: "rt-toolbar" }, [
     richTextButton("B", "מודגש", () => exec("bold")),
     richTextButton("I", "נטוי", () => exec("italic")),
@@ -184,8 +247,10 @@ function createRichToolbar(editableEl) {
     richTextButton("א+", "הגדלת גופן", () => {
       fontSizeIdx = Math.min(RICHTEXT_FONT_SIZES.length - 1, fontSizeIdx + 1);
       exec("fontSize", String(RICHTEXT_FONT_SIZES[fontSizeIdx]));
-    })
+    }),
+    imageUpload.btn
   ]);
+  toolbar.appendChild(imageUpload.fileInput);
 
   return toolbar;
 }

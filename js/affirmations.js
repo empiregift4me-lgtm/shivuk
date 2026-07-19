@@ -76,7 +76,7 @@ function loadAffirmationState() {
 }
 
 function saveAffirmationState(state) {
-  localStorage.setItem(STORE_KEYS.affirmationState, JSON.stringify(state));
+  safeSetItem(STORE_KEYS.affirmationState, JSON.stringify(state));
 }
 
 function renderAffirmationHeadline(sentence) {
