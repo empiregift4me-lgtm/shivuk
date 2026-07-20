@@ -300,10 +300,12 @@ function buildTopicsEditor(root, topics, persist, opts) {
   }
 
   // בונה כפתור-משנה ("פירוט" / "מסקנות") שפותח/סוגר תיבת כתיבה נפרדת משלו בתוך אזור הפירוט של עניין -
-  // כך ששני סוגי הכתיבה (מה שקרה השבוע מול מסקנות מהמפגש עם המטפלת) נשארים נפרדים אחד מהשני
+  // כך ששני סוגי הכתיבה (מה שקרה השבוע מול מסקנות מהמפגש עם המטפלת) נשארים נפרדים אחד מהשני.
+  // התוכן נעול לעריכה (תצוגה בלבד) עד לחיצה על כפתור העיפרון, כדי למנוע עריכה בטעות תוך כדי גלילה/קריאה
   function buildSubNoteSection(topic, item, field, label) {
     const key = item.id + ":" + field;
     let open = subNoteCollapsedState[key] !== undefined ? !subNoteCollapsedState[key] : summaryNotesHasContent(item[field]);
+    let editing = false;
     const section = el("div", { class: "summary-subnote-section" });
     const btn = el("button", { type: "button", class: "summary-subnote-toggle" + (open ? " is-open" : ""), text: label });
     const box = el("div", { class: "summary-subnote-box" + (open ? "" : " is-collapsed") });
@@ -314,22 +316,56 @@ function buildTopicsEditor(root, topics, persist, opts) {
       btn.classList.toggle("is-open", open);
     });
 
-    const editable = el("div", { class: "summary-item-notes", contenteditable: "true", spellcheck: "false" });
-    editable.innerHTML = item[field] || "";
-    const autoGrow = () => {
-      editable.style.height = "auto";
-      editable.style.height = editable.scrollHeight + "px";
-    };
-    editable.addEventListener("input", () => {
-      item[field] = editable.innerHTML;
-      autoGrow();
-      debouncedPersist();
-    });
-    requestAnimationFrame(autoGrow);
-    const boxRow = el("div", { class: "summary-item-notes-row" });
-    boxRow.appendChild(createMiniRichToolbar(editable));
-    boxRow.appendChild(editable);
-    box.appendChild(boxRow);
+    function buildBoxContent() {
+      box.innerHTML = "";
+      if (editing) {
+        const editable = el("div", { class: "summary-item-notes", contenteditable: "true", spellcheck: "false" });
+        editable.innerHTML = item[field] || "";
+        const autoGrow = () => {
+          editable.style.height = "auto";
+          editable.style.height = editable.scrollHeight + "px";
+        };
+        editable.addEventListener("input", () => {
+          item[field] = editable.innerHTML;
+          autoGrow();
+          debouncedPersist();
+        });
+        requestAnimationFrame(autoGrow);
+        const boxRow = el("div", { class: "summary-item-notes-row" });
+        boxRow.appendChild(createMiniRichToolbar(editable));
+        boxRow.appendChild(editable);
+        box.appendChild(boxRow);
+        box.appendChild(
+          el("button", {
+            type: "button",
+            class: "summary-subnote-edit-btn",
+            text: "✓ סיום עריכה",
+            onclick: () => {
+              editing = false;
+              buildBoxContent();
+            }
+          })
+        );
+        requestAnimationFrame(() => editable.focus());
+      } else {
+        const view = el("div", { class: "summary-item-notes summary-item-notes-view" });
+        view.innerHTML = item[field] || "";
+        box.appendChild(view);
+        box.appendChild(
+          el("button", {
+            type: "button",
+            class: "summary-subnote-edit-btn",
+            text: "✏️ עריכה",
+            title: "לחיצה כדי לפתוח לעריכה",
+            onclick: () => {
+              editing = true;
+              buildBoxContent();
+            }
+          })
+        );
+      }
+    }
+    buildBoxContent();
 
     section.appendChild(btn);
     section.appendChild(box);

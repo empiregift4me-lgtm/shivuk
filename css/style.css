@@ -1376,6 +1376,7 @@ select.field-input:focus {
 .summary-header-row { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: var(--space-sm); margin-bottom: 4px; }
 .summary-header-row .panel-title { margin: 0; }
 .summary-top-row { display: flex; align-items: center; justify-content: flex-start; flex-wrap: wrap; gap: var(--space-sm); margin-bottom: var(--space); }
+.summary-top-row .session-topic-input { flex: 1 1 200px; width: auto; min-width: 120px; }
 .session-date-row { display: flex; align-items: center; gap: var(--space-sm); }
 .session-date-label { color: var(--text-submuted); font-size: 0.95rem; }
 .session-date-input { max-width: 190px; }
@@ -1458,6 +1459,18 @@ select.field-input:focus {
 .summary-subnote-toggle.is-open { background: var(--c-highlight); color: #231942; border-color: var(--c-highlight); }
 .summary-subnote-box { margin-top: 6px; }
 .summary-subnote-box.is-collapsed { display: none; }
+.summary-subnote-edit-btn {
+  font-family: inherit;
+  border: 1px solid var(--c-border);
+  background: var(--c-field);
+  color: var(--text-submuted);
+  border-radius: 6px;
+  padding: 4px 10px;
+  font-size: 0.78rem;
+  cursor: pointer;
+  margin-top: 6px;
+}
+.summary-subnote-edit-btn:hover { background: var(--c-highlight); color: #231942; }
 .summary-subnote-label { font-size: 0.8rem; color: var(--text-submuted); margin: 6px 0 2px; font-weight: 600; }
 .summary-item-add-row { display: flex; justify-content: flex-start; margin-top: 4px; }
 .summary-item-add-btn {

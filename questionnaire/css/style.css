@@ -1,0 +1,276 @@
+/* ===== מערכת עיצוב - בהיר וחם ===== */
+:root {
+  --c-page: #fffdf7;
+  --c-card: #fdf5e6;
+  --c-panel: #f0e6d0;
+  --c-border: #e2cba4;
+  --c-gold: #c5963a;
+  --c-red: #a31621;
+  --c-red-strong: #8b1019;
+
+  --text-dark: #4a3030;
+  --text-muted: #6b4a4a;
+
+  --space: 16px;
+  --space-sm: 8px;
+  --space-lg: 24px;
+  --radius: 14px;
+  --radius-sm: 8px;
+
+  --shadow-card: 0 2px 12px rgba(74, 48, 48, 0.12), 0 1px 2px rgba(74, 48, 48, 0.08);
+  --shadow-hover: 0 6px 18px rgba(74, 48, 48, 0.18);
+}
+
+* { box-sizing: border-box; }
+
+html { font-size: 15px; }
+
+body {
+  margin: 0;
+  font-family: "Rubik", "Segoe UI", sans-serif;
+  background: var(--c-page);
+  color: var(--text-dark);
+  line-height: 1.7;
+  min-height: 100vh;
+}
+
+.btn {
+  font-family: inherit;
+  border: none;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-weight: 600;
+  padding: 12px 22px;
+  font-size: 1rem;
+  transition: transform 0.08s ease, box-shadow 0.15s ease, background 0.15s ease;
+}
+.btn:active { transform: translateY(1px); }
+.btn:disabled { opacity: 0.5; cursor: default; }
+
+.btn-primary { background: var(--c-gold); color: #fffdf7; box-shadow: 0 2px 8px rgba(197, 150, 58, 0.4); }
+.btn-primary:hover:not(:disabled) { background: #b3862f; box-shadow: 0 4px 12px rgba(197, 150, 58, 0.5); }
+
+/* ===== מסכי שער / סיום / נעילה - כרטיס מרכזי על רקע מלא ===== */
+.gate-overlay {
+  position: fixed;
+  inset: 0;
+  background: var(--c-page);
+  z-index: 999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space);
+}
+.gate-overlay.is-hidden { display: none; }
+
+.gate-box {
+  background: var(--c-card);
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-hover);
+  padding: var(--space-lg);
+  width: 100%;
+  max-width: 380px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.gate-icon { font-size: 2.4rem; }
+.gate-title { font-size: 1.4rem; font-weight: 700; color: var(--text-dark); margin: 0 0 4px; }
+.gate-message { font-size: 1rem; color: var(--text-muted); margin: 0 0 8px; }
+
+.gate-form { display: flex; flex-direction: column; gap: var(--space-sm); }
+.gate-input {
+  font-family: inherit;
+  font-size: 1.1rem;
+  text-align: center;
+  background: var(--c-panel);
+  color: var(--text-dark);
+  border: 1.5px solid var(--c-border);
+  border-radius: var(--radius-sm);
+  padding: 10px;
+  letter-spacing: 2px;
+  outline: none;
+}
+.gate-input:focus { border-color: var(--c-gold); }
+.gate-error { color: var(--c-red); font-size: 0.9rem; min-height: 1.2em; }
+.gate-countdown { color: var(--text-muted); font-size: 0.85rem; margin-top: 4px; }
+
+.done-box .gate-icon { font-size: 2.8rem; }
+.btn-export { margin-top: 6px; }
+
+/* ===== מעטפת האפליקציה ===== */
+.app-shell { min-height: 100vh; }
+.app-shell.is-hidden { display: none; }
+
+.fill-header {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  display: flex;
+  justify-content: center;
+  padding: 10px var(--space);
+  background: var(--c-card);
+  border-bottom: 1px solid var(--c-border);
+}
+
+.fill-timer {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-dark);
+  background: var(--c-panel);
+  border: 1px solid var(--c-border);
+  border-radius: 999px;
+  padding: 6px 16px;
+  font-size: 1rem;
+}
+.fill-timer.is-urgent { color: #fffdf7; background: var(--c-red); border-color: var(--c-red-strong); }
+
+.exercise-root {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: var(--space-lg) var(--space) 120px;
+}
+
+/* ===== ראש תרגיל ===== */
+.screen-header { margin-bottom: var(--space); }
+.instr-text { font-size: 1rem; color: var(--text-muted); margin: 0 0 var(--space-sm); }
+.anchor-title {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: var(--text-dark);
+  line-height: 1.5;
+  margin: 0 0 var(--space);
+}
+
+.progress-numbered {
+  display: inline-block;
+  font-weight: 700;
+  color: var(--c-gold);
+  background: var(--c-panel);
+  border: 1px solid var(--c-border);
+  border-radius: 999px;
+  padding: 4px 14px;
+  font-size: 0.9rem;
+  margin-bottom: var(--space);
+}
+
+.progress-track {
+  width: 100%;
+  height: 8px;
+  background: var(--c-panel);
+  border: 1px solid var(--c-border);
+  border-radius: 5px;
+  overflow: hidden;
+  margin-bottom: var(--space-lg);
+}
+.progress-fill { height: 100%; width: 0%; background: var(--c-gold); transition: width 0.3s ease; }
+
+.sub-question {
+  font-weight: 600;
+  font-size: 1.1rem;
+  color: var(--text-dark);
+  margin: 0 0 var(--space-sm);
+}
+
+/* ===== שורות "זורמות" - שאלה + שדה השלמה בתוך אותה שורה ===== */
+.rows-wrap { display: flex; flex-direction: column; gap: var(--space); }
+.stage-wrap { display: flex; flex-direction: column; }
+
+.flow-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 2px 6px;
+  font-size: 1.1rem;
+  line-height: 2;
+}
+
+.q-lead { font-weight: 600; color: var(--text-dark); }
+
+.flow-input {
+  flex: 1 1 180px;
+  min-width: 140px;
+  border: none;
+  border-bottom: 1.5px dashed var(--c-border);
+  background: transparent;
+  font: inherit;
+  color: var(--text-dark);
+  padding: 2px 4px;
+  outline: none;
+}
+.flow-input:focus { border-bottom-color: var(--c-gold); }
+.flow-input:disabled { color: var(--text-dark); opacity: 0.85; border-bottom-style: solid; }
+.flow-input::placeholder { color: var(--text-muted); opacity: 0.6; }
+
+/* ===== כפתור "הבא" - קבוע בתחתית המסך ===== */
+.next-bar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  justify-content: center;
+  padding: 14px var(--space);
+  background: linear-gradient(to top, var(--c-page) 60%, rgba(255, 253, 247, 0));
+  z-index: 40;
+}
+.next-btn { min-width: 160px; font-size: 1.05rem; }
+
+/* ===== ייצוא PDF - עץ סטטי מחוץ למסך ===== */
+.pdf-export-mount {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 0;
+  height: 0;
+  overflow: hidden;
+}
+
+.pdf-root {
+  background: #ffffff;
+  color: #231313;
+  font-family: "Rubik", "Segoe UI", sans-serif;
+  direction: rtl;
+  padding: 20px;
+}
+.pdf-title { font-size: 20px; font-weight: 800; margin-bottom: 4px; }
+.pdf-date { font-size: 13px; color: #6b4a4a; margin-bottom: 18px; }
+.pdf-section-title {
+  font-size: 16px;
+  font-weight: 800;
+  color: #8b1019;
+  border-bottom: 2px solid #c5963a;
+  padding-bottom: 6px;
+  margin: 20px 0 10px;
+}
+.pdf-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 6px 0;
+  border-bottom: 1px solid #f0e6d0;
+  font-size: 14px;
+  line-height: 1.8;
+}
+.pdf-num {
+  flex: 0 0 auto;
+  min-width: 22px;
+  text-align: center;
+  font-weight: 700;
+  color: #c5963a;
+}
+.pdf-sentence { flex: 1 1 auto; }
+.pdf-lead { font-weight: 800; }
+
+/* ===== רספונסיביות ===== */
+@media (max-width: 560px) {
+  .exercise-root { padding: var(--space) var(--space-sm) 120px; }
+  .anchor-title { font-size: 1.25rem; }
+  .flow-row { font-size: 1rem; }
+}
