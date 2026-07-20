@@ -700,9 +700,16 @@ function renderSummaryWriteTab(content) {
     updateSavedLabel();
   }
 
-  // שורת כותרת - "כתיבה חופשית" + חיווי "נשמר לפני..." מול תאריך הפגישה, בקצוות מנוגדים של אותה שורה
+  // שורת כותרת - שדה נושא הפגישה משמש כעת ככותרת העמוד עצמה (במקום כותרת "כתיבה חופשית" קבועה
+  // ומיותרת) + חיווי "נשמר לפני..." מול תאריך הפגישה, בקצוות מנוגדים של אותה שורה
   const headerRow = el("div", { class: "summary-header-row" });
-  const titleGroup = el("div", { class: "summary-title-group" }, [el("h2", { class: "panel-title", text: "כתיבה חופשית" }), savedLabel]);
+  const topicInput = el("input", {
+    type: "text",
+    class: "field-input session-topic-input",
+    placeholder: "הנושא העיקרי של הפגישה הוא...."
+  });
+  topicInput.value = draft.topic || "";
+  const titleGroup = el("div", { class: "summary-title-group" }, [topicInput, savedLabel]);
   headerRow.appendChild(titleGroup);
   const dateRow = el("div", { class: "session-date-row" });
   dateRow.appendChild(el("label", { class: "session-date-label", text: "תאריך הפגישה:" }));
@@ -712,18 +719,11 @@ function renderSummaryWriteTab(content) {
   headerRow.appendChild(dateRow);
   wrap.appendChild(headerRow);
 
-  // "+ נושא חדש" ושדה נושא הפגישה צמודים זה לזה; כפתור "+ כתיבה חופשית" מוסיף בלוק כתיבה חופשית
-  // מיד אחרי העניין שבו היה הפוקוס לאחרונה
+  // "+ נושא חדש" ו-"+ כתיבה חופשית" צמודים זה לזה כקבוצת כפתורים - ממוקמים בסוף העמוד, מיד
+  // אחרי שורת "+ הוסף עניין חדש" של הנושא האחרון, כהמשך טבעי של אותה שורת פעולות
   const topRow = el("div", { class: "summary-top-row" });
   const addTopicBtn = el("button", { type: "button", class: "btn btn-primary btn-small summary-add-topic-btn", text: "+ נושא חדש" });
   topRow.appendChild(addTopicBtn);
-  const topicInput = el("input", {
-    type: "text",
-    class: "field-input session-topic-input",
-    placeholder: "הנושא העיקרי של הפגישה הוא...."
-  });
-  topicInput.value = draft.topic || "";
-  topRow.appendChild(topicInput);
   const freewriteAtFocusBtn = el("button", {
     type: "button",
     class: "btn btn-secondary btn-small",
@@ -731,7 +731,6 @@ function renderSummaryWriteTab(content) {
     title: "מוסיפה תיבת כתיבה חופשית מיד אחרי העניין שבו עומדים כרגע"
   });
   topRow.appendChild(freewriteAtFocusBtn);
-  wrap.appendChild(topRow);
 
   if (topics.length === 0) {
     topics.push(newSummaryTopic());
@@ -740,6 +739,7 @@ function renderSummaryWriteTab(content) {
 
   const editorRoot = el("div", { class: "summary-topics-wrap" });
   wrap.appendChild(editorRoot);
+  wrap.appendChild(topRow);
   const editorHandle = buildTopicsEditor(editorRoot, topics, persistDraft, { readOnly: false, hideAddButton: true });
   addTopicBtn.addEventListener("click", () => editorHandle.addTopic());
   freewriteAtFocusBtn.addEventListener("click", () => editorHandle.addFreewriteNearFocus());
