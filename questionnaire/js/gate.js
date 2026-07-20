@@ -1,6 +1,19 @@
 // שער כניסה - סיסמה זמנית שתקפה 30 דקות ממועד יצירת הקישור (GATE_OPENED_AT).
 // זהו מנגנון נפרד לחלוטין מטיימר המילוי (ב-filltimer.js) - זה רק מסך נעילה בכניסה.
 
+// קיצור מקשים סמוי לצפייה/בדיקה עצמית: Ctrl+Shift+L פותח את השאלון מיידית, גם בלי
+// סיסמה נכונה וגם אם חלון 30 הדקות כבר פג. שימי לב: מי שיודע את הצירוף עוקף לגמרי
+// את ההגנה - כדאי לא לחשוף אותו ללקוחות.
+document.addEventListener("keydown", (e) => {
+  if (!(e.ctrlKey && e.shiftKey && e.code === "KeyL")) return;
+  e.preventDefault();
+  if (!document.getElementById("app-shell").classList.contains("is-hidden")) return;
+  clearInterval(gateCountdownInterval);
+  document.getElementById("gate-overlay").classList.add("is-hidden");
+  document.getElementById("expired-overlay").classList.add("is-hidden");
+  onQuestionnaireUnlocked();
+});
+
 let gateCountdownInterval = null;
 
 function gateDeadline() {
