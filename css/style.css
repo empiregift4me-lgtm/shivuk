@@ -1441,38 +1441,41 @@ select.field-input:focus {
   border-radius: 6px;
 }
 .summary-notes-toggle:hover { color: var(--c-highlight); background: var(--c-field); }
-.summary-item-notes-wrap { margin: 6px 0 4px; }
+.summary-item-notes-wrap { margin: 8px 0 4px; display: flex; flex-direction: column; gap: 8px; }
 .summary-item-notes-wrap.is-collapsed { display: none; }
 .summary-item-notes-row { display: flex; align-items: stretch; gap: 6px; }
-.summary-subnote-section { margin-bottom: 6px; }
-.summary-subnote-toggle {
-  font-family: inherit;
+/* כרטיס אחיד לכל אחד מ"פירוט"/"מסקנות" - כותרת + כפתור עריכה יחד בשורה עליונה, תוחם וברור,
+   בלי שכבת פתיחה/סגירה נוספת שמקננת בתוך הקיפול הראשי של העניין */
+.summary-subnote-card {
+  background: var(--c-panel);
   border: 1px solid var(--c-border);
-  background: var(--c-field);
-  color: var(--text-submuted);
-  border-radius: 999px;
-  padding: 4px 12px;
-  font-size: 0.8rem;
-  cursor: pointer;
-  margin-inline-end: 6px;
+  border-radius: var(--radius-sm);
+  padding: 8px 10px;
 }
-.summary-subnote-toggle.is-open { background: var(--c-highlight); color: #231942; border-color: var(--c-highlight); }
-.summary-subnote-box { margin-top: 6px; }
-.summary-subnote-box.is-collapsed { display: none; }
+.summary-subnote-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+.summary-subnote-label { font-size: 0.85rem; color: var(--text-submuted); font-weight: 700; }
+.summary-subnote-empty { color: var(--text-submuted); opacity: 0.7; font-size: 0.9rem; }
 .summary-subnote-edit-btn {
-  font-family: inherit;
+  flex: 0 0 auto;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
   border: 1px solid var(--c-border);
   background: var(--c-field);
-  color: var(--text-submuted);
-  border-radius: 6px;
-  padding: 4px 10px;
-  font-size: 0.78rem;
+  color: var(--text-light);
   cursor: pointer;
-  margin-top: 6px;
+  font-size: 13px;
+  line-height: 1;
+  padding: 0;
 }
 .summary-subnote-edit-btn:hover { background: var(--c-highlight); color: #231942; }
-.summary-subnote-label { font-size: 0.8rem; color: var(--text-submuted); margin: 6px 0 2px; font-weight: 600; }
-.summary-item-add-row { display: flex; justify-content: flex-start; margin-top: 4px; }
+.summary-item-add-row { display: flex; justify-content: flex-start; margin-top: 2px; }
 .summary-item-add-btn {
   width: 26px;
   height: 26px;

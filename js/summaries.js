@@ -90,7 +90,6 @@ function isBlankSummaryTopic(topic) {
 function buildTopicsEditor(root, topics, persist, opts) {
   const readOnly = !!opts.readOnly;
   const collapsedState = {};
-  const subNoteCollapsedState = {};
   const storyCollapsedState = {};
   const debouncedPersist = debounce(persist, 400);
   // העניין שהיה בו הפוקוס לאחרונה - כדי שכפתור "+ כתיבה חופשית" ידע איפה בדיוק להוסיף את הבלוק החדש
@@ -299,26 +298,27 @@ function buildTopicsEditor(root, topics, persist, opts) {
     return wrap;
   }
 
-  // בונה כפתור-משנה ("פירוט" / "מסקנות") שפותח/סוגר תיבת כתיבה נפרדת משלו בתוך אזור הפירוט של עניין -
-  // כך ששני סוגי הכתיבה (מה שקרה השבוע מול מסקנות מהמפגש עם המטפלת) נשארים נפרדים אחד מהשני.
-  // התוכן נעול לעריכה (תצוגה בלבד) עד לחיצה על כפתור העיפרון, כדי למנוע עריכה בטעות תוך כדי גלילה/קריאה
+  // כרטיס אחיד ל"פירוט"/"מסקנות" - כותרת קטנה + כפתור עיפרון/וי יושבים יחד בשורת כותרת אחת,
+  // והתוכן מתחתיה באותו כרטיס תחום (בלי שכבת קיפול נוספת - הכרטיס תמיד גלוי כשפתוחים את פירוט העניין,
+  // כדי לא ליצור שני מדרגים מקוננים של פתיחה/סגירה שמבלבלים את העין).
+  // בפעם הראשונה (השדה עדיין ריק) נכנסים ישר למצב עריכה בלי לחיצה נוספת על העיפרון - הנעילה נועדה
+  // להגן על תוכן קיים מעריכה בטעות, לא ליצור חיכוך בהקלדה הראשונה
   function buildSubNoteSection(topic, item, field, label) {
-    const key = item.id + ":" + field;
-    let open = subNoteCollapsedState[key] !== undefined ? !subNoteCollapsedState[key] : summaryNotesHasContent(item[field]);
-    let editing = false;
-    const section = el("div", { class: "summary-subnote-section" });
-    const btn = el("button", { type: "button", class: "summary-subnote-toggle" + (open ? " is-open" : ""), text: label });
-    const box = el("div", { class: "summary-subnote-box" + (open ? "" : " is-collapsed") });
-    btn.addEventListener("click", () => {
-      open = !open;
-      subNoteCollapsedState[key] = !open;
-      box.classList.toggle("is-collapsed", !open);
-      btn.classList.toggle("is-open", open);
-    });
+    let editing = !summaryNotesHasContent(item[field]);
+    const card = el("div", { class: "summary-subnote-card" });
+    const header = el("div", { class: "summary-subnote-header" });
+    header.appendChild(el("span", { class: "summary-subnote-label", text: label }));
+    const editBtn = el("button", { type: "button", class: "summary-subnote-edit-btn" });
+    header.appendChild(editBtn);
+    card.appendChild(header);
+    const body = el("div", { class: "summary-subnote-body" });
+    card.appendChild(body);
 
-    function buildBoxContent() {
-      box.innerHTML = "";
+    function render() {
+      body.innerHTML = "";
       if (editing) {
+        editBtn.textContent = "✓";
+        editBtn.title = "סיום עריכה";
         const editable = el("div", { class: "summary-item-notes", contenteditable: "true", spellcheck: "false" });
         editable.innerHTML = item[field] || "";
         const autoGrow = () => {
@@ -334,42 +334,23 @@ function buildTopicsEditor(root, topics, persist, opts) {
         const boxRow = el("div", { class: "summary-item-notes-row" });
         boxRow.appendChild(createMiniRichToolbar(editable));
         boxRow.appendChild(editable);
-        box.appendChild(boxRow);
-        box.appendChild(
-          el("button", {
-            type: "button",
-            class: "summary-subnote-edit-btn",
-            text: "✓ סיום עריכה",
-            onclick: () => {
-              editing = false;
-              buildBoxContent();
-            }
-          })
-        );
+        body.appendChild(boxRow);
         requestAnimationFrame(() => editable.focus());
       } else {
+        editBtn.textContent = "✏️";
+        editBtn.title = "לחיצה כדי לפתוח לעריכה";
         const view = el("div", { class: "summary-item-notes summary-item-notes-view" });
-        view.innerHTML = item[field] || "";
-        box.appendChild(view);
-        box.appendChild(
-          el("button", {
-            type: "button",
-            class: "summary-subnote-edit-btn",
-            text: "✏️ עריכה",
-            title: "לחיצה כדי לפתוח לעריכה",
-            onclick: () => {
-              editing = true;
-              buildBoxContent();
-            }
-          })
-        );
+        view.innerHTML = summaryNotesHasContent(item[field]) ? item[field] : `<span class="summary-subnote-empty">אין עדיין ${label}</span>`;
+        body.appendChild(view);
       }
     }
-    buildBoxContent();
+    editBtn.addEventListener("click", () => {
+      editing = !editing;
+      render();
+    });
+    render();
 
-    section.appendChild(btn);
-    section.appendChild(box);
-    return section;
+    return card;
   }
 
   function buildItemBlock(topic, item, itemIdx) {
