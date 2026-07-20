@@ -1550,19 +1550,17 @@ select.field-input:focus {
 .summary-subnote-confirm-btn:hover { filter: brightness(1.15); }
 .summary-subnote-empty { color: var(--text-submuted); opacity: 0.7; font-size: 0.9rem; }
 .summary-subnote-edit-btn {
-  flex: 0 0 auto;
-  width: 26px;
-  height: 26px;
-  border-radius: 50%;
-  border: 1px solid var(--c-border);
-  background: var(--c-field);
-  color: var(--text-light);
+  float: right;
+  border: none;
+  background: transparent;
+  color: var(--text-submuted);
   cursor: pointer;
-  font-size: 13px;
+  font-size: 14px;
   line-height: 1;
   padding: 0;
+  margin-inline-start: 6px;
 }
-.summary-subnote-edit-btn:hover { background: var(--c-highlight); color: #231942; }
+.summary-subnote-edit-btn:hover { color: var(--text-light); }
 /* שורת "הוסף עניין" עצמאית בין עניין לעניין - קו דק שיוצא לרוחב מלא עם עיגול "+" בקצה הימני,
    לא קופסה עם טקסט - פעולה מבנית עדינה, לא חלק מתוכן העניין הקיים */
 .summary-add-item-row {

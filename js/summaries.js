@@ -326,7 +326,8 @@ function buildTopicsEditor(root, topics, persist, opts) {
     card.appendChild(body);
 
     function render() {
-      header.querySelectorAll(".summary-subnote-edit-btn").forEach((b) => b.remove());
+      header.innerHTML = "";
+      if (label) header.appendChild(el("span", { class: "summary-subnote-label", text: label }));
       body.innerHTML = "";
       if (editing) {
         const editable = el("div", { class: "summary-item-notes", contenteditable: "true", spellcheck: "false" });
@@ -360,6 +361,8 @@ function buildTopicsEditor(root, topics, persist, opts) {
         body.appendChild(boxRow);
         requestAnimationFrame(() => editable.focus());
       } else {
+        const view = el("div", { class: "summary-item-notes summary-item-notes-view" });
+        view.innerHTML = summaryNotesHasContent(getHtml()) ? getHtml() : `<span class="summary-subnote-empty">אין עדיין ${label || "תוכן"}</span>`;
         const editBtn = el("button", {
           type: "button",
           class: "summary-subnote-edit-btn",
@@ -370,9 +373,7 @@ function buildTopicsEditor(root, topics, persist, opts) {
             render();
           }
         });
-        header.appendChild(editBtn);
-        const view = el("div", { class: "summary-item-notes summary-item-notes-view" });
-        view.innerHTML = summaryNotesHasContent(getHtml()) ? getHtml() : `<span class="summary-subnote-empty">אין עדיין ${label || "תוכן"}</span>`;
+        view.insertBefore(editBtn, view.firstChild);
         body.appendChild(view);
       }
     }
@@ -486,6 +487,10 @@ function buildTopicsEditor(root, topics, persist, opts) {
         body.appendChild(toolbar);
         requestAnimationFrame(() => detailEditable.focus());
       } else {
+        const detailView = el("div", { class: "summary-item-notes summary-item-notes-view" });
+        detailView.innerHTML = summaryNotesHasContent(getDetailHtml())
+          ? getDetailHtml()
+          : `<span class="summary-subnote-empty">אין עדיין תוכן</span>`;
         const editBtn = el("button", {
           type: "button",
           class: "summary-subnote-edit-btn",
@@ -496,12 +501,7 @@ function buildTopicsEditor(root, topics, persist, opts) {
             render();
           }
         });
-        header.appendChild(editBtn);
-
-        const detailView = el("div", { class: "summary-item-notes summary-item-notes-view" });
-        detailView.innerHTML = summaryNotesHasContent(getDetailHtml())
-          ? getDetailHtml()
-          : `<span class="summary-subnote-empty">אין עדיין תוכן</span>`;
+        detailView.insertBefore(editBtn, detailView.firstChild);
         body.appendChild(detailView);
 
         if (summaryNotesHasContent(getConclusionsHtml())) {
