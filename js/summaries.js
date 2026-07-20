@@ -567,7 +567,7 @@ function renderSummaryWriteTab(content) {
 
   wrap.appendChild(
     el("button", {
-      class: "btn btn-primary btn-save",
+      class: "btn btn-primary btn-save summary-save-btn",
       type: "button",
       text: "שמירה",
       onclick: () => {
