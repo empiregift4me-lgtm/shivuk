@@ -1429,9 +1429,11 @@ select.field-input:focus {
 .summary-item.drag-over { background: rgba(224, 177, 203, 0.15); }
 .summary-item.is-done .summary-item-text-input,
 .summary-item.is-done .summary-item-text-view { text-decoration: line-through; opacity: 0.65; }
-.summary-item-text-input { flex: 1 1 auto; min-width: 120px; background: transparent; border: none; }
+/* שורת ה"עניין" היא העוגן הוויזואלי המרכזי של כל בלוק - גדולה ומודגשת משמעותית משאר הטקסט,
+   כדי שסריקה מהירה בעיניים (בפגישה) תמצא מיד "על מה מדברים" בלי לקרוא את כל הפירוט */
+.summary-item-text-input { flex: 1 1 auto; min-width: 120px; background: transparent; border: none; font-size: 1.15rem; font-weight: 700; }
 .summary-item-text-input:focus { outline: none; box-shadow: none; border-color: transparent; }
-.summary-item-text-view { flex: 1 1 auto; color: var(--text-light); }
+.summary-item-text-view { flex: 1 1 auto; color: var(--text-light); font-size: 1.15rem; font-weight: 700; }
 .summary-notes-toggle {
   flex: 0 0 auto;
   border: none;
@@ -1465,12 +1467,13 @@ select.field-input:focus {
   padding: 12px 14px;
   margin: 0;
 }
+/* התווית צמודה כמעט ישירות לתיבה שמתחתיה (עקרון הקִרבה - Gestalt) כדי שהעין תקשר אותן מיד כזוג */
 .summary-subnote-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 8px;
-  margin-bottom: 8px;
+  margin-bottom: 2px;
 }
 .summary-subnote-label { font-size: 0.72rem; color: var(--text-submuted); font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; opacity: 0.85; }
 .summary-subnote-confirm-row { display: flex; justify-content: flex-end; margin-top: 8px; }
@@ -1501,20 +1504,21 @@ select.field-input:focus {
   padding: 0;
 }
 .summary-subnote-edit-btn:hover { background: var(--c-highlight); color: #231942; }
-.summary-item-add-row { display: flex; justify-content: flex-start; margin-top: 2px; }
-.summary-item-add-btn {
-  width: 26px;
-  height: 26px;
-  border-radius: 50%;
-  border: 1px solid var(--c-border);
-  background: var(--c-field);
-  color: var(--text-light);
+/* שורת "הוסף עניין" עצמאית בין עניין לעניין - פעולה מבנית, לא חלק מתוכן העניין הקיים,
+   כדי שלא תתבלבל עם שדות הפירוט/מסקנות ולא תילחץ בטעות */
+.summary-add-item-row { margin: 6px 0; }
+.summary-add-item-btn {
+  width: 100%;
+  font-family: inherit;
+  border: 1px dashed var(--c-border);
+  background: transparent;
+  color: var(--text-submuted);
+  border-radius: var(--radius-sm);
+  padding: 7px;
+  font-size: 0.85rem;
   cursor: pointer;
-  font-size: 15px;
-  line-height: 1;
-  padding: 0;
 }
-.summary-item-add-btn:hover { background: var(--c-highlight); color: #231942; }
+.summary-add-item-btn:hover { border-color: var(--c-highlight); color: var(--c-highlight); background: rgba(224, 177, 203, 0.08); }
 .summary-topic-story-btn {
   flex: 0 0 auto;
   font-family: inherit;
@@ -1533,9 +1537,9 @@ select.field-input:focus {
 .summary-freewrite-block + .summary-freewrite-block,
 .summary-freewrite-block { margin-bottom: 12px; }
 .summary-freewrite-delete { margin-top: 8px; }
-/* סרגל הכלים המצומצם - שורה אופקית אחת בראש תיבת הטקסט, לא טור אנכי בצד.
-   הבדל עדין מאוד מהרקע הסובב (שכבת בהירות שקופה קלה, לא צבע מוצק שונה) - מספיק כדי שהעין תזהה
-   "יש כאן פס נפרד", בלי למשוך תשומת לב מוגזמת. קו עדין מתחתיו הוא ההפרדה היחידה מהטקסט. */
+/* סרגל הכלים המצומצם - שורה אופקית אחת בתחתית תיבת הטקסט (שם נמצא הסמן בזמן כתיבה), לא טור
+   אנכי בצד ולא בראש. הבדל עדין מאוד מהרקע הסובב (שכבת בהירות שקופה קלה, לא צבע מוצק שונה) -
+   מספיק כדי שהעין תזהה "יש כאן פס נפרד", בלי למשוך תשומת לב מוגזמת. */
 .rt-toolbar-mini {
   position: static;
   flex-direction: row;
@@ -1544,11 +1548,17 @@ select.field-input:focus {
   gap: 4px;
   background: rgba(255, 255, 255, 0.035);
   border: none;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
   box-shadow: none;
   padding: 6px 8px;
   margin: 0;
 }
+/* חיווי "נשמר לפני..." יושב צמוד לכותרת הראשית, כדי להרגיע בלי להסתמך רק על כפתור השמירה */
+.summary-title-group { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.summary-title-group .panel-title { margin: 0; }
+.summary-saved-indicator { font-size: 0.78rem; color: var(--text-submuted); opacity: 0.85; }
+/* תצוגת ארכיון (לא במצב עריכה) עמומה מעט - אבחנה מיידית בין "צפייה בעבר" לבין "עריכה חיה" */
+.summary-archive-locked-view { opacity: 0.82; filter: saturate(0.85); }
 .summary-item-notes {
   flex: 1 1 auto;
   min-width: 0;

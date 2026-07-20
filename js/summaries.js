@@ -229,8 +229,8 @@ function buildTopicsEditor(root, topics, persist, opts) {
       });
       requestAnimationFrame(storyAutoGrow);
       const storyRow = el("div", { class: "summary-item-notes-row" });
-      storyRow.appendChild(createMiniRichToolbar(storyEditable));
       storyRow.appendChild(storyEditable);
+      storyRow.appendChild(createMiniRichToolbar(storyEditable));
       storyWrap.appendChild(storyRow);
     }
     block.appendChild(head);
@@ -248,10 +248,24 @@ function buildTopicsEditor(root, topics, persist, opts) {
     const itemsWrap = el("div", { class: "summary-items" });
     topic.items.forEach((item, itemIdx) => {
       itemsWrap.appendChild(item.type === "freewrite" ? buildFreewriteBlock(topic, item, itemIdx) : buildItemBlock(topic, item, itemIdx));
+      // כפתור "הוספת עניין" יושב כשורה עצמאית במרווח שבין עניין לעניין - לא חלק מתוכן העניין
+      // הקיים, כדי שלא יתערבב עם שדות הפירוט/מסקנות שלו
+      if (!readOnly) itemsWrap.appendChild(buildAddItemRow(topic, itemIdx));
     });
     block.appendChild(itemsWrap);
 
     return block;
+  }
+
+  function buildAddItemRow(topic, afterIdx) {
+    return el("div", { class: "summary-add-item-row" }, [
+      el("button", {
+        type: "button",
+        class: "summary-add-item-btn",
+        text: "+ הוסף עניין חדש",
+        onclick: () => insertItemAfter(topic, afterIdx)
+      })
+    ]);
   }
 
   function buildFreewriteBlock(topic, item, itemIdx) {
@@ -280,8 +294,8 @@ function buildTopicsEditor(root, topics, persist, opts) {
     });
     requestAnimationFrame(autoGrow);
     const row = el("div", { class: "summary-item-notes-row" });
-    row.appendChild(createMiniRichToolbar(editable));
     row.appendChild(editable);
+    row.appendChild(createMiniRichToolbar(editable));
     const deleteBtn = el("button", {
       type: "button",
       class: "task-delete-btn summary-freewrite-delete",
@@ -329,8 +343,8 @@ function buildTopicsEditor(root, topics, persist, opts) {
         });
         requestAnimationFrame(autoGrow);
         const boxRow = el("div", { class: "summary-item-notes-row" });
-        boxRow.appendChild(createMiniRichToolbar(editable));
         boxRow.appendChild(editable);
+        boxRow.appendChild(createMiniRichToolbar(editable));
         body.appendChild(boxRow);
         // כפתור האישור יושב בתחתית השדה (לא בכותרת) - מסמן בבירור "כאן מסיימים", בנפרד ממקום
         // כניסת העריכה (העיפרון תמיד למעלה, ליד הכותרת)
@@ -494,18 +508,6 @@ function buildTopicsEditor(root, topics, persist, opts) {
     } else {
       notesWrap.appendChild(buildSubNoteSection(topic, item, "notesHtml", "פירוט"));
       notesWrap.appendChild(buildSubNoteSection(topic, item, "conclusionsHtml", "מסקנות"));
-
-      notesWrap.appendChild(
-        el("div", { class: "summary-item-add-row" }, [
-          el("button", {
-            type: "button",
-            class: "summary-item-add-btn",
-            text: "+",
-            title: "הוספת עניין חדש מיד אחרי זה",
-            onclick: () => insertItemAfter(topic, itemIdx)
-          })
-        ])
-      );
     }
 
     setCollapsed(collapsedState[item.id]);
@@ -519,21 +521,30 @@ function buildTopicsEditor(root, topics, persist, opts) {
 
 function renderSummaryWriteTab(content) {
   content.innerHTML = "";
+  if (summaryAutosaveIntervalId) clearInterval(summaryAutosaveIntervalId);
   const wrap = el("div", { class: "panel" });
 
   const draft = loadSummaryDraft();
   const topics = normalizeSummaryTopics(draft.topics);
 
-  const draftStatus = el("p", { class: "draft-status" });
+  let lastSavedAt = draft.savedAt || null;
+  const savedLabel = el("span", { class: "summary-saved-indicator" });
+  function updateSavedLabel() {
+    savedLabel.textContent = formatRelativeSaved(lastSavedAt);
+  }
+  updateSavedLabel();
+  summaryAutosaveIntervalId = setInterval(updateSavedLabel, 20000);
 
   function persistDraft() {
-    saveSummaryDraft({ topics, sessionDate: dateInput.value || todayISO(), topic: topicInput.value });
-    draftStatus.textContent = "✓ טיוטה נשמרה אוטומטית";
+    lastSavedAt = Date.now();
+    saveSummaryDraft({ topics, sessionDate: dateInput.value || todayISO(), topic: topicInput.value, savedAt: lastSavedAt });
+    updateSavedLabel();
   }
 
-  // שורת כותרת - "כתיבה חופשית" מול תאריך הפגישה, בקצוות מנוגדים של אותה שורה
+  // שורת כותרת - "כתיבה חופשית" + חיווי "נשמר לפני..." מול תאריך הפגישה, בקצוות מנוגדים של אותה שורה
   const headerRow = el("div", { class: "summary-header-row" });
-  headerRow.appendChild(el("h2", { class: "panel-title", text: "כתיבה חופשית" }));
+  const titleGroup = el("div", { class: "summary-title-group" }, [el("h2", { class: "panel-title", text: "כתיבה חופשית" }), savedLabel]);
+  headerRow.appendChild(titleGroup);
   const dateRow = el("div", { class: "session-date-row" });
   dateRow.appendChild(el("label", { class: "session-date-label", text: "תאריך הפגישה:" }));
   const dateInput = el("input", { type: "date", class: "field-input session-date-input" });
@@ -578,7 +589,6 @@ function renderSummaryWriteTab(content) {
   addTopicBtn.addEventListener("click", () => editorHandle.addTopic());
   freewriteAtFocusBtn.addEventListener("click", () => editorHandle.addFreewriteNearFocus());
 
-  wrap.appendChild(draftStatus);
   dateInput.addEventListener("change", persistDraft);
   topicInput.addEventListener("input", persistDraft);
 
@@ -624,6 +634,21 @@ function renderSummaryWriteTab(content) {
 
   content.appendChild(wrap);
 }
+
+// ניסוח זמן יחסי לחיווי "נשמר לפני..." ליד כותרת העמוד - מרגיע יותר מהודעת "נשמר" סטטית
+// כי מראה בבירור שהשמירה עדכנית, לא רק שהתרחשה אי-פעם
+function formatRelativeSaved(ts) {
+  if (!ts) return "";
+  const diffSec = Math.max(0, Math.round((Date.now() - ts) / 1000));
+  if (diffSec < 10) return "נשמר הרגע";
+  if (diffSec < 60) return `נשמר לפני ${diffSec} שניות`;
+  const diffMin = Math.round(diffSec / 60);
+  if (diffMin < 60) return `נשמר לפני ${diffMin} ${diffMin === 1 ? "דקה" : "דקות"}`;
+  const diffHour = Math.round(diffMin / 60);
+  return `נשמר לפני ${diffHour} ${diffHour === 1 ? "שעה" : "שעות"}`;
+}
+
+let summaryAutosaveIntervalId = null;
 
 let summaryArchiveOrder = "desc";
 
@@ -784,7 +809,9 @@ function renderSummaryArchiveTab(content, goToWriteTab) {
           })
         ]);
         body.appendChild(topRow);
-        const viewRoot = el("div", { class: "summary-topics-wrap" });
+        // מראה מעט "עמום" (opacity מופחת) בתצוגת ארכיון - אבחנה ויזואלית מיידית בין פגישה נעולה/עבר
+        // לבין מסך עריכה חי, כדי שלא תתבלבל בין השניים במבט ראשון
+        const viewRoot = el("div", { class: "summary-topics-wrap summary-archive-locked-view" });
         body.appendChild(viewRoot);
         buildTopicsEditor(viewRoot, item.topics, () => {}, { readOnly: true });
         if (unchecked) {
