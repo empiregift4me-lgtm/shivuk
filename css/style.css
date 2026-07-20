@@ -1377,7 +1377,7 @@ select.field-input:focus {
 /* ===== סיכומים - נושא -> עניינים -> כתיבה חופשית ===== */
 .summary-header-row { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: var(--space-sm); margin-bottom: 4px; }
 .summary-header-row .panel-title { margin: 0; }
-.summary-top-row { display: flex; align-items: center; justify-content: flex-start; flex-wrap: wrap; gap: var(--space-sm); margin-bottom: var(--space); }
+.summary-top-row { display: flex; align-items: center; justify-content: flex-start; flex-wrap: wrap; gap: var(--space-sm); margin-bottom: var(--space-lg); }
 .summary-top-row .session-topic-input { flex: 1 1 200px; width: auto; min-width: 120px; }
 .session-date-row { display: flex; align-items: center; gap: var(--space-sm); }
 .session-date-label { color: var(--text-submuted); font-size: 0.95rem; }
@@ -1405,8 +1405,8 @@ select.field-input:focus {
   align-items: center;
   gap: 10px;
   border-bottom: 2px solid var(--c-border);
-  padding-bottom: 12px;
-  margin-bottom: 10px;
+  padding-bottom: 8px;
+  margin-bottom: 6px;
 }
 .summary-topic-title-input {
   flex: 1 1 auto;
@@ -1447,7 +1447,7 @@ select.field-input:focus {
 }
 .summary-notes-toggle:hover { color: var(--c-highlight); background: var(--c-field); }
 .summary-item-row .task-drag-handle { order: 5; }
-.summary-item-notes-wrap { margin: 10px 0 6px; display: flex; flex-direction: column; gap: 14px; }
+.summary-item-notes-wrap { margin: 8px 0 4px; display: flex; flex-direction: column; gap: 8px; }
 .summary-item-notes-wrap.is-collapsed { display: none; }
 /* קבוצת "כלי עריכה + טקסט" - בלי מסגרת חיצונית משלה (זה היה קופסה נוספת בתוך הכרטיס);
    ההפרדה היחידה היא הקו העדין שמתחת לסרגל הכלים עצמו */
@@ -1464,7 +1464,7 @@ select.field-input:focus {
 .summary-freewrite-block {
   background: var(--c-panel);
   border-radius: var(--radius-sm);
-  padding: 12px 14px;
+  padding: 10px 12px;
   margin: 0;
 }
 /* התווית צמודה כמעט ישירות לתיבה שמתחתיה (עקרון הקִרבה - Gestalt) כדי שהעין תקשר אותן מיד כזוג */
@@ -1474,21 +1474,23 @@ select.field-input:focus {
   justify-content: space-between;
   gap: 8px;
   margin-bottom: 2px;
+  min-height: 0;
 }
-.summary-subnote-label { font-size: 0.72rem; color: var(--text-submuted); font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; opacity: 0.85; }
-.summary-subnote-confirm-row { display: flex; justify-content: flex-end; margin-top: 8px; }
+.summary-subnote-label { font-size: 0.85rem; color: var(--text-submuted); font-weight: 700; }
+/* כפתור "סיום" יושב בתוך שורת סרגל הכלים עצמה (ליד כפתור העלאת התמונה), לא בשורה נפרדת -
+   צבע כהה יותר מהכפתורים הרגילים כדי לבדל אותו כפעולת סיום, לא עוד כלי עיצוב */
 .summary-subnote-confirm-btn {
   font-family: inherit;
-  border: 1px solid var(--c-highlight);
-  background: var(--c-highlight);
-  color: #231942;
-  border-radius: 999px;
-  padding: 5px 14px;
+  border: 1px solid var(--c-muted-btn);
+  background: var(--c-muted-btn);
+  color: var(--text-light);
+  border-radius: 6px;
+  padding: 5px 12px;
   font-size: 0.8rem;
   font-weight: 600;
   cursor: pointer;
 }
-.summary-subnote-confirm-btn:hover { filter: brightness(1.08); }
+.summary-subnote-confirm-btn:hover { filter: brightness(1.15); }
 .summary-subnote-empty { color: var(--text-submuted); opacity: 0.7; font-size: 0.9rem; }
 .summary-subnote-edit-btn {
   flex: 0 0 auto;
@@ -1504,21 +1506,35 @@ select.field-input:focus {
   padding: 0;
 }
 .summary-subnote-edit-btn:hover { background: var(--c-highlight); color: #231942; }
-/* שורת "הוסף עניין" עצמאית בין עניין לעניין - פעולה מבנית, לא חלק מתוכן העניין הקיים,
-   כדי שלא תתבלבל עם שדות הפירוט/מסקנות ולא תילחץ בטעות */
-.summary-add-item-row { margin: 6px 0; }
-.summary-add-item-btn {
+/* שורת "הוסף עניין" עצמאית בין עניין לעניין - קו דק שיוצא לרוחב מלא עם עיגול "+" בקצה הימני,
+   לא קופסה עם טקסט - פעולה מבנית עדינה, לא חלק מתוכן העניין הקיים */
+.summary-add-item-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   width: 100%;
+  margin: 8px 0;
+  padding: 4px 0;
   font-family: inherit;
-  border: 1px dashed var(--c-border);
-  background: transparent;
-  color: var(--text-submuted);
-  border-radius: var(--radius-sm);
-  padding: 7px;
-  font-size: 0.85rem;
+  background: none;
+  border: none;
   cursor: pointer;
 }
-.summary-add-item-btn:hover { border-color: var(--c-highlight); color: var(--c-highlight); background: rgba(224, 177, 203, 0.08); }
+.summary-add-item-circle {
+  flex: 0 0 auto;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 1px solid var(--c-border);
+  background: var(--c-field);
+  color: var(--text-light);
+  font-size: 14px;
+  line-height: 22px;
+  text-align: center;
+}
+.summary-add-item-line { flex: 1 1 auto; height: 1px; background: var(--c-border); }
+.summary-add-item-row:hover .summary-add-item-circle { background: var(--c-highlight); color: #231942; border-color: var(--c-highlight); }
+.summary-add-item-row:hover .summary-add-item-line { background: var(--c-highlight); opacity: 0.6; }
 .summary-topic-story-btn {
   flex: 0 0 auto;
   font-family: inherit;

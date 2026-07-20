@@ -257,15 +257,17 @@ function buildTopicsEditor(root, topics, persist, opts) {
     return block;
   }
 
+  // שורת "הוספת עניין" - קו דק שיוצא לרוחב מלא עם עיגול "+" בקצה הימני שלו, לא קופסה עם טקסט
   function buildAddItemRow(topic, afterIdx) {
-    return el("div", { class: "summary-add-item-row" }, [
-      el("button", {
-        type: "button",
-        class: "summary-add-item-btn",
-        text: "+ הוסף עניין חדש",
-        onclick: () => insertItemAfter(topic, afterIdx)
-      })
-    ]);
+    const btn = el("button", {
+      type: "button",
+      class: "summary-add-item-row",
+      title: "הוספת עניין חדש"
+    });
+    btn.appendChild(el("span", { class: "summary-add-item-circle", text: "+" }));
+    btn.appendChild(el("span", { class: "summary-add-item-line" }));
+    btn.addEventListener("click", () => insertItemAfter(topic, afterIdx));
+    return btn;
   }
 
   function buildFreewriteBlock(topic, item, itemIdx) {
@@ -321,7 +323,8 @@ function buildTopicsEditor(root, topics, persist, opts) {
     let editing = !summaryNotesHasContent(item[field]);
     const card = el("div", { class: "summary-subnote-card" });
     const header = el("div", { class: "summary-subnote-header" });
-    header.appendChild(el("span", { class: "summary-subnote-label", text: label }));
+    const labelEl = el("span", { class: "summary-subnote-label", text: label });
+    header.appendChild(labelEl);
     card.appendChild(header);
     const body = el("div", { class: "summary-subnote-body" });
     card.appendChild(body);
@@ -344,23 +347,21 @@ function buildTopicsEditor(root, topics, persist, opts) {
         requestAnimationFrame(autoGrow);
         const boxRow = el("div", { class: "summary-item-notes-row" });
         boxRow.appendChild(editable);
-        boxRow.appendChild(createMiniRichToolbar(editable));
-        body.appendChild(boxRow);
-        // כפתור האישור יושב בתחתית השדה (לא בכותרת) - מסמן בבירור "כאן מסיימים", בנפרד ממקום
-        // כניסת העריכה (העיפרון תמיד למעלה, ליד הכותרת)
-        body.appendChild(
-          el("div", { class: "summary-subnote-confirm-row" }, [
-            el("button", {
-              type: "button",
-              class: "summary-subnote-confirm-btn",
-              text: "✓ סיום עריכה",
-              onclick: () => {
-                editing = false;
-                render();
-              }
-            })
-          ])
+        // כפתור "סיום" יושב בתוך סרגל הכלים עצמו, ליד כפתור העלאת התמונה - לא בשורה נפרדת משלו
+        const toolbar = createMiniRichToolbar(editable);
+        toolbar.appendChild(
+          el("button", {
+            type: "button",
+            class: "summary-subnote-confirm-btn",
+            text: "סיום",
+            onclick: () => {
+              editing = false;
+              render();
+            }
+          })
         );
+        boxRow.appendChild(toolbar);
+        body.appendChild(boxRow);
         requestAnimationFrame(() => editable.focus());
       } else {
         const editBtn = el("button", {
@@ -380,6 +381,12 @@ function buildTopicsEditor(root, topics, persist, opts) {
       }
     }
     render();
+
+    // מאפשר לקורא (למשל כרטיס "פירוט") לעדכן את הכותרת בזמן אמת - למשל כדי להציג בה את שם
+    // העניין במקום מילה קבועה, מתעדכן תוך כדי הקלדה בשדה העניין
+    card.updateLabel = (text) => {
+      labelEl.textContent = text;
+    };
 
     return card;
   }
@@ -425,6 +432,9 @@ function buildTopicsEditor(root, topics, persist, opts) {
     });
     row.appendChild(checkbox);
 
+    // נבנה לפני שדה הטקסט (אם כי מתווסף לעץ רק בהמשך) כדי ששדה הטקסט יוכל לעדכן את הכותרת שלו חי
+    const detailCard = !readOnly ? buildSubNoteSection(topic, item, "notesHtml", (item.text || "").trim() || "פירוט") : null;
+
     let textEl;
     if (readOnly) {
       textEl = el("span", { class: "summary-item-text-view", text: item.text || "" });
@@ -444,6 +454,7 @@ function buildTopicsEditor(root, topics, persist, opts) {
       textEl.addEventListener("input", () => {
         item.text = textEl.value;
         debouncedPersist();
+        if (detailCard.updateLabel) detailCard.updateLabel(textEl.value.trim() || "פירוט");
       });
       textEl.addEventListener("keydown", (e) => {
         if (e.key !== "Enter") return;
@@ -506,7 +517,9 @@ function buildTopicsEditor(root, topics, persist, opts) {
         notesWrap.appendChild(concView);
       }
     } else {
-      notesWrap.appendChild(buildSubNoteSection(topic, item, "notesHtml", "פירוט"));
+      // כרטיס "פירוט" מציג בכותרתו את שם העניין עצמו (במקום המילה הקבועה "פירוט") - מתעדכן
+      // חי תוך כדי הקלדה בשדה העניין, כדי שיהיה ברור על איזה עניין הפירוט הזה בלי לגלול למעלה
+      notesWrap.appendChild(detailCard);
       notesWrap.appendChild(buildSubNoteSection(topic, item, "conclusionsHtml", "מסקנות"));
     }
 
@@ -552,10 +565,6 @@ function renderSummaryWriteTab(content) {
   dateRow.appendChild(dateInput);
   headerRow.appendChild(dateRow);
   wrap.appendChild(headerRow);
-
-  wrap.appendChild(
-    el("p", { class: "panel-subtitle", text: "בנו כאן את רשימת הנושאים לשיחה - עם שמירה זה יעבור לארכיון, והדף יתפנה לסיכום הבא." })
-  );
 
   // "+ נושא חדש" ושדה נושא הפגישה צמודים זה לזה; כפתור "+ כתיבה חופשית" מוסיף בלוק כתיבה חופשית
   // מיד אחרי העניין שבו היה הפוקוס לאחרונה
