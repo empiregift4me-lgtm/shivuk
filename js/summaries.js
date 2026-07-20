@@ -308,17 +308,14 @@ function buildTopicsEditor(root, topics, persist, opts) {
     const card = el("div", { class: "summary-subnote-card" });
     const header = el("div", { class: "summary-subnote-header" });
     header.appendChild(el("span", { class: "summary-subnote-label", text: label }));
-    const editBtn = el("button", { type: "button", class: "summary-subnote-edit-btn" });
-    header.appendChild(editBtn);
     card.appendChild(header);
     const body = el("div", { class: "summary-subnote-body" });
     card.appendChild(body);
 
     function render() {
+      header.querySelectorAll(".summary-subnote-edit-btn").forEach((b) => b.remove());
       body.innerHTML = "";
       if (editing) {
-        editBtn.textContent = "✓";
-        editBtn.title = "סיום עריכה";
         const editable = el("div", { class: "summary-item-notes", contenteditable: "true", spellcheck: "false" });
         editable.innerHTML = item[field] || "";
         const autoGrow = () => {
@@ -335,19 +332,39 @@ function buildTopicsEditor(root, topics, persist, opts) {
         boxRow.appendChild(createMiniRichToolbar(editable));
         boxRow.appendChild(editable);
         body.appendChild(boxRow);
+        // כפתור האישור יושב בתחתית השדה (לא בכותרת) - מסמן בבירור "כאן מסיימים", בנפרד ממקום
+        // כניסת העריכה (העיפרון תמיד למעלה, ליד הכותרת)
+        body.appendChild(
+          el("div", { class: "summary-subnote-confirm-row" }, [
+            el("button", {
+              type: "button",
+              class: "summary-subnote-confirm-btn",
+              text: "✓ סיום עריכה",
+              onclick: () => {
+                editing = false;
+                render();
+              }
+            })
+          ])
+        );
         requestAnimationFrame(() => editable.focus());
       } else {
-        editBtn.textContent = "✏️";
-        editBtn.title = "לחיצה כדי לפתוח לעריכה";
+        const editBtn = el("button", {
+          type: "button",
+          class: "summary-subnote-edit-btn",
+          text: "✏️",
+          title: "לחיצה כדי לפתוח לעריכה",
+          onclick: () => {
+            editing = true;
+            render();
+          }
+        });
+        header.appendChild(editBtn);
         const view = el("div", { class: "summary-item-notes summary-item-notes-view" });
         view.innerHTML = summaryNotesHasContent(item[field]) ? item[field] : `<span class="summary-subnote-empty">אין עדיין ${label}</span>`;
         body.appendChild(view);
       }
     }
-    editBtn.addEventListener("click", () => {
-      editing = !editing;
-      render();
-    });
     render();
 
     return card;
