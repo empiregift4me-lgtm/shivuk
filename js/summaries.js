@@ -169,6 +169,27 @@ function buildTopicsEditor(root, topics, persist, opts) {
 
     if (readOnly) {
       head.appendChild(el("h3", { class: "summary-topic-title-view", text: topic.title || "(ללא כותרת)" }));
+      // גם בתצוגת ארכיון בלבד, סיפור הנושא ניתן לקיפול/פתיחה עם אותו חץ - לא מוצג תמיד פתוח
+      if (summaryNotesHasContent(topic.storyHtml)) {
+        let storyOpen = storyCollapsedState[topic.id] !== undefined ? !storyCollapsedState[topic.id] : !opts.collapsedByDefault;
+        const storyBtn = el("button", {
+          type: "button",
+          class: "summary-notes-toggle",
+          text: storyOpen ? "▾" : "▸",
+          title: "הצגה/הסתרה של כתיבה חופשית כללית על הנושא"
+        });
+        storyWrap = el("div", { class: "summary-topic-story-wrap" + (storyOpen ? "" : " is-collapsed") });
+        const storyView = el("div", { class: "summary-item-notes summary-item-notes-view summary-topic-story-view" });
+        storyView.innerHTML = topic.storyHtml;
+        storyWrap.appendChild(storyView);
+        storyBtn.addEventListener("click", () => {
+          storyOpen = !storyOpen;
+          storyCollapsedState[topic.id] = !storyOpen;
+          storyWrap.classList.toggle("is-collapsed", !storyOpen);
+          storyBtn.textContent = storyOpen ? "▾" : "▸";
+        });
+        head.appendChild(storyBtn);
+      }
     } else {
       const titleInput = el("input", {
         type: "text",
@@ -188,7 +209,12 @@ function buildTopicsEditor(root, topics, persist, opts) {
       // בתחילת הנושא, לפני כל העניינים - למידה/סיפור כללי הרלוונטי לנושא הספציפי.
       // אותו עיצוב בדיוק כמו חץ הפירוט של עניין (▸/▾), לא כפתור-טקסט
       storyWrap = el("div", { class: "summary-topic-story-wrap is-collapsed" });
-      let storyOpen = storyCollapsedState[topic.id] !== undefined ? !storyCollapsedState[topic.id] : summaryNotesHasContent(topic.storyHtml);
+      let storyOpen =
+        storyCollapsedState[topic.id] !== undefined
+          ? !storyCollapsedState[topic.id]
+          : opts.collapsedByDefault
+          ? false
+          : summaryNotesHasContent(topic.storyHtml);
       const storyBtn = el("button", {
         type: "button",
         class: "summary-notes-toggle",
@@ -231,15 +257,7 @@ function buildTopicsEditor(root, topics, persist, opts) {
     }
     block.appendChild(head);
 
-    if (readOnly) {
-      if (summaryNotesHasContent(topic.storyHtml)) {
-        const storyView = el("div", { class: "summary-item-notes summary-item-notes-view summary-topic-story-view" });
-        storyView.innerHTML = topic.storyHtml;
-        block.appendChild(storyView);
-      }
-    } else {
-      block.appendChild(storyWrap);
-    }
+    if (storyWrap) block.appendChild(storyWrap);
 
     const itemsWrap = el("div", { class: "summary-items" });
     topic.items.forEach((item, itemIdx) => {
@@ -646,7 +664,7 @@ function buildTopicsEditor(root, topics, persist, opts) {
 
     const notesWrap = el("div", { class: "summary-item-notes-wrap" });
     const hasAnyNotes = summaryNotesHasContent(item.notesHtml) || summaryNotesHasContent(item.conclusionsHtml);
-    if (collapsedState[item.id] === undefined) collapsedState[item.id] = !hasAnyNotes;
+    if (collapsedState[item.id] === undefined) collapsedState[item.id] = opts.collapsedByDefault ? true : !hasAnyNotes;
     const setCollapsed = (val) => {
       collapsedState[item.id] = val;
       notesWrap.classList.toggle("is-collapsed", val);
@@ -676,8 +694,19 @@ function buildTopicsEditor(root, topics, persist, opts) {
     return itemWrap;
   }
 
+  // הרחבה/כיווץ גורף של כל הענפים (סיפורי נושא + פירוט/מסקנות של כל עניין) - למשל כפתור "הרחב הכל" בארכיון
+  function setAllCollapsed(collapsed) {
+    topics.forEach((t) => {
+      storyCollapsedState[t.id] = collapsed;
+      t.items.forEach((it) => {
+        if (it.type !== "freewrite") collapsedState[it.id] = collapsed;
+      });
+    });
+    fullRender();
+  }
+
   fullRender();
-  return { addTopic, addFreewriteNearFocus };
+  return { addTopic, addFreewriteNearFocus, setAllCollapsed };
 }
 
 function renderSummaryWriteTab(content) {
@@ -958,8 +987,22 @@ function renderSummaryArchiveTab(content, goToWriteTab) {
         );
         body.appendChild(buildEditToggle("שמירת שינויים"));
       } else {
+        // כל הענפים (סיפורי נושא + פירוט/מסקנות) מתחילים סגורים בתצוגת הארכיון הראשית, כדי לא
+        // להציף במסך ארוך - כפתור "הרחב"/"כווץ" פותח או סוגר את כולם יחד בבת אחת
+        let allExpanded = false;
+        const expandAllBtn = el("button", {
+          class: "btn btn-secondary btn-small",
+          type: "button",
+          text: "הרחב",
+          onclick: () => {
+            allExpanded = !allExpanded;
+            viewHandle.setAllCollapsed(!allExpanded);
+            expandAllBtn.textContent = allExpanded ? "כווץ" : "הרחב";
+          }
+        });
         const topRow = el("div", { class: "archive-body-actions" }, [
           buildEditToggle("עריכה ושינוי"),
+          expandAllBtn,
           el("button", {
             class: "btn btn-secondary btn-small",
             type: "button",
@@ -972,7 +1015,7 @@ function renderSummaryArchiveTab(content, goToWriteTab) {
         // לבין מסך עריכה חי, כדי שלא תתבלבל בין השניים במבט ראשון
         const viewRoot = el("div", { class: "summary-topics-wrap summary-archive-locked-view" });
         body.appendChild(viewRoot);
-        buildTopicsEditor(viewRoot, item.topics, () => {}, { readOnly: true });
+        const viewHandle = buildTopicsEditor(viewRoot, item.topics, () => {}, { readOnly: true, collapsedByDefault: true });
         if (unchecked) {
           body.appendChild(
             el("button", {
