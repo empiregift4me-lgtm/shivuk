@@ -703,7 +703,9 @@ function renderSummaryWriteTab(content) {
   }
 
   // שורת כותרת - שדה נושא הפגישה משמש כעת ככותרת העמוד עצמה (במקום כותרת "כתיבה חופשית" קבועה
-  // ומיותרת) + חיווי "נשמר לפני..." מול תאריך הפגישה, בקצוות מנוגדים של אותה שורה
+  // ומיותרת) + חיווי "נשמר לפני..." מול תאריך הפגישה, בקצוות מנוגדים של אותה שורה.
+  // התיבה הזו עומדת בנפרד מהתיבה הסגולה הכללית של העמוד (בדיוק כמו לשוניות הארכיונים/תשלומים),
+  // ולא משוכנת בתוכה - נספחת ל-content ולא ל-wrap
   const headerRow = el("div", { class: "summary-header-row" });
   const topicInput = el("input", {
     type: "text",
@@ -719,7 +721,7 @@ function renderSummaryWriteTab(content) {
   dateInput.value = draft.sessionDate || todayISO();
   dateRow.appendChild(dateInput);
   headerRow.appendChild(dateRow);
-  wrap.appendChild(headerRow);
+  content.appendChild(headerRow);
 
   // "+ נושא חדש" ו-"+ כתיבה חופשית" צמודים זה לזה כקבוצת כפתורים - ממוקמים בסוף העמוד, מיד
   // אחרי שורת "+ הוסף עניין חדש" של הנושא האחרון, כהמשך טבעי של אותה שורת פעולות
