@@ -216,22 +216,16 @@ function buildTopicsEditor(root, topics, persist, opts) {
       head.appendChild(deleteTopicBtn);
 
       storyWrap.classList.toggle("is-collapsed", !storyOpen);
-      const storyEditable = el("div", { class: "summary-item-notes", contenteditable: "true", spellcheck: "false" });
-      storyEditable.innerHTML = topic.storyHtml || "";
-      const storyAutoGrow = () => {
-        storyEditable.style.height = "auto";
-        storyEditable.style.height = storyEditable.scrollHeight + "px";
-      };
-      storyEditable.addEventListener("input", () => {
-        topic.storyHtml = storyEditable.innerHTML;
-        storyAutoGrow();
-        debouncedPersist();
-      });
-      requestAnimationFrame(storyAutoGrow);
-      const storyRow = el("div", { class: "summary-item-notes-row" });
-      storyRow.appendChild(storyEditable);
-      storyRow.appendChild(createMiniRichToolbar(storyEditable));
-      storyWrap.appendChild(storyRow);
+      // אותה תבנית נעילה/עריכה בדיוק כמו בעניינים - תצוגה נעולה + עיפרון, וכפתור "סיום" בתוך הסרגל
+      storyWrap.appendChild(
+        buildSubNoteSection(
+          () => topic.storyHtml,
+          (v) => {
+            topic.storyHtml = v;
+          },
+          ""
+        )
+      );
     }
     block.appendChild(head);
 
@@ -314,17 +308,17 @@ function buildTopicsEditor(root, topics, persist, opts) {
     return wrap;
   }
 
-  // כרטיס אחיד ל"פירוט"/"מסקנות" - כותרת קטנה + כפתור עיפרון/וי יושבים יחד בשורת כותרת אחת,
-  // והתוכן מתחתיה באותו כרטיס תחום (בלי שכבת קיפול נוספת - הכרטיס תמיד גלוי כשפתוחים את פירוט העניין,
-  // כדי לא ליצור שני מדרגים מקוננים של פתיחה/סגירה שמבלבלים את העין).
-  // בפעם הראשונה (השדה עדיין ריק) נכנסים ישר למצב עריכה בלי לחיצה נוספת על העיפרון - הנעילה נועדה
-  // להגן על תוכן קיים מעריכה בטעות, לא ליצור חיכוך בהקלדה הראשונה
-  function buildSubNoteSection(topic, item, field, label) {
-    let editing = !summaryNotesHasContent(item[field]);
-    const card = el("div", { class: "summary-subnote-card" });
+  // כרטיס נעילה/עריכה גנרי (getHtml/setHtml במקום item+field ישירות, כדי לשרת גם עניינים
+  // וגם את הפירוט ברמת הנושא בעזרת אותו קוד בדיוק) - בלי שכבת קיפול נוספת (הכרטיס תמיד גלוי
+  // כשפותחים את האזור שמכיל אותו). בפעם הראשונה (השדה עדיין ריק) נכנסים ישר למצב עריכה בלי
+  // לחיצה נוספת על העיפרון - הנעילה נועדה להגן על תוכן קיים מעריכה בטעות, לא ליצור חיכוך בהקלדה הראשונה.
+  // label ריק = אין שורת כותרת כלל (למשל "פירוט" עניין, ששמו כבר מוצג בשורת העניין מעליו);
+  // opts.variant מוסיף מחלקת CSS נוספת לכרטיס (למשל צבע רקע שונה למסקנות)
+  function buildSubNoteSection(getHtml, setHtml, label, opts) {
+    let editing = !summaryNotesHasContent(getHtml());
+    const card = el("div", { class: "summary-subnote-card" + (opts && opts.variant ? " summary-subnote-card--" + opts.variant : "") });
     const header = el("div", { class: "summary-subnote-header" });
-    const labelEl = el("span", { class: "summary-subnote-label", text: label });
-    header.appendChild(labelEl);
+    if (label) header.appendChild(el("span", { class: "summary-subnote-label", text: label }));
     card.appendChild(header);
     const body = el("div", { class: "summary-subnote-body" });
     card.appendChild(body);
@@ -334,13 +328,13 @@ function buildTopicsEditor(root, topics, persist, opts) {
       body.innerHTML = "";
       if (editing) {
         const editable = el("div", { class: "summary-item-notes", contenteditable: "true", spellcheck: "false" });
-        editable.innerHTML = item[field] || "";
+        editable.innerHTML = getHtml() || "";
         const autoGrow = () => {
           editable.style.height = "auto";
           editable.style.height = editable.scrollHeight + "px";
         };
         editable.addEventListener("input", () => {
-          item[field] = editable.innerHTML;
+          setHtml(editable.innerHTML);
           autoGrow();
           debouncedPersist();
         });
@@ -376,17 +370,11 @@ function buildTopicsEditor(root, topics, persist, opts) {
         });
         header.appendChild(editBtn);
         const view = el("div", { class: "summary-item-notes summary-item-notes-view" });
-        view.innerHTML = summaryNotesHasContent(item[field]) ? item[field] : `<span class="summary-subnote-empty">אין עדיין ${label}</span>`;
+        view.innerHTML = summaryNotesHasContent(getHtml()) ? getHtml() : `<span class="summary-subnote-empty">אין עדיין ${label || "תוכן"}</span>`;
         body.appendChild(view);
       }
     }
     render();
-
-    // מאפשר לקורא (למשל כרטיס "פירוט") לעדכן את הכותרת בזמן אמת - למשל כדי להציג בה את שם
-    // העניין במקום מילה קבועה, מתעדכן תוך כדי הקלדה בשדה העניין
-    card.updateLabel = (text) => {
-      labelEl.textContent = text;
-    };
 
     return card;
   }
@@ -432,8 +420,16 @@ function buildTopicsEditor(root, topics, persist, opts) {
     });
     row.appendChild(checkbox);
 
-    // נבנה לפני שדה הטקסט (אם כי מתווסף לעץ רק בהמשך) כדי ששדה הטקסט יוכל לעדכן את הכותרת שלו חי
-    const detailCard = !readOnly ? buildSubNoteSection(topic, item, "notesHtml", (item.text || "").trim() || "פירוט") : null;
+    // כרטיס הפירוט בלי שורת כותרת משלו - שם העניין כבר מוצג בשורת העניין מעליו, אין צורך לחזור עליו
+    const detailCard = !readOnly
+      ? buildSubNoteSection(
+          () => item.notesHtml,
+          (v) => {
+            item.notesHtml = v;
+          },
+          ""
+        )
+      : null;
 
     let textEl;
     if (readOnly) {
@@ -454,7 +450,6 @@ function buildTopicsEditor(root, topics, persist, opts) {
       textEl.addEventListener("input", () => {
         item.text = textEl.value;
         debouncedPersist();
-        if (detailCard.updateLabel) detailCard.updateLabel(textEl.value.trim() || "פירוט");
       });
       textEl.addEventListener("keydown", (e) => {
         if (e.key !== "Enter") return;
@@ -517,10 +512,17 @@ function buildTopicsEditor(root, topics, persist, opts) {
         notesWrap.appendChild(concView);
       }
     } else {
-      // כרטיס "פירוט" מציג בכותרתו את שם העניין עצמו (במקום המילה הקבועה "פירוט") - מתעדכן
-      // חי תוך כדי הקלדה בשדה העניין, כדי שיהיה ברור על איזה עניין הפירוט הזה בלי לגלול למעלה
       notesWrap.appendChild(detailCard);
-      notesWrap.appendChild(buildSubNoteSection(topic, item, "conclusionsHtml", "מסקנות"));
+      notesWrap.appendChild(
+        buildSubNoteSection(
+          () => item.conclusionsHtml,
+          (v) => {
+            item.conclusionsHtml = v;
+          },
+          "מסקנות",
+          { variant: "conclusions" }
+        )
+      );
     }
 
     setCollapsed(collapsedState[item.id]);

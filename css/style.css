@@ -1457,16 +1457,18 @@ select.field-input:focus {
   border-radius: var(--radius-sm);
   overflow: hidden;
 }
-/* כרטיס אחיד לכל שדה (פירוט/מסקנות/פירוט-נושא/כתיבה חופשית) - אותו ריפוד ורקע בדיוק בכל שלושת
-   הסוגים, כדי שסרגל הכלים תמיד יתחיל באותו מרחק מהקצה ולא "יזוז" בין כרטיס לכרטיס */
+/* כרטיס אחיד לכל שדה (פירוט/מסקנות/כתיבה חופשית) - אותו ריפוד ורקע בדיוק, כדי שסרגל הכלים
+   תמיד יתחיל באותו מרחק מהקצה ולא "יזוז" בין כרטיס לכרטיס. פירוט הנושא (summary-topic-story-wrap)
+   הוא רק עטיפה לקיפול חיצוני - הכרטיס עצמו (summary-subnote-card) מקונן בתוכו ומספק את הרקע/ריפוד */
 .summary-subnote-card,
-.summary-topic-story-wrap,
 .summary-freewrite-block {
   background: var(--c-panel);
   border-radius: var(--radius-sm);
   padding: 10px 12px;
   margin: 0;
 }
+/* וריאנט "מסקנות" - גוון רקע שונה מ"פירוט" כדי שיהיה הבדל ויזואלי ברור בין השניים */
+.summary-subnote-card--conclusions { background: var(--c-card); }
 /* התווית צמודה כמעט ישירות לתיבה שמתחתיה (עקרון הקִרבה - Gestalt) כדי שהעין תקשר אותן מיד כזוג */
 .summary-subnote-header {
   display: flex;
@@ -1513,8 +1515,8 @@ select.field-input:focus {
   align-items: center;
   gap: 8px;
   width: 100%;
-  margin: 8px 0;
-  padding: 4px 0;
+  margin: 2px 0;
+  padding: 0;
   font-family: inherit;
   background: none;
   border: none;
