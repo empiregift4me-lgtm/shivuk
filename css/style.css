@@ -1375,7 +1375,19 @@ select.field-input:focus {
 .rt-btn:hover { background: var(--c-highlight); color: #231942; }
 
 /* ===== סיכומים - נושא -> עניינים -> כתיבה חופשית ===== */
-.summary-header-row { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: var(--space-sm); margin-bottom: 4px; }
+/* תיבה נפרדת ומובחנת לפרטי הפגישה (נושא/תאריך/נשמר), כדי שלא תיראה מחוברת לרשימת הנושאים שמתחתיה */
+.summary-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--space-sm);
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius-sm);
+  background: var(--c-panel);
+  padding: 10px 12px;
+  margin-bottom: var(--space);
+}
 .summary-header-row .panel-title { margin: 0; }
 /* שדה נושא הפגישה משמש ככותרת העמוד - פונט גדול ומודגש כמו כותרת אמיתית, לא שדה טופס רגיל */
 .summary-title-group .session-topic-input {
@@ -1412,8 +1424,8 @@ select.field-input:focus {
 .checklist-mark:disabled { cursor: default; opacity: 0.7; }
 
 .summary-topics-wrap { display: flex; flex-direction: column; }
-/* מרווח כפול לפני כותרת נושא חדש, כדי שיהיה ברור בבירור שזה נושא נפרד מהקודם */
-.summary-topic + .summary-topic { margin-top: calc(var(--space-lg) * 2); }
+/* אותו מרווח כפול לפני כל כותרת נושא, כולל הראשון - לא רק בין נושא לנושא הבא */
+.summary-topic { margin-top: calc(var(--space-lg) * 2); }
 /* כותרת הנושא בתוך תיבה עם מסגרת מלאה, במקום קו תחתון בלבד */
 .summary-topic-head {
   display: flex;
@@ -1497,19 +1509,30 @@ select.field-input:focus {
 /* קו הפרדה ארוך בין אזור הפירוט לאזור המסקנות, בתוך אותו כרטיס */
 .summary-subnote-divider { height: 1px; background: var(--c-border); margin: 10px 0; }
 .summary-subnote-inline-label { font-size: 0.85rem; color: var(--text-submuted); font-weight: 700; margin-bottom: 2px; }
-/* כפתור פתיחת אזור המסקנות בתוך כרטיס הפירוט - מוצג רק כל עוד לא נפתח */
+/* כפתור פתיחת אזור המסקנות בתוך כרטיס הפירוט - מוצג רק כל עוד לא נפתח. פיל מלא ומודרני
+   (לא מקווקו) עם מעבר חלק ב-hover, במקום כפתור-placeholder דהוי */
 .summary-add-conclusions-btn {
   font-family: inherit;
-  border: 1px dashed var(--c-border);
-  background: transparent;
-  color: var(--text-submuted);
-  border-radius: var(--radius-sm);
-  padding: 6px 14px;
+  border: 1px solid var(--c-border);
+  background: var(--c-field);
+  color: var(--text-light);
+  border-radius: 999px;
+  padding: 6px 16px;
   font-size: 0.8rem;
+  font-weight: 600;
   cursor: pointer;
   margin-top: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  transition: background 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease;
 }
-.summary-add-conclusions-btn:hover { border-color: var(--c-highlight); color: var(--c-highlight); background: rgba(224, 177, 203, 0.08); }
+.summary-add-conclusions-btn:hover {
+  background: var(--c-highlight);
+  color: #231942;
+  border-color: var(--c-highlight);
+  transform: translateY(-1px);
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.25);
+}
+.summary-add-conclusions-btn:active { transform: translateY(0); }
 .summary-subnote-label { font-size: 0.85rem; color: var(--text-submuted); font-weight: 700; }
 /* כפתור "סיום" יושב בתוך שורת סרגל הכלים עצמה (ליד כפתור העלאת התמונה), לא בשורה נפרדת -
    צבע כהה יותר מהכפתורים הרגילים כדי לבדל אותו כפעולת סיום, לא עוד כלי עיצוב */

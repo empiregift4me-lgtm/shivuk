@@ -184,20 +184,22 @@ function buildTopicsEditor(root, topics, persist, opts) {
       });
       head.appendChild(titleInput);
 
-      // כפתור "פירוט" ברמת הנושא (בשורת הכותרת בלבד, ליד כפתור המחיקה) - כתיבה חופשית אחת שמסופרת
-      // בתחילת הנושא, לפני כל העניינים - למידה/סיפור כללי הרלוונטי לנושא הספציפי
+      // חץ קטן ברמת הנושא (בשורת הכותרת בלבד, ליד כפתור המחיקה) - פותח כתיבה חופשית אחת שמסופרת
+      // בתחילת הנושא, לפני כל העניינים - למידה/סיפור כללי הרלוונטי לנושא הספציפי.
+      // אותו עיצוב בדיוק כמו חץ הפירוט של עניין (▸/▾), לא כפתור-טקסט
       storyWrap = el("div", { class: "summary-topic-story-wrap is-collapsed" });
       let storyOpen = storyCollapsedState[topic.id] !== undefined ? !storyCollapsedState[topic.id] : summaryNotesHasContent(topic.storyHtml);
       const storyBtn = el("button", {
         type: "button",
-        class: "summary-topic-story-btn",
-        text: "פירוט",
-        title: "כתיבה חופשית כללית על הנושא - מופיעה בתחילת הנושא, לפני כל העניינים"
+        class: "summary-notes-toggle",
+        text: storyOpen ? "▾" : "▸",
+        title: "הצגה/הסתרה של כתיבה חופשית כללית על הנושא"
       });
       storyBtn.addEventListener("click", () => {
         storyOpen = !storyOpen;
         storyCollapsedState[topic.id] = !storyOpen;
         storyWrap.classList.toggle("is-collapsed", !storyOpen);
+        storyBtn.textContent = storyOpen ? "▾" : "▸";
       });
       head.appendChild(storyBtn);
 
