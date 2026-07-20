@@ -242,10 +242,10 @@ function buildTopicsEditor(root, topics, persist, opts) {
     const itemsWrap = el("div", { class: "summary-items" });
     topic.items.forEach((item, itemIdx) => {
       itemsWrap.appendChild(item.type === "freewrite" ? buildFreewriteBlock(topic, item, itemIdx) : buildItemBlock(topic, item, itemIdx));
-      // כפתור "הוספת עניין" יושב כשורה עצמאית במרווח שבין עניין לעניין - לא חלק מתוכן העניין
-      // הקיים, כדי שלא יתערבב עם שדות הפירוט/מסקנות שלו
-      if (!readOnly) itemsWrap.appendChild(buildAddItemRow(topic, itemIdx));
     });
+    // כפתור "הוספת עניין" מופיע פעם אחת בלבד, בסוף רשימת העניינים של הנושא - לא אחרי כל עניין;
+    // סידור/העברת עניינים באמצע הרשימה נעשה עכשיו בגרירה (גם בתוך הנושא וגם בין נושאים)
+    if (!readOnly) itemsWrap.appendChild(buildAddItemRow(topic, topic.items.length - 1));
     block.appendChild(itemsWrap);
 
     return block;
@@ -379,6 +379,143 @@ function buildTopicsEditor(root, topics, persist, opts) {
     return card;
   }
 
+  // כרטיס משולב אחד לפירוט ומסקנות של עניין - מסקנות נפתחות רק בלחיצה על "+ מסקנות" בתחתית,
+  // ואז מופרדות מהפירוט בקו ארוך + כותרת "מסקנות". עיפרון אחד וסרגל כלים אחד משותפים לשני
+  // האזורים - הסרגל פועל תמיד על התיבה שהייתה בה הפוקוס האחרון (activeEditable)
+  function buildCombinedNoteCard(getDetailHtml, setDetailHtml, getConclusionsHtml, setConclusionsHtml) {
+    let editing = !summaryNotesHasContent(getDetailHtml());
+    let conclusionsOpen = summaryNotesHasContent(getConclusionsHtml());
+    let activeEditable = null;
+    const card = el("div", { class: "summary-subnote-card" });
+    const header = el("div", { class: "summary-subnote-header" });
+    card.appendChild(header);
+    const body = el("div", { class: "summary-subnote-body" });
+    card.appendChild(body);
+
+    function render() {
+      header.innerHTML = "";
+      body.innerHTML = "";
+
+      if (editing) {
+        const detailEditable = el("div", { class: "summary-item-notes", contenteditable: "true", spellcheck: "false" });
+        detailEditable.innerHTML = getDetailHtml() || "";
+        attachPlainTextPaste(detailEditable);
+        const autoGrowDetail = () => {
+          detailEditable.style.height = "auto";
+          detailEditable.style.height = detailEditable.scrollHeight + "px";
+        };
+        detailEditable.addEventListener("input", () => {
+          setDetailHtml(detailEditable.innerHTML);
+          autoGrowDetail();
+          debouncedPersist();
+        });
+        detailEditable.addEventListener("focus", () => {
+          activeEditable = detailEditable;
+        });
+        requestAnimationFrame(autoGrowDetail);
+        body.appendChild(detailEditable);
+        activeEditable = detailEditable;
+
+        if (conclusionsOpen) {
+          body.appendChild(el("div", { class: "summary-subnote-divider" }));
+          body.appendChild(el("div", { class: "summary-subnote-inline-label", text: "מסקנות" }));
+          const conclusionsEditable = el("div", { class: "summary-item-notes", contenteditable: "true", spellcheck: "false" });
+          conclusionsEditable.innerHTML = getConclusionsHtml() || "";
+          attachPlainTextPaste(conclusionsEditable);
+          const autoGrowConc = () => {
+            conclusionsEditable.style.height = "auto";
+            conclusionsEditable.style.height = conclusionsEditable.scrollHeight + "px";
+          };
+          conclusionsEditable.addEventListener("input", () => {
+            setConclusionsHtml(conclusionsEditable.innerHTML);
+            autoGrowConc();
+            debouncedPersist();
+          });
+          conclusionsEditable.addEventListener("focus", () => {
+            activeEditable = conclusionsEditable;
+          });
+          requestAnimationFrame(autoGrowConc);
+          body.appendChild(conclusionsEditable);
+        } else {
+          body.appendChild(
+            el("button", {
+              type: "button",
+              class: "summary-add-conclusions-btn",
+              text: "+ מסקנות",
+              onclick: () => {
+                conclusionsOpen = true;
+                render();
+              }
+            })
+          );
+        }
+
+        // סרגל כלים אחד משותף - פועל תמיד על activeEditable, לא על תיבה קבועה מראש
+        function exec(cmd, value) {
+          if (activeEditable) activeEditable.focus();
+          document.execCommand(cmd, false, value);
+        }
+        const fileInput = el("input", { type: "file", accept: "image/*", hidden: "hidden" });
+        fileInput.addEventListener("change", () => {
+          const file = fileInput.files[0];
+          if (file && activeEditable) insertCompressedImage(activeEditable, file);
+          fileInput.value = "";
+        });
+        const toolbar = el("div", { class: "rt-toolbar rt-toolbar-mini" }, [
+          richTextButton("B", "מודגש", () => exec("bold")),
+          richTextButton("U", "קו תחתון", () => exec("underline")),
+          richTextButton("🖍", "צביעת טקסט", () => {
+            if (activeEditable) toggleHighlight(activeEditable, MINI_TOOLBAR_HIGHLIGHT_COLOR);
+          }),
+          richTextButton("📷", "הוספת תמונה (נדחסת אוטומטית לחיסכון במקום)", () => fileInput.click())
+        ]);
+        toolbar.appendChild(fileInput);
+        toolbar.appendChild(
+          el("button", {
+            type: "button",
+            class: "summary-subnote-confirm-btn",
+            text: "סיום",
+            onclick: () => {
+              editing = false;
+              render();
+            }
+          })
+        );
+        body.appendChild(toolbar);
+        requestAnimationFrame(() => detailEditable.focus());
+      } else {
+        const editBtn = el("button", {
+          type: "button",
+          class: "summary-subnote-edit-btn",
+          text: "✏️",
+          title: "לחיצה כדי לפתוח לעריכה",
+          onclick: () => {
+            editing = true;
+            render();
+          }
+        });
+        header.appendChild(editBtn);
+
+        const detailView = el("div", { class: "summary-item-notes summary-item-notes-view" });
+        detailView.innerHTML = summaryNotesHasContent(getDetailHtml())
+          ? getDetailHtml()
+          : `<span class="summary-subnote-empty">אין עדיין תוכן</span>`;
+        body.appendChild(detailView);
+
+        if (summaryNotesHasContent(getConclusionsHtml())) {
+          body.appendChild(el("div", { class: "summary-subnote-divider" }));
+          body.appendChild(el("div", { class: "summary-subnote-inline-label", text: "מסקנות" }));
+          const concView = el("div", { class: "summary-item-notes summary-item-notes-view" });
+          concView.innerHTML = getConclusionsHtml();
+          body.appendChild(concView);
+        }
+      }
+    }
+    render();
+
+    return card;
+  }
+
   function buildItemBlock(topic, item, itemIdx) {
     const itemWrap = el("div", { class: "summary-item" + (item.done ? " is-done" : "") });
     const row = el("div", { class: "summary-item-row" });
@@ -388,7 +525,8 @@ function buildTopicsEditor(root, topics, persist, opts) {
       dragHandle.draggable = true;
       dragHandle.addEventListener("dragstart", (e) => {
         e.dataTransfer.effectAllowed = "move";
-        e.dataTransfer.setData("text/plain", String(itemIdx));
+        // כוללים גם את מזהה הנושא, כדי לאפשר גרירת עניין מנושא אחד לתוך נושא אחר (לא רק סידור בתוך אותו נושא)
+        e.dataTransfer.setData("text/plain", JSON.stringify({ topicId: topic.id, itemIdx }));
         itemWrap.classList.add("is-dragging");
       });
       dragHandle.addEventListener("dragend", () => itemWrap.classList.remove("is-dragging"));
@@ -400,10 +538,23 @@ function buildTopicsEditor(root, topics, persist, opts) {
       itemWrap.addEventListener("drop", (e) => {
         e.preventDefault();
         itemWrap.classList.remove("drag-over");
-        const fromIdx = Number(e.dataTransfer.getData("text/plain"));
-        if (fromIdx === itemIdx || Number.isNaN(fromIdx)) return;
-        const [moved] = topic.items.splice(fromIdx, 1);
-        topic.items.splice(itemIdx, 0, moved);
+        let dragData;
+        try {
+          dragData = JSON.parse(e.dataTransfer.getData("text/plain"));
+        } catch (err) {
+          return;
+        }
+        if (!dragData || !dragData.topicId) return;
+        const sourceTopic = topics.find((t) => t.id === dragData.topicId);
+        if (!sourceTopic) return;
+        if (sourceTopic === topic && dragData.itemIdx === itemIdx) return;
+        const [moved] = sourceTopic.items.splice(dragData.itemIdx, 1);
+        if (!moved) return;
+        // אם המקור והיעד אותו נושא, והפריט שהוצא ישב לפני היעד - האינדקס של היעד זז אחורה באחד
+        let targetIdx = itemIdx;
+        if (sourceTopic === topic && dragData.itemIdx < itemIdx) targetIdx -= 1;
+        topic.items.splice(targetIdx, 0, moved);
+        if (sourceTopic.items.length === 0) sourceTopic.items.push(newSummaryItem());
         persist();
         fullRender();
       });
@@ -420,14 +571,17 @@ function buildTopicsEditor(root, topics, persist, opts) {
     });
     row.appendChild(checkbox);
 
-    // כרטיס הפירוט בלי שורת כותרת משלו - שם העניין כבר מוצג בשורת העניין מעליו, אין צורך לחזור עליו
-    const detailCard = !readOnly
-      ? buildSubNoteSection(
+    // כרטיס משולב אחד לפירוט ומסקנות - שם העניין כבר מוצג בשורת העניין מעליו, אין צורך לחזור עליו בכרטיס
+    const combinedCard = !readOnly
+      ? buildCombinedNoteCard(
           () => item.notesHtml,
           (v) => {
             item.notesHtml = v;
           },
-          ""
+          () => item.conclusionsHtml,
+          (v) => {
+            item.conclusionsHtml = v;
+          }
         )
       : null;
 
@@ -512,17 +666,7 @@ function buildTopicsEditor(root, topics, persist, opts) {
         notesWrap.appendChild(concView);
       }
     } else {
-      notesWrap.appendChild(detailCard);
-      notesWrap.appendChild(
-        buildSubNoteSection(
-          () => item.conclusionsHtml,
-          (v) => {
-            item.conclusionsHtml = v;
-          },
-          "מסקנות",
-          { variant: "conclusions" }
-        )
-      );
+      notesWrap.appendChild(combinedCard);
     }
 
     setCollapsed(collapsedState[item.id]);
