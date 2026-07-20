@@ -1201,6 +1201,20 @@ select.field-input:focus {
 }
 .archive-topic-input::placeholder { color: var(--text-submuted); opacity: 0.75; font-weight: 400; }
 .archive-topic-input:focus { background: var(--c-field); border-radius: var(--radius-sm); }
+.archive-date-inline-wrap { flex: 0 0 auto; display: flex; align-items: center; padding: 0 4px; }
+.archive-date-input {
+  font-family: inherit;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  color: var(--text-light);
+  font-weight: 600;
+  font-size: 0.95rem;
+  padding: 6px 8px;
+  cursor: pointer;
+  color-scheme: dark;
+}
+.archive-date-input:hover, .archive-date-input:focus { border-color: var(--c-border); background: var(--c-field); outline: none; }
 /* כפתור ה-✓ מוצג רק כשעורכים בפועל את שדה הנושא (פוקוס בתוכו), כדי לא לבלגן את התצוגה הרגילה */
 .archive-topic-confirm-btn {
   flex: 0 0 auto;
@@ -1359,7 +1373,9 @@ select.field-input:focus {
 .rt-btn:hover { background: var(--c-highlight); color: #231942; }
 
 /* ===== סיכומים - נושא -> עניינים -> כתיבה חופשית ===== */
-.summary-top-row { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: var(--space-sm); margin-bottom: var(--space); }
+.summary-header-row { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: var(--space-sm); margin-bottom: 4px; }
+.summary-header-row .panel-title { margin: 0; }
+.summary-top-row { display: flex; align-items: center; justify-content: flex-start; flex-wrap: wrap; gap: var(--space-sm); margin-bottom: var(--space); }
 .session-date-row { display: flex; align-items: center; gap: var(--space-sm); }
 .session-date-label { color: var(--text-submuted); font-size: 0.95rem; }
 .session-date-input { max-width: 190px; }
@@ -1403,8 +1419,7 @@ select.field-input:focus {
 .summary-topic-title-input::placeholder { color: var(--text-submuted); opacity: 0.8; font-weight: 400; }
 .summary-topic-title-view { flex: 1 1 auto; font-size: 1.2rem; font-weight: 700; color: var(--text-light); margin: 0; }
 .summary-items { display: flex; flex-direction: column; }
-.summary-item { padding: 8px 0; border-bottom: 1px solid var(--c-border); }
-.summary-item:last-child { border-bottom: none; }
+.summary-item { padding: 10px 0; }
 .summary-item-row { display: flex; align-items: center; gap: 8px; }
 .summary-item.is-dragging { opacity: 0.4; }
 .summary-item.drag-over { background: rgba(224, 177, 203, 0.15); }
@@ -1418,14 +1433,63 @@ select.field-input:focus {
   border: none;
   background: transparent;
   color: var(--text-submuted);
-  font-size: 0.85rem;
+  font-size: 1.3rem;
+  line-height: 1;
   cursor: pointer;
-  padding: 4px 6px;
+  padding: 8px 10px;
+  border-radius: 6px;
 }
-.summary-notes-toggle:hover { color: var(--c-highlight); }
+.summary-notes-toggle:hover { color: var(--c-highlight); background: var(--c-field); }
 .summary-item-notes-wrap { margin: 6px 0 4px; }
 .summary-item-notes-wrap.is-collapsed { display: none; }
 .summary-item-notes-row { display: flex; align-items: stretch; gap: 6px; }
+.summary-subnote-section { margin-bottom: 6px; }
+.summary-subnote-toggle {
+  font-family: inherit;
+  border: 1px solid var(--c-border);
+  background: var(--c-field);
+  color: var(--text-submuted);
+  border-radius: 999px;
+  padding: 4px 12px;
+  font-size: 0.8rem;
+  cursor: pointer;
+  margin-inline-end: 6px;
+}
+.summary-subnote-toggle.is-open { background: var(--c-highlight); color: #231942; border-color: var(--c-highlight); }
+.summary-subnote-box { margin-top: 6px; }
+.summary-subnote-box.is-collapsed { display: none; }
+.summary-subnote-label { font-size: 0.8rem; color: var(--text-submuted); margin: 6px 0 2px; font-weight: 600; }
+.summary-item-add-row { display: flex; justify-content: flex-start; margin-top: 4px; }
+.summary-item-add-btn {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: 1px solid var(--c-border);
+  background: var(--c-field);
+  color: var(--text-light);
+  cursor: pointer;
+  font-size: 15px;
+  line-height: 1;
+  padding: 0;
+}
+.summary-item-add-btn:hover { background: var(--c-highlight); color: #231942; }
+.summary-topic-story-btn {
+  flex: 0 0 auto;
+  font-family: inherit;
+  border: 1px solid var(--c-border);
+  background: var(--c-field);
+  color: var(--text-light);
+  border-radius: 6px;
+  padding: 5px 10px;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+.summary-topic-story-btn:hover { background: var(--c-highlight); color: #231942; }
+.summary-topic-story-wrap { margin: 4px 0 10px; }
+.summary-topic-story-wrap.is-collapsed { display: none; }
+.summary-topic-story-view { margin: 4px 0 10px; }
+.summary-freewrite-block { margin: 10px 0; padding: 10px; background: var(--c-panel); border: 1px dashed var(--c-border); border-radius: var(--radius-sm); }
+.summary-freewrite-delete { margin-top: 6px; }
 .rt-toolbar-mini {
   position: static;
   flex: 0 0 auto;

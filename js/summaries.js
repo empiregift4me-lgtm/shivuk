@@ -39,14 +39,20 @@ function initSummariesView(container) {
   activate("write");
 }
 
-// ---- מבנה נתונים: כל סיכום = { id, sessionDate, paid, createdAt, updatedAt, topics: [{ id, title, items: [{ id, text, done, notesHtml }] }] } ----
+// ---- מבנה נתונים: כל סיכום = { id, sessionDate, paid, createdAt, updatedAt,
+// topics: [{ id, title, storyHtml, items: [{ id, text, done, notesHtml, conclusionsHtml } | { id, type:"freewrite", html }] }] } ----
 
 function newSummaryItem() {
-  return { id: "item_" + Date.now() + "_" + Math.random().toString(36).slice(2, 7), text: "", done: false, notesHtml: "" };
+  return { id: "item_" + Date.now() + "_" + Math.random().toString(36).slice(2, 7), text: "", done: false, notesHtml: "", conclusionsHtml: "" };
+}
+
+// בלוק כתיבה חופשית עצמאי שיושב בין עניינים (לא קשור לעניין ספציפי) - נוסף דרך כפתור "+ כתיבה חופשית"
+function newFreewriteBlock() {
+  return { id: "free_" + Date.now() + "_" + Math.random().toString(36).slice(2, 7), type: "freewrite", html: "" };
 }
 
 function newSummaryTopic() {
-  return { id: "topic_" + Date.now() + "_" + Math.random().toString(36).slice(2, 7), title: "", items: [newSummaryItem()] };
+  return { id: "topic_" + Date.now() + "_" + Math.random().toString(36).slice(2, 7), title: "", storyHtml: "", items: [newSummaryItem()] };
 }
 
 function normalizeSummaryTopics(topics) {
@@ -70,7 +76,12 @@ function persistSummaryItem(item) {
 function isBlankSummaryTopic(topic) {
   return (
     (topic.title || "").trim() === "" &&
-    topic.items.every((it) => (it.text || "").trim() === "" && !summaryNotesHasContent(it.notesHtml))
+    !summaryNotesHasContent(topic.storyHtml) &&
+    topic.items.every((it) =>
+      it.type === "freewrite"
+        ? !summaryNotesHasContent(it.html)
+        : (it.text || "").trim() === "" && !summaryNotesHasContent(it.notesHtml) && !summaryNotesHasContent(it.conclusionsHtml)
+    )
   );
 }
 
@@ -79,7 +90,11 @@ function isBlankSummaryTopic(topic) {
 function buildTopicsEditor(root, topics, persist, opts) {
   const readOnly = !!opts.readOnly;
   const collapsedState = {};
+  const subNoteCollapsedState = {};
+  const storyCollapsedState = {};
   const debouncedPersist = debounce(persist, 400);
+  // העניין שהיה בו הפוקוס לאחרונה - כדי שכפתור "+ כתיבה חופשית" ידע איפה בדיוק להוסיף את הבלוק החדש
+  let lastFocusedItemRef = null;
 
   function addTopic() {
     topics.push(newSummaryTopic());
@@ -89,6 +104,42 @@ function buildTopicsEditor(root, topics, persist, opts) {
       const titles = root.querySelectorAll(".summary-topic-title-input");
       const last = titles[titles.length - 1];
       if (last) last.focus();
+    });
+  }
+
+  // מוסיפה בלוק כתיבה חופשית מיד אחרי העניין שבו היה הפוקוס לאחרונה (או בסוף הנושא הראשון אם עוד לא התמקדו באף עניין)
+  function addFreewriteNearFocus() {
+    let targetTopic = topics[0];
+    let insertIdx = targetTopic ? targetTopic.items.length : 0;
+    if (lastFocusedItemRef && topics.includes(lastFocusedItemRef.topic)) {
+      targetTopic = lastFocusedItemRef.topic;
+      const idx = targetTopic.items.indexOf(lastFocusedItemRef.item);
+      insertIdx = idx === -1 ? targetTopic.items.length : idx + 1;
+    }
+    if (!targetTopic) {
+      targetTopic = newSummaryTopic();
+      targetTopic.items = [];
+      topics.push(targetTopic);
+      insertIdx = 0;
+    }
+    const block = newFreewriteBlock();
+    targetTopic.items.splice(insertIdx, 0, block);
+    persist();
+    fullRender();
+    requestAnimationFrame(() => {
+      const editable = root.querySelector(`[data-block-id="${block.id}"]`);
+      if (editable) editable.focus();
+    });
+  }
+
+  function insertItemAfter(topic, itemIdx) {
+    const newItem = newSummaryItem();
+    topic.items.splice(itemIdx + 1, 0, newItem);
+    persist();
+    fullRender();
+    requestAnimationFrame(() => {
+      const target = root.querySelector(`[data-item-id="${newItem.id}"]`);
+      if (target) target.focus();
     });
   }
 
@@ -115,6 +166,7 @@ function buildTopicsEditor(root, topics, persist, opts) {
   function buildTopicBlock(topic, topicIdx) {
     const block = el("div", { class: "summary-topic" });
     const head = el("div", { class: "summary-topic-head" });
+    let storyWrap = null;
 
     if (readOnly) {
       head.appendChild(el("h3", { class: "summary-topic-title-view", text: topic.title || "(ללא כותרת)" }));
@@ -133,6 +185,23 @@ function buildTopicsEditor(root, topics, persist, opts) {
       });
       head.appendChild(titleInput);
 
+      // כפתור "פירוט" ברמת הנושא (בשורת הכותרת בלבד, ליד כפתור המחיקה) - כתיבה חופשית אחת שמסופרת
+      // בתחילת הנושא, לפני כל העניינים - למידה/סיפור כללי הרלוונטי לנושא הספציפי
+      storyWrap = el("div", { class: "summary-topic-story-wrap is-collapsed" });
+      let storyOpen = storyCollapsedState[topic.id] !== undefined ? !storyCollapsedState[topic.id] : summaryNotesHasContent(topic.storyHtml);
+      const storyBtn = el("button", {
+        type: "button",
+        class: "summary-topic-story-btn",
+        text: "פירוט",
+        title: "כתיבה חופשית כללית על הנושא - מופיעה בתחילת הנושא, לפני כל העניינים"
+      });
+      storyBtn.addEventListener("click", () => {
+        storyOpen = !storyOpen;
+        storyCollapsedState[topic.id] = !storyOpen;
+        storyWrap.classList.toggle("is-collapsed", !storyOpen);
+      });
+      head.appendChild(storyBtn);
+
       const deleteTopicBtn = el("button", {
         type: "button",
         class: "task-delete-btn",
@@ -146,14 +215,125 @@ function buildTopicsEditor(root, topics, persist, opts) {
         fullRender();
       });
       head.appendChild(deleteTopicBtn);
+
+      storyWrap.classList.toggle("is-collapsed", !storyOpen);
+      const storyEditable = el("div", { class: "summary-item-notes", contenteditable: "true", spellcheck: "false" });
+      storyEditable.innerHTML = topic.storyHtml || "";
+      const storyAutoGrow = () => {
+        storyEditable.style.height = "auto";
+        storyEditable.style.height = storyEditable.scrollHeight + "px";
+      };
+      storyEditable.addEventListener("input", () => {
+        topic.storyHtml = storyEditable.innerHTML;
+        storyAutoGrow();
+        debouncedPersist();
+      });
+      requestAnimationFrame(storyAutoGrow);
+      const storyRow = el("div", { class: "summary-item-notes-row" });
+      storyRow.appendChild(createMiniRichToolbar(storyEditable));
+      storyRow.appendChild(storyEditable);
+      storyWrap.appendChild(storyRow);
     }
     block.appendChild(head);
 
+    if (readOnly) {
+      if (summaryNotesHasContent(topic.storyHtml)) {
+        const storyView = el("div", { class: "summary-item-notes summary-item-notes-view summary-topic-story-view" });
+        storyView.innerHTML = topic.storyHtml;
+        block.appendChild(storyView);
+      }
+    } else {
+      block.appendChild(storyWrap);
+    }
+
     const itemsWrap = el("div", { class: "summary-items" });
-    topic.items.forEach((item, itemIdx) => itemsWrap.appendChild(buildItemBlock(topic, item, itemIdx)));
+    topic.items.forEach((item, itemIdx) => {
+      itemsWrap.appendChild(item.type === "freewrite" ? buildFreewriteBlock(topic, item, itemIdx) : buildItemBlock(topic, item, itemIdx));
+    });
     block.appendChild(itemsWrap);
 
     return block;
+  }
+
+  function buildFreewriteBlock(topic, item, itemIdx) {
+    const wrap = el("div", { class: "summary-freewrite-block" });
+    if (readOnly) {
+      const view = el("div", { class: "summary-item-notes summary-item-notes-view" });
+      view.innerHTML = item.html || "";
+      wrap.appendChild(view);
+      return wrap;
+    }
+    const editable = el("div", {
+      class: "summary-item-notes",
+      contenteditable: "true",
+      spellcheck: "false",
+      "data-block-id": item.id
+    });
+    editable.innerHTML = item.html || "";
+    const autoGrow = () => {
+      editable.style.height = "auto";
+      editable.style.height = editable.scrollHeight + "px";
+    };
+    editable.addEventListener("input", () => {
+      item.html = editable.innerHTML;
+      autoGrow();
+      debouncedPersist();
+    });
+    requestAnimationFrame(autoGrow);
+    const row = el("div", { class: "summary-item-notes-row" });
+    row.appendChild(createMiniRichToolbar(editable));
+    row.appendChild(editable);
+    const deleteBtn = el("button", {
+      type: "button",
+      class: "task-delete-btn summary-freewrite-delete",
+      text: "🗑",
+      title: "מחיקת בלוק הכתיבה החופשית"
+    });
+    deleteBtn.addEventListener("click", () => {
+      topic.items.splice(itemIdx, 1);
+      persist();
+      fullRender();
+    });
+    wrap.appendChild(row);
+    wrap.appendChild(deleteBtn);
+    return wrap;
+  }
+
+  // בונה כפתור-משנה ("פירוט" / "מסקנות") שפותח/סוגר תיבת כתיבה נפרדת משלו בתוך אזור הפירוט של עניין -
+  // כך ששני סוגי הכתיבה (מה שקרה השבוע מול מסקנות מהמפגש עם המטפלת) נשארים נפרדים אחד מהשני
+  function buildSubNoteSection(topic, item, field, label) {
+    const key = item.id + ":" + field;
+    let open = subNoteCollapsedState[key] !== undefined ? !subNoteCollapsedState[key] : summaryNotesHasContent(item[field]);
+    const section = el("div", { class: "summary-subnote-section" });
+    const btn = el("button", { type: "button", class: "summary-subnote-toggle" + (open ? " is-open" : ""), text: label });
+    const box = el("div", { class: "summary-subnote-box" + (open ? "" : " is-collapsed") });
+    btn.addEventListener("click", () => {
+      open = !open;
+      subNoteCollapsedState[key] = !open;
+      box.classList.toggle("is-collapsed", !open);
+      btn.classList.toggle("is-open", open);
+    });
+
+    const editable = el("div", { class: "summary-item-notes", contenteditable: "true", spellcheck: "false" });
+    editable.innerHTML = item[field] || "";
+    const autoGrow = () => {
+      editable.style.height = "auto";
+      editable.style.height = editable.scrollHeight + "px";
+    };
+    editable.addEventListener("input", () => {
+      item[field] = editable.innerHTML;
+      autoGrow();
+      debouncedPersist();
+    });
+    requestAnimationFrame(autoGrow);
+    const boxRow = el("div", { class: "summary-item-notes-row" });
+    boxRow.appendChild(createMiniRichToolbar(editable));
+    boxRow.appendChild(editable);
+    box.appendChild(boxRow);
+
+    section.appendChild(btn);
+    section.appendChild(box);
+    return section;
   }
 
   function buildItemBlock(topic, item, itemIdx) {
@@ -206,9 +386,13 @@ function buildTopicsEditor(root, topics, persist, opts) {
         class: "field-input summary-item-text-input",
         placeholder: "עניין...",
         autocomplete: "off",
-        spellcheck: "false"
+        spellcheck: "false",
+        "data-item-id": item.id
       });
       textEl.value = item.text || "";
+      textEl.addEventListener("focus", () => {
+        lastFocusedItemRef = { topic, item };
+      });
       textEl.addEventListener("input", () => {
         item.text = textEl.value;
         debouncedPersist();
@@ -234,7 +418,7 @@ function buildTopicsEditor(root, topics, persist, opts) {
     }
     row.appendChild(textEl);
 
-    const collapseBtn = el("button", { type: "button", class: "summary-notes-toggle", title: "הצגה/הסתרה של הכתיבה החופשית" });
+    const collapseBtn = el("button", { type: "button", class: "summary-notes-toggle", title: "הצגה/הסתרה של הפירוט והמסקנות" });
     row.appendChild(collapseBtn);
 
     if (!readOnly) {
@@ -251,36 +435,43 @@ function buildTopicsEditor(root, topics, persist, opts) {
     itemWrap.appendChild(row);
 
     const notesWrap = el("div", { class: "summary-item-notes-wrap" });
-    if (collapsedState[item.id] === undefined) collapsedState[item.id] = !summaryNotesHasContent(item.notesHtml);
+    const hasAnyNotes = summaryNotesHasContent(item.notesHtml) || summaryNotesHasContent(item.conclusionsHtml);
+    if (collapsedState[item.id] === undefined) collapsedState[item.id] = !hasAnyNotes;
     const setCollapsed = (val) => {
       collapsedState[item.id] = val;
       notesWrap.classList.toggle("is-collapsed", val);
-      collapseBtn.textContent = val ? "▸ פירוט" : "▾ פירוט";
+      collapseBtn.textContent = val ? "▸" : "▾";
     };
     collapseBtn.addEventListener("click", () => setCollapsed(!collapsedState[item.id]));
 
     if (readOnly) {
-      const view = el("div", { class: "summary-item-notes summary-item-notes-view" });
-      view.innerHTML = item.notesHtml || "";
-      notesWrap.appendChild(view);
+      if (summaryNotesHasContent(item.notesHtml)) {
+        notesWrap.appendChild(el("p", { class: "summary-subnote-label", text: "פירוט:" }));
+        const detailView = el("div", { class: "summary-item-notes summary-item-notes-view" });
+        detailView.innerHTML = item.notesHtml || "";
+        notesWrap.appendChild(detailView);
+      }
+      if (summaryNotesHasContent(item.conclusionsHtml)) {
+        notesWrap.appendChild(el("p", { class: "summary-subnote-label", text: "מסקנות:" }));
+        const concView = el("div", { class: "summary-item-notes summary-item-notes-view" });
+        concView.innerHTML = item.conclusionsHtml || "";
+        notesWrap.appendChild(concView);
+      }
     } else {
-      const notesEditable = el("div", { class: "summary-item-notes", contenteditable: "true", spellcheck: "false" });
-      notesEditable.innerHTML = item.notesHtml || "";
-      attachPlainTextPaste(notesEditable);
-      const autoGrow = () => {
-        notesEditable.style.height = "auto";
-        notesEditable.style.height = notesEditable.scrollHeight + "px";
-      };
-      notesEditable.addEventListener("input", () => {
-        item.notesHtml = notesEditable.innerHTML;
-        autoGrow();
-        debouncedPersist();
-      });
-      requestAnimationFrame(autoGrow);
-      const notesRow = el("div", { class: "summary-item-notes-row" });
-      notesRow.appendChild(createMiniRichToolbar(notesEditable));
-      notesRow.appendChild(notesEditable);
-      notesWrap.appendChild(notesRow);
+      notesWrap.appendChild(buildSubNoteSection(topic, item, "notesHtml", "פירוט"));
+      notesWrap.appendChild(buildSubNoteSection(topic, item, "conclusionsHtml", "מסקנות"));
+
+      notesWrap.appendChild(
+        el("div", { class: "summary-item-add-row" }, [
+          el("button", {
+            type: "button",
+            class: "summary-item-add-btn",
+            text: "+",
+            title: "הוספת עניין חדש מיד אחרי זה",
+            onclick: () => insertItemAfter(topic, itemIdx)
+          })
+        ])
+      );
     }
 
     setCollapsed(collapsedState[item.id]);
@@ -289,23 +480,40 @@ function buildTopicsEditor(root, topics, persist, opts) {
   }
 
   fullRender();
-  return { addTopic };
+  return { addTopic, addFreewriteNearFocus };
 }
 
 function renderSummaryWriteTab(content) {
   content.innerHTML = "";
   const wrap = el("div", { class: "panel" });
-  wrap.appendChild(el("h2", { class: "panel-title", text: "כתיבה חופשית" }));
-  wrap.appendChild(
-    el("p", { class: "panel-subtitle", text: "בנו כאן את רשימת הנושאים לשיחה - עם שמירה זה יעבור לארכיון, והדף יתפנה לסיכום הבא." })
-  );
 
   const draft = loadSummaryDraft();
   const topics = normalizeSummaryTopics(draft.topics);
 
   const draftStatus = el("p", { class: "draft-status" });
 
-  // כפתור "+ נושא חדש" ותאריך הפגישה באותה שורה - התאריך בקצה השמאלי ביותר
+  function persistDraft() {
+    saveSummaryDraft({ topics, sessionDate: dateInput.value || todayISO(), topic: topicInput.value });
+    draftStatus.textContent = "✓ טיוטה נשמרה אוטומטית";
+  }
+
+  // שורת כותרת - "כתיבה חופשית" מול תאריך הפגישה, בקצוות מנוגדים של אותה שורה
+  const headerRow = el("div", { class: "summary-header-row" });
+  headerRow.appendChild(el("h2", { class: "panel-title", text: "כתיבה חופשית" }));
+  const dateRow = el("div", { class: "session-date-row" });
+  dateRow.appendChild(el("label", { class: "session-date-label", text: "תאריך הפגישה:" }));
+  const dateInput = el("input", { type: "date", class: "field-input session-date-input" });
+  dateInput.value = draft.sessionDate || todayISO();
+  dateRow.appendChild(dateInput);
+  headerRow.appendChild(dateRow);
+  wrap.appendChild(headerRow);
+
+  wrap.appendChild(
+    el("p", { class: "panel-subtitle", text: "בנו כאן את רשימת הנושאים לשיחה - עם שמירה זה יעבור לארכיון, והדף יתפנה לסיכום הבא." })
+  );
+
+  // "+ נושא חדש" ושדה נושא הפגישה צמודים זה לזה; כפתור "+ כתיבה חופשית" מוסיף בלוק כתיבה חופשית
+  // מיד אחרי העניין שבו היה הפוקוס לאחרונה
   const topRow = el("div", { class: "summary-top-row" });
   const addTopicBtn = el("button", { type: "button", class: "btn btn-primary btn-small summary-add-topic-btn", text: "+ נושא חדש" });
   topRow.appendChild(addTopicBtn);
@@ -316,18 +524,14 @@ function renderSummaryWriteTab(content) {
   });
   topicInput.value = draft.topic || "";
   topRow.appendChild(topicInput);
-  const dateRow = el("div", { class: "session-date-row" });
-  dateRow.appendChild(el("label", { class: "session-date-label", text: "תאריך הפגישה:" }));
-  const dateInput = el("input", { type: "date", class: "field-input session-date-input" });
-  dateInput.value = draft.sessionDate || todayISO();
-  dateRow.appendChild(dateInput);
-  topRow.appendChild(dateRow);
+  const freewriteAtFocusBtn = el("button", {
+    type: "button",
+    class: "btn btn-secondary btn-small",
+    text: "+ כתיבה חופשית",
+    title: "מוסיפה תיבת כתיבה חופשית מיד אחרי העניין שבו עומדים כרגע"
+  });
+  topRow.appendChild(freewriteAtFocusBtn);
   wrap.appendChild(topRow);
-
-  function persistDraft() {
-    saveSummaryDraft({ topics, sessionDate: dateInput.value || todayISO(), topic: topicInput.value });
-    draftStatus.textContent = "✓ טיוטה נשמרה אוטומטית";
-  }
 
   if (topics.length === 0) {
     topics.push(newSummaryTopic());
@@ -338,6 +542,7 @@ function renderSummaryWriteTab(content) {
   wrap.appendChild(editorRoot);
   const editorHandle = buildTopicsEditor(editorRoot, topics, persistDraft, { readOnly: false, hideAddButton: true });
   addTopicBtn.addEventListener("click", () => editorHandle.addTopic());
+  freewriteAtFocusBtn.addEventListener("click", () => editorHandle.addFreewriteNearFocus());
 
   wrap.appendChild(draftStatus);
   dateInput.addEventListener("change", persistDraft);
@@ -350,7 +555,14 @@ function renderSummaryWriteTab(content) {
       text: "שמירה",
       onclick: () => {
         const hasContent = topics.some(
-          (t) => (t.title || "").trim() !== "" || t.items.some((it) => (it.text || "").trim() !== "" || summaryNotesHasContent(it.notesHtml))
+          (t) =>
+            (t.title || "").trim() !== "" ||
+            summaryNotesHasContent(t.storyHtml) ||
+            t.items.some((it) =>
+              it.type === "freewrite"
+                ? summaryNotesHasContent(it.html)
+                : (it.text || "").trim() !== "" || summaryNotesHasContent(it.notesHtml) || summaryNotesHasContent(it.conclusionsHtml)
+            )
         );
         if (!hasContent) {
           alert("אין כאן עדיין תוכן לשמירה.");
@@ -411,10 +623,20 @@ function renderSummaryArchiveTab(content, goToWriteTab) {
 
   list.forEach((item) => {
     const toggleBtn = el("button", { class: "archive-item-toggle summary-archive-toggle", type: "button" }, [
-      el("span", { class: "archive-date", text: item.sessionDate ? formatDateHe(item.sessionDate) : formatTimestamp(item.createdAt) }),
       el("span", { class: "paid-badge" + (item.paid ? " is-paid" : ""), text: item.paid ? "💰 שולם" : "לא שולם" }),
       el("span", { class: "archive-chevron", text: "︿" })
     ]);
+
+    // תאריך הפגישה ניתן עכשיו לעריכה ישירות מהארכיון - שדה תאריך אמיתי, נשמר מיד עם שינוי
+    const dateInput = el("input", { type: "date", class: "archive-date-input", title: "שינוי תאריך הפגישה" });
+    dateInput.value = item.sessionDate || "";
+    dateInput.addEventListener("click", (e) => e.stopPropagation());
+    dateInput.addEventListener("change", () => {
+      item.sessionDate = dateInput.value || todayISO();
+      persistSummaryItem(item);
+      renderSummaryArchiveTab(content, goToWriteTab);
+    });
+    const dateWrap = el("div", { class: "archive-date-inline-wrap" }, [dateInput]);
 
     // שדה נושא ניתן לעריכה ישירות משורת הארכיון עצמה, בלי צורך להיכנס ל"עריכה ושינוי" -
     // לחיצה בתוך השדה כותבים, ולחיצה על ✓ שומרת מיד
@@ -471,7 +693,7 @@ function renderSummaryArchiveTab(content, goToWriteTab) {
         }
       }
     });
-    const head = el("div", { class: "archive-item-head" }, [topicWrap, toggleBtn, deleteBtn]);
+    const head = el("div", { class: "archive-item-head" }, [topicWrap, dateWrap, toggleBtn, deleteBtn]);
     const body = el("div", { class: "archive-item-body is-collapsed" });
     let built = false;
     let editing = false;
@@ -672,7 +894,9 @@ function exportSummaryToPDF(item) {
 }
 
 function hasUncheckedItems(item) {
-  return normalizeSummaryTopics(item.topics).some((topic) => topic.items.some((it) => !it.done && (it.text || "").trim() !== ""));
+  return normalizeSummaryTopics(item.topics).some((topic) =>
+    topic.items.some((it) => it.type !== "freewrite" && !it.done && (it.text || "").trim() !== "")
+  );
 }
 
 // מעבירה (לא מעתיקה) עניינים שלא סומנו מסיכום שמור לטיוטת הכתיבה החופשית, תחת אותה כותרת (שנשארת גם בסיכום המקורי)
@@ -684,15 +908,15 @@ function moveUncheckedToDraft(item, persistItem, onDone) {
 
   let movedAny = false;
   sourceTopics.forEach((topic) => {
-    const unchecked = topic.items.filter((it) => !it.done && (it.text || "").trim() !== "");
+    const unchecked = topic.items.filter((it) => it.type !== "freewrite" && !it.done && (it.text || "").trim() !== "");
     if (unchecked.length === 0) return;
     movedAny = true;
 
-    topic.items = topic.items.filter((it) => it.done || (it.text || "").trim() === "");
+    topic.items = topic.items.filter((it) => it.type === "freewrite" || it.done || (it.text || "").trim() === "");
 
     let targetTopic = draftTopics.find((t) => (t.title || "").trim() === (topic.title || "").trim());
     if (!targetTopic) {
-      targetTopic = { id: "topic_" + Date.now() + "_" + Math.random().toString(36).slice(2, 7), title: topic.title, items: [] };
+      targetTopic = { id: "topic_" + Date.now() + "_" + Math.random().toString(36).slice(2, 7), title: topic.title, storyHtml: "", items: [] };
       draftTopics.push(targetTopic);
     }
     unchecked.forEach((it) => {
@@ -700,7 +924,8 @@ function moveUncheckedToDraft(item, persistItem, onDone) {
         id: "item_" + Date.now() + "_" + Math.random().toString(36).slice(2, 7),
         text: it.text,
         done: false,
-        notesHtml: it.notesHtml || ""
+        notesHtml: it.notesHtml || "",
+        conclusionsHtml: it.conclusionsHtml || ""
       });
     });
   });
