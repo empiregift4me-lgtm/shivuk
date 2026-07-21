@@ -151,24 +151,10 @@ function initChatView(container, listKey, draftKey, options) {
 
         bubble.appendChild(box);
 
+        // אין כפתור מחיקה כל עוד ההודעה נעולה - אפשר למחוק רק אחרי פתיחה בסיסמה (למטה, בתצוגה
+        // החשופה), כדי שלא יהיה אפשר למחוק תוכן מוגן בלי לפתוח ולראות אותו קודם
         const meta = el("div", { class: "chat-bubble-meta" });
         meta.appendChild(el("span", { class: "chat-timestamp", text: formatTimestamp(msg.createdAt) }));
-        const actions = el("span", { class: "chat-bubble-actions" });
-        actions.appendChild(
-          el("button", {
-            type: "button",
-            class: "bubble-icon-btn",
-            text: "🗑",
-            title: "מחיקה",
-            onclick: () => {
-              if (confirm("למחוק את ההודעה הזו לצמיתות?")) {
-                saveChatList(listKey, loadChatList(listKey).filter((m) => m.id !== msg.id));
-                renderFeed();
-              }
-            }
-          })
-        );
-        meta.appendChild(actions);
         bubble.appendChild(meta);
       }
 
