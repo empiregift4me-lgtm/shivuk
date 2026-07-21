@@ -1648,7 +1648,15 @@ select.field-input:focus {
 .summary-topic-story-view { margin: 4px 0 10px; }
 .summary-freewrite-block + .summary-freewrite-block,
 .summary-freewrite-block { margin-bottom: 12px; }
-.summary-freewrite-delete { margin-top: 8px; }
+/* הפח יושב עכשיו בתוך סרגל הכלים (בעריכה) או צמוד לעיפרון (בתצוגה נעולה) - לא בשורה נפרדת למטה */
+.summary-freewrite-delete-inline {
+  float: left;
+  width: auto;
+  height: auto;
+  border-radius: 0;
+  padding: 0;
+  margin-inline-end: 6px;
+}
 /* סרגל הכלים המצומצם - שורה אופקית אחת בתחתית תיבת הטקסט (שם נמצא הסמן בזמן כתיבה), לא טור
    אנכי בצד ולא בראש. הבדל עדין מאוד מהרקע הסובב (שכבת בהירות שקופה קלה, לא צבע מוצק שונה) -
    מספיק כדי שהעין תזהה "יש כאן פס נפרד", בלי למשוך תשומת לב מוגזמת. */

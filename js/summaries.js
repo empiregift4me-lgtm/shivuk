@@ -284,6 +284,9 @@ function buildTopicsEditor(root, topics, persist, opts) {
     return btn;
   }
 
+  // אותה תבנית נעילה/עריכה בדיוק כמו בכרטיסי פירוט/מסקנות וסיפור נושא - תצוגה נעולה + עיפרון,
+  // וכפתור "סיום" בתוך הסרגל. כפתור המחיקה יושב תמיד באותה שורה (בתוך הסרגל בעריכה, וצמוד
+  // לעיפרון בתצוגה נעולה) ולא בשורה נפרדת משלו למטה
   function buildFreewriteBlock(topic, item, itemIdx) {
     const wrap = el("div", { class: "summary-freewrite-block" });
     if (readOnly) {
@@ -292,39 +295,88 @@ function buildTopicsEditor(root, topics, persist, opts) {
       wrap.appendChild(view);
       return wrap;
     }
-    const editable = el("div", {
-      class: "summary-item-notes",
-      contenteditable: "true",
-      spellcheck: "false",
-      "data-block-id": item.id
-    });
-    editable.innerHTML = item.html || "";
-    const autoGrow = () => {
-      editable.style.height = "auto";
-      editable.style.height = editable.scrollHeight + "px";
-    };
-    editable.addEventListener("input", () => {
-      item.html = editable.innerHTML;
-      autoGrow();
-      debouncedPersist();
-    });
-    requestAnimationFrame(autoGrow);
-    const row = el("div", { class: "summary-item-notes-row" });
-    row.appendChild(editable);
-    row.appendChild(createMiniRichToolbar(editable));
-    const deleteBtn = el("button", {
-      type: "button",
-      class: "task-delete-btn summary-freewrite-delete",
-      text: "🗑",
-      title: "מחיקת בלוק הכתיבה החופשית"
-    });
-    deleteBtn.addEventListener("click", () => {
+
+    let editing = !summaryNotesHasContent(item.html);
+
+    function deleteBlock() {
+      if (!confirm("למחוק את בלוק הכתיבה החופשית הזה?")) return;
       topic.items.splice(itemIdx, 1);
       persist();
       fullRender();
-    });
-    wrap.appendChild(row);
-    wrap.appendChild(deleteBtn);
+    }
+
+    function render() {
+      wrap.innerHTML = "";
+      if (editing) {
+        const editable = el("div", {
+          class: "summary-item-notes",
+          contenteditable: "true",
+          spellcheck: "false",
+          "data-block-id": item.id
+        });
+        editable.innerHTML = item.html || "";
+        const autoGrow = () => {
+          editable.style.height = "auto";
+          editable.style.height = editable.scrollHeight + "px";
+        };
+        editable.addEventListener("input", () => {
+          item.html = editable.innerHTML;
+          autoGrow();
+          debouncedPersist();
+        });
+        requestAnimationFrame(autoGrow);
+        const row = el("div", { class: "summary-item-notes-row" });
+        row.appendChild(editable);
+        const toolbar = createMiniRichToolbar(editable);
+        toolbar.appendChild(
+          el("button", {
+            type: "button",
+            class: "summary-subnote-confirm-btn",
+            text: "סיום",
+            onclick: () => {
+              editing = false;
+              render();
+            }
+          })
+        );
+        toolbar.appendChild(
+          el("button", {
+            type: "button",
+            class: "task-delete-btn summary-freewrite-delete",
+            text: "🗑",
+            title: "מחיקת בלוק הכתיבה החופשית",
+            onclick: deleteBlock
+          })
+        );
+        row.appendChild(toolbar);
+        wrap.appendChild(row);
+        requestAnimationFrame(() => editable.focus());
+      } else {
+        const view = el("div", { class: "summary-item-notes summary-item-notes-view" });
+        view.innerHTML = summaryNotesHasContent(item.html) ? item.html : `<span class="summary-subnote-empty">אין עדיין תוכן</span>`;
+        const editBtn = el("button", {
+          type: "button",
+          class: "summary-subnote-edit-btn",
+          text: "✏️",
+          title: "לחיצה כדי לפתוח לעריכה",
+          onclick: () => {
+            editing = true;
+            render();
+          }
+        });
+        const deleteBtn = el("button", {
+          type: "button",
+          class: "task-delete-btn summary-freewrite-delete summary-freewrite-delete-inline",
+          text: "🗑",
+          title: "מחיקת בלוק הכתיבה החופשית",
+          onclick: deleteBlock
+        });
+        view.insertBefore(deleteBtn, view.firstChild);
+        view.insertBefore(editBtn, view.firstChild);
+        wrap.appendChild(view);
+      }
+    }
+    render();
     return wrap;
   }
 
