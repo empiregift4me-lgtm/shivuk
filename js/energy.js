@@ -205,7 +205,7 @@ function buildManualEntryForm(container) {
   ENERGY_TYPES.forEach((typeDef) => {
     const btn = el("button", {
       type: "button",
-      class: "energy-filter-btn" + (typeDef.key === selectedType ? " is-active" : ""),
+      class: "energy-filter-btn energy-manual-type-btn" + (typeDef.key === selectedType ? " is-active" : ""),
       title: typeDef.label
     });
     btn.appendChild(el("span", { class: "energy-filter-emoji", text: typeDef.emoji }));

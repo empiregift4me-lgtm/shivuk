@@ -1002,6 +1002,14 @@ select.field-input:focus {
 .energy-filter-btn.is-active { background: var(--c-muted-btn); border-color: var(--c-highlight); }
 .energy-filter-emoji { font-size: 1.05rem; }
 .energy-filter-count { font-size: 0.75rem; color: var(--text-submuted); }
+/* בחירת סוג התיעוד בטופס ההוספה הידנית - ניגודיות חזקה וברורה לבחירה הפעילה (כמו הלשונית הפעילה
+   למעלה), כדי שלא יהיה ספק איזה סוג נבחר */
+.energy-manual-type-btn.is-active {
+  background: var(--c-accent);
+  border-color: var(--c-accent);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+}
+.energy-manual-type-btn.is-active .energy-filter-count { color: #231942; font-weight: 700; }
 .energy-actions-group { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
 .energy-bulk-toggle-btn {
   font-family: inherit;
