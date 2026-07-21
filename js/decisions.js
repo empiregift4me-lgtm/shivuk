@@ -9,7 +9,11 @@ function initChatView(container, listKey, draftKey, options) {
   wrap.appendChild(feed);
 
   const composeArea = el("div", { class: "chat-compose" });
-  const editable = el("div", { class: "chat-editable", contenteditable: "true" });
+  const editable = el("div", {
+    class: "chat-editable",
+    contenteditable: "true",
+    spellcheck: options && options.disableSpellcheck ? "false" : "true"
+  });
   editable.innerHTML = loadChatDraft(draftKey);
   const toolbar = createRichToolbar(editable);
   const sendBtn = el("button", { class: "btn btn-primary", type: "button", text: "שליחה (או Ctrl+Enter)" });
@@ -281,5 +285,5 @@ function initDecisionsView(container) {
 }
 
 function initEmotionalView(container) {
-  initChatView(container, STORE_KEYS.emotional, STORE_KEYS.emotionalDraft, { protectable: true });
+  initChatView(container, STORE_KEYS.emotional, STORE_KEYS.emotionalDraft, { protectable: true, disableSpellcheck: true });
 }
