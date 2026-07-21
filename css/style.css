@@ -1375,7 +1375,8 @@ select.field-input:focus {
 .rt-btn:hover { background: var(--c-highlight); color: #231942; }
 
 /* ===== סיכומים - נושא -> עניינים -> כתיבה חופשית ===== */
-/* תיבה נפרדת ומובחנת לפרטי הפגישה (נושא/תאריך/נשמר), כדי שלא תיראה מחוברת לרשימת הנושאים שמתחתיה */
+/* תיבה נפרדת ומובחנת לפרטי הפגישה (נושא/תאריך/נשמר), כדי שלא תיראה מחוברת לרשימת הנושאים שמתחתיה -
+   אותו רקע ואותה עגילות פינות בדיוק כמו התיבה הראשית (.panel) שמתחתיה, כדי שתיראה בת-אותה משפחה */
 .summary-header-row {
   display: flex;
   align-items: center;
@@ -1383,12 +1384,19 @@ select.field-input:focus {
   flex-wrap: wrap;
   gap: var(--space-sm);
   border: 1px solid var(--c-border);
-  border-radius: var(--radius-sm);
-  background: var(--c-panel);
+  border-radius: var(--radius);
+  background: var(--c-card);
   padding: 10px 12px;
   margin-bottom: var(--space);
 }
 .summary-header-row .panel-title { margin: 0; }
+/* ניסיון: תיבה ראשית "שטוחה" בלי רקע/מסגרת/צל משלה - התוכן הפנימי (ראש נושא, כרטיסי הערות)
+   כבר ממוסגר בתיבות משלו, כך שהקריאות נשמרת גם בלי המסגרת החיצונית */
+.summary-write-panel--flat {
+  background: transparent;
+  border: none;
+  box-shadow: none;
+}
 /* שדה נושא הפגישה משמש ככותרת העמוד - פונט גדול ומודגש כמו כותרת אמיתית, לא שדה טופס רגיל */
 .summary-title-group .session-topic-input {
   flex: 1 1 auto;

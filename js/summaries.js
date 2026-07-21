@@ -712,7 +712,9 @@ function buildTopicsEditor(root, topics, persist, opts) {
 function renderSummaryWriteTab(content) {
   content.innerHTML = "";
   if (summaryAutosaveIntervalId) clearInterval(summaryAutosaveIntervalId);
-  const wrap = el("div", { class: "panel" });
+  // ניסיון: התיבה הראשית ללא רקע/מסגרת סגולה משלה - כל אלמנט פנימי (ראש נושא, כרטיסי הערות) כבר
+  // מגיע עם התיבה שלו, כך שהתוכן נשאר קריא וממוסגר גם בלי התיבה החיצונית
+  const wrap = el("div", { class: "panel summary-write-panel--flat" });
 
   const draft = loadSummaryDraft();
   const topics = normalizeSummaryTopics(draft.topics);
