@@ -28,6 +28,26 @@ function initChatView(container, listKey, draftKey, options) {
     toolbar.prepend(protectBtn);
   }
 
+  // כפתור הרחבת תיבת הכתיבה - מסתיר זמנית את היסטוריית ההודעות ומגדיל את תיבת ההקלדה כדי לאפשר
+  // כתיבה ארוכה ורציפה בלי הפרעה חזותית. טוגל דו-כיווני - לחיצה נוספת מחזירה למצב הרגיל
+  let focusMode = false;
+  const focusBtn = el("button", {
+    type: "button",
+    class: "rt-btn chat-focus-btn",
+    text: "🔼",
+    title: "הרחבת תיבת הכתיבה על כל האזור, עם הסתרה זמנית של ההודעות"
+  });
+  focusBtn.addEventListener("mousedown", (e) => e.preventDefault());
+  focusBtn.addEventListener("click", () => {
+    focusMode = !focusMode;
+    wrap.classList.toggle("chat-focus-mode", focusMode);
+    focusBtn.classList.toggle("is-active", focusMode);
+    focusBtn.textContent = focusMode ? "🔽" : "🔼";
+    focusBtn.title = focusMode ? "חזרה לתצוגה הרגילה" : "הרחבת תיבת הכתיבה על כל האזור, עם הסתרה זמנית של ההודעות";
+    if (focusMode) editable.focus();
+  });
+  toolbar.appendChild(focusBtn);
+
   composeArea.appendChild(toolbar);
   composeArea.appendChild(editable);
   composeArea.appendChild(sendBtn);
