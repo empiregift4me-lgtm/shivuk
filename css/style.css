@@ -1513,6 +1513,30 @@ select.field-input:focus {
   padding: 10px 12px;
   margin: 0;
 }
+/* מצב הרחבה - הכרטיס עצמו "קופץ" מעל כל שאר התוכן (כולל כותרות ונושאים אחרים) בלי לגעת בהם,
+   כדי לאפשר כתיבה ארוכה ורציפה במסך מלא. לחיצה נוספת על אותו כפתור מחזירה למצב הרגיל */
+.summary-subnote-card.is-focus-expanded,
+.summary-freewrite-block.is-focus-expanded {
+  position: fixed;
+  inset: 12px;
+  z-index: 300;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+}
+.is-focus-expanded .summary-subnote-body,
+.is-focus-expanded .summary-item-notes-row {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+.is-focus-expanded .summary-item-notes[contenteditable] {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+}
 /* אין יותר תווית בכותרת (הפירוט/מסקנות משולבים באותו כרטיס) - העיפרון היחיד שיושב שם מיושר
    תמיד לצד שמאל */
 .summary-subnote-header {

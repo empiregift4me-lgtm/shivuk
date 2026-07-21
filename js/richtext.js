@@ -188,6 +188,36 @@ function buildImageUploadButton(editableEl) {
   return { btn, fileInput };
 }
 
+// כפתור הרחבה/כיווץ - מרחיב את הכרטיס המכיל (summary-subnote-card/summary-freewrite-block) על פני
+// כל המסך (מכסה בכך זמנית את שאר התוכן), לכתיבה ארוכה ורציפה. טוגל דו-כיווני. מחפש את הכרטיס
+// בזמן הלחיצה עצמה (לא בזמן הבנייה), כי בזמן הבנייה הכרטיס לפעמים עדיין לא מחובר לעץ המסמך
+function buildFocusToggleButton(editableEl) {
+  let expanded = false;
+  const btn = richTextButton(
+    "🔼",
+    "הרחבת תיבת הכתיבה על כל המסך, עם הסתרה זמנית של שאר התוכן",
+    () => {
+      const cardEl = editableEl.closest(".summary-subnote-card, .summary-freewrite-block");
+      if (!cardEl) return;
+      expanded = !expanded;
+      cardEl.classList.toggle("is-focus-expanded", expanded);
+      cardEl.querySelectorAll(".summary-item-notes[contenteditable]").forEach((ed) => {
+        if (expanded) {
+          ed.style.height = "";
+        } else {
+          ed.dispatchEvent(new Event("input", { bubbles: true }));
+        }
+      });
+      btn.textContent = expanded ? "🔽" : "🔼";
+      btn.classList.toggle("is-active", expanded);
+      btn.title = expanded
+        ? "חזרה לתצוגה הרגילה"
+        : "הרחבת תיבת הכתיבה על כל המסך, עם הסתרה זמנית של שאר התוכן";
+    }
+  );
+  return btn;
+}
+
 // סרגל כלים מצומצם לתיבות כתיבה חופשית קטנות (מודגש/קו תחתון/צביעה/תמונה) - למשל בתוך "עניינים" בסיכומים
 function createMiniRichToolbar(editableEl) {
   attachPlainTextPaste(editableEl);
@@ -200,7 +230,8 @@ function createMiniRichToolbar(editableEl) {
     richTextButton("B", "מודגש", () => exec("bold")),
     richTextButton("U", "קו תחתון", () => exec("underline")),
     richTextButton("🖍", "צביעת טקסט (לחיצה נוספת על טקסט מודגש מסירה את ההדגשה)", () => toggleHighlight(editableEl, MINI_TOOLBAR_HIGHLIGHT_COLOR)),
-    imageUpload.btn
+    imageUpload.btn,
+    buildFocusToggleButton(editableEl)
   ]);
   toolbar.appendChild(imageUpload.fileInput);
   return toolbar;

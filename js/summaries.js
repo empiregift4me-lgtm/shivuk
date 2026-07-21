@@ -488,7 +488,8 @@ function buildTopicsEditor(root, topics, persist, opts) {
           richTextButton("🖍", "צביעת טקסט", () => {
             if (activeEditable) toggleHighlight(activeEditable, MINI_TOOLBAR_HIGHLIGHT_COLOR);
           }),
-          richTextButton("📷", "הוספת תמונה (נדחסת אוטומטית לחיסכון במקום)", () => fileInput.click())
+          richTextButton("📷", "הוספת תמונה (נדחסת אוטומטית לחיסכון במקום)", () => fileInput.click()),
+          buildFocusToggleButton(detailEditable)
         ]);
         toolbar.appendChild(fileInput);
         toolbar.appendChild(
