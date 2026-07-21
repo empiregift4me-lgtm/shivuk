@@ -5,6 +5,7 @@ const DAILY_AFFIRMATION_RESET_HOUR = 6;
 const DAILY_AFFIRMATION_MAX_SHOWS = 3; // הצגה ראשונה מובטחת ביום + עד 2 הופעות נוספות אקראיות
 const DAILY_AFFIRMATION_EXTRA_CHANCE = 0.25;
 const DAILY_AFFIRMATION_CLOSE_DELAY_MS = 25 * 1000;
+const DAILY_AFFIRMATION_NO_REPEAT_DAYS = 14; // המשפט לא יחזור על עצמו בטווח של שבועיים
 
 // "היום" באפליקציה מתחיל ב-06:00 ולא בחצות הלילה
 function affirmationAppDay(ts) {
@@ -115,6 +116,14 @@ function showAffirmationSplash(sentence) {
   setTimeout(() => closeBtn.classList.add("is-ready"), DAILY_AFFIRMATION_CLOSE_DELAY_MS);
 }
 
+// בוחרת משפט חדש שלא הופיע באף אחד מה-DAILY_AFFIRMATION_NO_REPEAT_DAYS הימים האחרונים (אם אפשרי)
+function pickDailyAffirmationSentence(recentSentences) {
+  const excluded = new Set((recentSentences || []).slice(-DAILY_AFFIRMATION_NO_REPEAT_DAYS));
+  const pool = DAILY_AFFIRMATIONS.filter((s) => !excluded.has(s));
+  const candidates = pool.length > 0 ? pool : DAILY_AFFIRMATIONS;
+  return candidates[Math.floor(Math.random() * candidates.length)];
+}
+
 // נקראת מיד אחרי הזנת סיסמה מוצלחת - בוחרת (או שומרת) את משפט היום, ומציגה את החלונית פעם מובטחת אחרי איפוס
 // היום ב-06:00, ועד 2 פעמים נוספות באקראי במהלך אותו יום
 function initDailyAffirmation() {
@@ -124,8 +133,10 @@ function initDailyAffirmation() {
   let showSplash = false;
 
   if (!state || state.appDay !== currentAppDay) {
-    const sentence = DAILY_AFFIRMATIONS[Math.floor(Math.random() * DAILY_AFFIRMATIONS.length)];
-    state = { sentence, appDay: currentAppDay, showsToday: 1 };
+    const recentSentences = (state && state.recentSentences) || [];
+    const sentence = pickDailyAffirmationSentence(recentSentences);
+    const updatedRecent = recentSentences.concat([sentence]).slice(-DAILY_AFFIRMATION_NO_REPEAT_DAYS);
+    state = { sentence, appDay: currentAppDay, showsToday: 1, recentSentences: updatedRecent };
     showSplash = true;
   } else if (state.showsToday < DAILY_AFFIRMATION_MAX_SHOWS && Math.random() < DAILY_AFFIRMATION_EXTRA_CHANCE) {
     state.showsToday += 1;
