@@ -1,6 +1,6 @@
 // נעילת מסך בסיסמה - נועלת עם טעינת הדף, ונועלת מחדש כל שעה
 
-const LOCK_PASSWORD = "3105911";
+const LOCK_PASSWORD = "31059111";
 const LOCK_INTERVAL_MS = 60 * 60 * 1000;
 let lockTimer = null;
 
