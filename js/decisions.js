@@ -177,9 +177,9 @@ function initChatView(container, listKey, draftKey, options) {
         if (linkable) {
           const chips = renderLinkChips(
             msg.links,
-            (link) => jumpToSummaryArchiveItem(link.id),
+            (link) => jumpToSummaryArchiveItem(link.summaryId, link.boxId),
             (link) =>
-              removeLinkFromEmotionalMsg(msg, link.id, () => {
+              removeLinkFromEmotionalMsg(msg, link, () => {
                 persistMsg();
                 buildBubble();
               })
@@ -232,9 +232,9 @@ function initChatView(container, listKey, draftKey, options) {
               type: "button",
               class: "bubble-icon-btn",
               text: "🔗",
-              title: "קישור לסיכום",
+              title: "קישור לתיבת כתיבה בסיכומים",
               onclick: () =>
-                addLinkFromEmotionalToSummary(msg, () => {
+                addLinkFromEmotionalToSummaryBox(msg, () => {
                   persistMsg();
                   buildBubble();
                 })

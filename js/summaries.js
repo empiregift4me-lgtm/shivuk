@@ -166,7 +166,7 @@ function buildTopicsEditor(root, topics, persist, opts) {
   }
 
   function buildTopicBlock(topic, topicIdx) {
-    const block = el("div", { class: "summary-topic" });
+    const block = el("div", { class: "summary-topic", "data-topic-id": topic.id });
     const head = el("div", { class: "summary-topic-head" });
     let storyWrap = null;
 
@@ -254,7 +254,12 @@ function buildTopicsEditor(root, topics, persist, opts) {
           (v) => {
             topic.storyHtml = v;
           },
-          ""
+          "",
+          {
+            linkBox: topic,
+            summaryContext: opts.summaryContext,
+            linkLabel: `📖 סיפור: ${topic.title || "(ללא כותרת)"}`
+          }
         )
       );
     }
@@ -291,7 +296,7 @@ function buildTopicsEditor(root, topics, persist, opts) {
   // וכפתור "סיום" בתוך הסרגל. כפתור המחיקה יושב תמיד באותה שורה (בתוך הסרגל בעריכה, וצמוד
   // לעיפרון בתצוגה נעולה) ולא בשורה נפרדת משלו למטה
   function buildFreewriteBlock(topic, item, itemIdx) {
-    const wrap = el("div", { class: "summary-freewrite-block" });
+    const wrap = el("div", { class: "summary-freewrite-block", "data-item-id": item.id });
     if (readOnly) {
       const view = el("div", { class: "summary-item-notes summary-item-notes-view" });
       view.innerHTML = item.html || "";
@@ -331,6 +336,21 @@ function buildTopicsEditor(root, topics, persist, opts) {
         const row = el("div", { class: "summary-item-notes-row" });
         row.appendChild(editable);
         const toolbar = createMiniRichToolbar(editable);
+        if (opts.summaryContext) {
+          toolbar.appendChild(
+            richTextButton("🔗", "קישור להודעה בתיעוד רגשי", () =>
+              addLinkFromSummaryBoxToEmotional(
+                opts.summaryContext,
+                item,
+                `✍️ כתיבה חופשית — ${topic.title || "(ללא כותרת)"}`,
+                () => {
+                  debouncedPersist();
+                  render();
+                }
+              )
+            )
+          );
+        }
         toolbar.appendChild(
           el("button", {
             type: "button",
@@ -353,6 +373,16 @@ function buildTopicsEditor(root, topics, persist, opts) {
         );
         row.appendChild(toolbar);
         wrap.appendChild(row);
+        const chipsEdit = renderLinkChips(
+          item.links,
+          (link) => jumpToEmotionalMessage(link.id),
+          (link) =>
+            removeLinkFromSummaryBox(item, link.id, () => {
+              debouncedPersist();
+              render();
+            })
+        );
+        if (chipsEdit) wrap.appendChild(chipsEdit);
         requestAnimationFrame(() => editable.focus());
       } else {
         const view = el("div", { class: "summary-item-notes summary-item-notes-view" });
@@ -377,6 +407,16 @@ function buildTopicsEditor(root, topics, persist, opts) {
         view.insertBefore(deleteBtn, view.firstChild);
         view.insertBefore(editBtn, view.firstChild);
         wrap.appendChild(view);
+        const chipsView = renderLinkChips(
+          item.links,
+          (link) => jumpToEmotionalMessage(link.id),
+          (link) =>
+            removeLinkFromSummaryBox(item, link.id, () => {
+              debouncedPersist();
+              render();
+            })
+        );
+        if (chipsView) wrap.appendChild(chipsView);
       }
     }
     render();
@@ -419,6 +459,21 @@ function buildTopicsEditor(root, topics, persist, opts) {
         boxRow.appendChild(editable);
         // כפתור "סיום" יושב בתוך סרגל הכלים עצמו, ליד כפתור העלאת התמונה - לא בשורה נפרדת משלו
         const toolbar = createMiniRichToolbar(editable);
+        if (opts && opts.summaryContext && opts.linkBox) {
+          toolbar.appendChild(
+            el("button", {
+              type: "button",
+              class: "rt-btn",
+              text: "🔗",
+              title: "קישור להודעה בתיעוד רגשי",
+              onclick: () =>
+                addLinkFromSummaryBoxToEmotional(opts.summaryContext, opts.linkBox, opts.linkLabel || label || "כתיבה חופשית", () => {
+                  debouncedPersist();
+                  render();
+                })
+            })
+          );
+        }
         toolbar.appendChild(
           el("button", {
             type: "button",
@@ -432,6 +487,18 @@ function buildTopicsEditor(root, topics, persist, opts) {
         );
         boxRow.appendChild(toolbar);
         body.appendChild(boxRow);
+        if (opts && opts.linkBox) {
+          const chips = renderLinkChips(
+            opts.linkBox.links,
+            (link) => jumpToEmotionalMessage(link.id),
+            (link) =>
+              removeLinkFromSummaryBox(opts.linkBox, link.id, () => {
+                debouncedPersist();
+                render();
+              })
+          );
+          if (chips) body.appendChild(chips);
+        }
         requestAnimationFrame(() => editable.focus());
       } else {
         const view = el("div", { class: "summary-item-notes summary-item-notes-view" });
@@ -448,6 +515,18 @@ function buildTopicsEditor(root, topics, persist, opts) {
         });
         view.insertBefore(editBtn, view.firstChild);
         body.appendChild(view);
+        if (opts && opts.linkBox) {
+          const chips = renderLinkChips(
+            opts.linkBox.links,
+            (link) => jumpToEmotionalMessage(link.id),
+            (link) =>
+              removeLinkFromSummaryBox(opts.linkBox, link.id, () => {
+                debouncedPersist();
+                render();
+              })
+          );
+          if (chips) body.appendChild(chips);
+        }
       }
     }
     render();
@@ -458,7 +537,7 @@ function buildTopicsEditor(root, topics, persist, opts) {
   // כרטיס משולב אחד לפירוט ומסקנות של עניין - מסקנות נפתחות רק בלחיצה על "+ מסקנות" בתחתית,
   // ואז מופרדות מהפירוט בקו ארוך + כותרת "מסקנות". עיפרון אחד וסרגל כלים אחד משותפים לשני
   // האזורים - הסרגל פועל תמיד על התיבה שהייתה בה הפוקוס האחרון (activeEditable)
-  function buildCombinedNoteCard(getDetailHtml, setDetailHtml, getConclusionsHtml, setConclusionsHtml) {
+  function buildCombinedNoteCard(getDetailHtml, setDetailHtml, getConclusionsHtml, setConclusionsHtml, linkOpts) {
     let editing = !summaryNotesHasContent(getDetailHtml());
     let conclusionsOpen = summaryNotesHasContent(getConclusionsHtml());
     let activeEditable = null;
@@ -546,6 +625,16 @@ function buildTopicsEditor(root, topics, persist, opts) {
           richTextButton("📷", "הוספת תמונה (נדחסת אוטומטית לחיסכון במקום)", () => fileInput.click()),
           buildFocusToggleButton(detailEditable)
         ]);
+        if (linkOpts && linkOpts.summaryContext && linkOpts.linkBox) {
+          toolbar.appendChild(
+            richTextButton("🔗", "קישור להודעה בתיעוד רגשי", () =>
+              addLinkFromSummaryBoxToEmotional(linkOpts.summaryContext, linkOpts.linkBox, linkOpts.linkLabel || "פירוט/מסקנות", () => {
+                debouncedPersist();
+                render();
+              })
+            )
+          );
+        }
         toolbar.appendChild(fileInput);
         toolbar.appendChild(
           el("button", {
@@ -559,6 +648,18 @@ function buildTopicsEditor(root, topics, persist, opts) {
           })
         );
         body.appendChild(toolbar);
+        if (linkOpts && linkOpts.linkBox) {
+          const chips = renderLinkChips(
+            linkOpts.linkBox.links,
+            (link) => jumpToEmotionalMessage(link.id),
+            (link) =>
+              removeLinkFromSummaryBox(linkOpts.linkBox, link.id, () => {
+                debouncedPersist();
+                render();
+              })
+          );
+          if (chips) body.appendChild(chips);
+        }
         requestAnimationFrame(() => detailEditable.focus());
       } else {
         const detailView = el("div", { class: "summary-item-notes summary-item-notes-view" });
@@ -585,6 +686,18 @@ function buildTopicsEditor(root, topics, persist, opts) {
           concView.innerHTML = getConclusionsHtml();
           body.appendChild(concView);
         }
+        if (linkOpts && linkOpts.linkBox) {
+          const chips = renderLinkChips(
+            linkOpts.linkBox.links,
+            (link) => jumpToEmotionalMessage(link.id),
+            (link) =>
+              removeLinkFromSummaryBox(linkOpts.linkBox, link.id, () => {
+                debouncedPersist();
+                render();
+              })
+          );
+          if (chips) body.appendChild(chips);
+        }
       }
     }
     render();
@@ -593,7 +706,7 @@ function buildTopicsEditor(root, topics, persist, opts) {
   }
 
   function buildItemBlock(topic, item, itemIdx) {
-    const itemWrap = el("div", { class: "summary-item" + (item.done ? " is-done" : "") });
+    const itemWrap = el("div", { class: "summary-item" + (item.done ? " is-done" : ""), "data-item-id": item.id });
     const row = el("div", { class: "summary-item-row" });
 
     if (!readOnly) {
@@ -657,6 +770,11 @@ function buildTopicsEditor(root, topics, persist, opts) {
           () => item.conclusionsHtml,
           (v) => {
             item.conclusionsHtml = v;
+          },
+          {
+            linkBox: item,
+            summaryContext: opts.summaryContext,
+            linkLabel: `📝 ${item.text || "עניין ללא שם"}`
           }
         )
       : null;
@@ -1041,7 +1159,7 @@ function renderSummaryArchiveTab(content, goToWriteTab) {
             item.updatedAt = Date.now();
             persistItem();
           },
-          { readOnly: false }
+          { readOnly: false, summaryContext: item }
         );
         body.appendChild(buildEditToggle("שמירת שינויים"));
       } else {
@@ -1066,29 +1184,9 @@ function renderSummaryArchiveTab(content, goToWriteTab) {
             type: "button",
             text: "ייצוא ל-PDF",
             onclick: () => exportSummaryToPDF(item)
-          }),
-          el("button", {
-            class: "btn btn-secondary btn-small",
-            type: "button",
-            text: "🔗 קישור לתיעוד רגשי",
-            onclick: () =>
-              addLinkFromSummaryToEmotional(item, () => {
-                persistItem();
-                buildBody();
-              })
           })
         ]);
         body.appendChild(topRow);
-        const chips = renderLinkChips(
-          item.links,
-          (link) => jumpToEmotionalMessage(link.id),
-          (link) =>
-            removeLinkFromSummary(item, link.id, () => {
-              persistItem();
-              buildBody();
-            })
-        );
-        if (chips) body.appendChild(chips);
         // מראה מעט "עמום" (opacity מופחת) בתצוגת ארכיון - אבחנה ויזואלית מיידית בין פגישה נעולה/עבר
         // לבין מסך עריכה חי, כדי שלא תתבלבל בין השניים במבט ראשון
         const viewRoot = el("div", { class: "summary-topics-wrap summary-archive-locked-view" });

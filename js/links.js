@@ -1,6 +1,7 @@
-// קישור בין רשומות בסיכומים לבין הודעות בתיעוד רגשי - כל צד שומר הפניה זה לזה, כדי שאפשר
-// יהיה לנווט מכל צד לצד השני. נשען על הפונקציות הגלובליות של שני המודולים (loadSummaries/
-// saveSummaries/loadChatList/saveChatList) שכבר קיימות ב-storage.js
+// קישור בין תיבות כתיבה חופשית בסיכומים (סיפור נושא / פירוט+מסקנות של עניין / בלוק כתיבה חופשית
+// עצמאי) לבין הודעות בתיעוד רגשי. כל צד שומר הפניה זה לזה, כדי שאפשר יהיה לנווט מכל צד לצד השני.
+// נשען על הפונקציות הגלובליות של שני המודולים (loadSummaries/saveSummaries/loadChatList/
+// saveChatList) שכבר קיימות ב-storage.js
 
 function summaryLinkLabel(summary) {
   const topic = (summary.topic || "").trim() || "(ללא נושא)";
@@ -8,13 +9,18 @@ function summaryLinkLabel(summary) {
   return `${topic} — ${date}`;
 }
 
+// הודעה מוגנת ("הגנה") מציגה תמיד את הנושא שלה בלבד, לא קטע מהטקסט המוסתר עצמו
 function emotionalMsgLinkLabel(msg) {
+  if (msg.protected) {
+    const topic = (msg.topic || "").trim() || "(ללא נושא)";
+    return `🔒 ${topic} — ${formatTimestamp(msg.createdAt)}`;
+  }
   const text = (msg.html || "").replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
   const snippet = text.length > 40 ? text.slice(0, 40) + "…" : text || "(הודעה ריקה)";
   return `${snippet} — ${formatTimestamp(msg.createdAt)}`;
 }
 
-// חלונית חיפוש/בחירה גנרית - candidates = [{id, label}], onPick(candidate) נקרא בבחירה
+// חלונית חיפוש/בחירה גנרית - candidates = [{id, label, ...}], onPick(candidate) נקרא בבחירה
 function openLinkPickerModal(title, candidates, onPick) {
   const overlay = el("div", { class: "modal-overlay link-picker-overlay" });
   const modal = el("div", { class: "modal-box link-picker-box" });
@@ -61,7 +67,20 @@ function openLinkPickerModal(title, candidates, onPick) {
   requestAnimationFrame(() => searchInput.focus());
 }
 
-function addLinkFromSummaryToEmotional(summary, onDone) {
+// מאתרת אובייקט נושא/עניין ספציפי בתוך סיכום שמור, לפי המזהה שלו
+function findSummaryBox(summary, boxId) {
+  let found = null;
+  (summary.topics || []).forEach((topic) => {
+    if (topic.id === boxId) found = topic;
+    (topic.items || []).forEach((item) => {
+      if (item.id === boxId) found = item;
+    });
+  });
+  return found;
+}
+
+// --- קישור מתיבת כתיבה חופשית בסיכום (topic.links / item.links) להודעת תיעוד רגשי ---
+function addLinkFromSummaryBoxToEmotional(summary, box, boxLabel, onDone) {
   const msgs = loadChatList(STORE_KEYS.emotional);
   if (msgs.length === 0) {
     alert("אין עדיין הודעות בתיעוד רגשי לקשר אליהן.");
@@ -72,15 +91,15 @@ function addLinkFromSummaryToEmotional(summary, onDone) {
     .sort((a, b) => b.createdAt - a.createdAt)
     .map((m) => ({ id: m.id, label: emotionalMsgLinkLabel(m) }));
   openLinkPickerModal("קישור להודעה בתיעוד רגשי", candidates, (choice) => {
-    if (!summary.links) summary.links = [];
-    if (!summary.links.some((l) => l.type === "emotional" && l.id === choice.id)) {
-      summary.links.push({ type: "emotional", id: choice.id, label: choice.label });
+    if (!box.links) box.links = [];
+    if (!box.links.some((l) => l.type === "emotional" && l.id === choice.id)) {
+      box.links.push({ type: "emotional", id: choice.id, label: choice.label });
     }
     const msg = msgs.find((m) => m.id === choice.id);
     if (msg) {
       if (!msg.links) msg.links = [];
-      if (!msg.links.some((l) => l.type === "summary" && l.id === summary.id)) {
-        msg.links.push({ type: "summary", id: summary.id, label: summaryLinkLabel(summary) });
+      if (!msg.links.some((l) => l.boxId === box.id)) {
+        msg.links.push({ type: "summaryBox", summaryId: summary.id, boxId: box.id, label: boxLabel });
       }
       saveChatList(STORE_KEYS.emotional, msgs);
     }
@@ -88,52 +107,82 @@ function addLinkFromSummaryToEmotional(summary, onDone) {
   });
 }
 
-function addLinkFromEmotionalToSummary(msg, onDone) {
-  const summaries = loadSummaries();
-  if (summaries.length === 0) {
-    alert("אין עדיין סיכומים שמורים לקשר אליהם.");
-    return;
-  }
-  const candidates = summaries
-    .slice()
-    .sort((a, b) => b.createdAt - a.createdAt)
-    .map((s) => ({ id: s.id, label: summaryLinkLabel(s) }));
-  openLinkPickerModal("קישור לסיכום", candidates, (choice) => {
-    if (!msg.links) msg.links = [];
-    if (!msg.links.some((l) => l.type === "summary" && l.id === choice.id)) {
-      msg.links.push({ type: "summary", id: choice.id, label: choice.label });
-    }
-    const all = loadSummaries();
-    const summary = all.find((s) => s.id === choice.id);
-    if (summary) {
-      if (!summary.links) summary.links = [];
-      if (!summary.links.some((l) => l.type === "emotional" && l.id === msg.id)) {
-        summary.links.push({ type: "emotional", id: msg.id, label: emotionalMsgLinkLabel(msg) });
-      }
-      saveSummaries(all);
-    }
-    onDone();
-  });
-}
-
-function removeLinkFromSummary(summary, linkId, onDone) {
-  summary.links = (summary.links || []).filter((l) => l.id !== linkId);
+function removeLinkFromSummaryBox(box, linkId, onDone) {
+  box.links = (box.links || []).filter((l) => l.id !== linkId);
   const msgs = loadChatList(STORE_KEYS.emotional);
   const msg = msgs.find((m) => m.id === linkId);
   if (msg) {
-    msg.links = (msg.links || []).filter((l) => l.id !== summary.id);
+    msg.links = (msg.links || []).filter((l) => l.boxId !== box.id);
     saveChatList(STORE_KEYS.emotional, msgs);
   }
   onDone();
 }
 
-function removeLinkFromEmotionalMsg(msg, linkId, onDone) {
-  msg.links = (msg.links || []).filter((l) => l.id !== linkId);
+// --- קישור מהודעת תיעוד רגשי לתיבת כתיבה חופשית בסיכום ---
+function addLinkFromEmotionalToSummaryBox(msg, onDone) {
   const summaries = loadSummaries();
-  const summary = summaries.find((s) => s.id === linkId);
-  if (summary) {
-    summary.links = (summary.links || []).filter((l) => l.id !== msg.id);
+  const candidates = [];
+  summaries.forEach((summary) => {
+    const summaryLabel = summaryLinkLabel(summary);
+    (summary.topics || []).forEach((topic) => {
+      if (summaryNotesHasContent(topic.storyHtml)) {
+        candidates.push({
+          id: topic.id,
+          label: `📖 סיפור: ${topic.title || "(ללא כותרת)"} — ${summaryLabel}`,
+          summaryId: summary.id,
+          boxRef: topic
+        });
+      }
+      (topic.items || []).forEach((item) => {
+        if (item.type === "freewrite") {
+          if (summaryNotesHasContent(item.html)) {
+            candidates.push({
+              id: item.id,
+              label: `✍️ כתיבה חופשית — ${summaryLabel}`,
+              summaryId: summary.id,
+              boxRef: item
+            });
+          }
+        } else if (summaryNotesHasContent(item.notesHtml) || summaryNotesHasContent(item.conclusionsHtml)) {
+          candidates.push({
+            id: item.id,
+            label: `📝 ${item.text || "עניין ללא שם"} — ${summaryLabel}`,
+            summaryId: summary.id,
+            boxRef: item
+          });
+        }
+      });
+    });
+  });
+  if (candidates.length === 0) {
+    alert("אין עדיין תיבות כתיבה עם תוכן בסיכומים לקשר אליהן.");
+    return;
+  }
+  openLinkPickerModal("קישור לתיבת כתיבה בסיכומים", candidates, (choice) => {
+    if (!msg.links) msg.links = [];
+    if (!msg.links.some((l) => l.boxId === choice.id)) {
+      msg.links.push({ type: "summaryBox", summaryId: choice.summaryId, boxId: choice.id, label: choice.label });
+    }
+    const box = choice.boxRef;
+    if (!box.links) box.links = [];
+    if (!box.links.some((l) => l.type === "emotional" && l.id === msg.id)) {
+      box.links.push({ type: "emotional", id: msg.id, label: emotionalMsgLinkLabel(msg) });
+    }
     saveSummaries(summaries);
+    onDone();
+  });
+}
+
+function removeLinkFromEmotionalMsg(msg, link, onDone) {
+  msg.links = (msg.links || []).filter((l) => l.boxId !== link.boxId);
+  const summaries = loadSummaries();
+  const summary = summaries.find((s) => s.id === link.summaryId);
+  if (summary) {
+    const box = findSummaryBox(summary, link.boxId);
+    if (box) {
+      box.links = (box.links || []).filter((l) => l.id !== msg.id);
+      saveSummaries(summaries);
+    }
   }
   onDone();
 }
@@ -165,11 +214,11 @@ function renderLinkChips(links, onNavigate, onRemove) {
   return row;
 }
 
-function flashLinkTarget(el) {
-  if (!el) return;
-  el.scrollIntoView({ behavior: "smooth", block: "center" });
-  el.classList.add("link-jump-highlight");
-  setTimeout(() => el.classList.remove("link-jump-highlight"), 2000);
+function flashLinkTarget(target) {
+  if (!target) return;
+  target.scrollIntoView({ behavior: "smooth", block: "center" });
+  target.classList.add("link-jump-highlight");
+  setTimeout(() => target.classList.remove("link-jump-highlight"), 2000);
 }
 
 // ניווט אל הודעת תיעוד רגשי ספציפית לפי מזהה - עובר לסקשן ואז מאתר את הבועה בפועל
@@ -181,8 +230,9 @@ function jumpToEmotionalMessage(msgId) {
   });
 }
 
-// ניווט אל רשומת סיכום בארכיון לפי מזהה - עובר ללשונית הארכיונים, פותח את הרשומה אם סגורה, וגולל אליה
-function jumpToSummaryArchiveItem(summaryId) {
+// ניווט אל תיבת כתיבה חופשית ספציפית בתוך רשומת סיכום בארכיון - עובר ללשונית הארכיונים,
+// פותח את הרשומה אם סגורה, ומגלגל אל התיבה הספציפית בתוכה (אם נמצאה)
+function jumpToSummaryArchiveItem(summaryId, boxId) {
   showSection("summaries");
   requestAnimationFrame(() => {
     if (window.activateSummariesArchiveTab) window.activateSummariesArchiveTab();
@@ -192,7 +242,14 @@ function jumpToSummaryArchiveItem(summaryId) {
       const toggleBtn = card.querySelector(".summary-archive-toggle");
       const body = card.querySelector(".archive-item-body");
       if (body && body.classList.contains("is-collapsed") && toggleBtn) toggleBtn.click();
-      flashLinkTarget(card);
+      requestAnimationFrame(() => {
+        let target = card;
+        if (boxId) {
+          const boxEl = card.querySelector(`[data-topic-id="${boxId}"], [data-item-id="${boxId}"]`);
+          if (boxEl) target = boxEl;
+        }
+        flashLinkTarget(target);
+      });
     });
   });
 }

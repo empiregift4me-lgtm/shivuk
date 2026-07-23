@@ -2,9 +2,7 @@
 
 const SECTIONS = ["dashboard", "journal", "summaries", "decisions", "emotional", "tasks", "energy"];
 const LAZY_SECTION_INIT = {
-  summaries: initSummariesView,
-  decisions: initDecisionsView,
-  emotional: initEmotionalView
+  summaries: initSummariesView
 };
 let sectionsInitialized = {};
 
@@ -21,6 +19,11 @@ function showSection(name) {
   } else if (name === "energy") {
     // מתעדכן בכל כניסה, כדי לשקף תיעודי אנרגיה חדשים שנוספו מאז
     renderEnergyView(document.getElementById("energy-view"));
+  } else if (name === "decisions") {
+    // מתעדכן בכל כניסה - נדרש כדי לשקף קישורים חדשים שנוספו מסיכומים בזמן שהיינו במסך אחר
+    initDecisionsView(document.getElementById("decisions-view"));
+  } else if (name === "emotional") {
+    initEmotionalView(document.getElementById("emotional-view"));
   } else if (LAZY_SECTION_INIT[name] && !sectionsInitialized[name]) {
     LAZY_SECTION_INIT[name](document.getElementById(`${name}-view`));
     sectionsInitialized[name] = true;
