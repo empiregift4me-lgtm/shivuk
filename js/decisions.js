@@ -3,6 +3,7 @@
 
 function initChatView(container, listKey, draftKey, options) {
   const protectable = !!(options && options.protectable);
+  const linkable = !!(options && options.linkable);
   container.innerHTML = "";
   const wrap = el("div", { class: "chat-wrap" });
   const feed = el("div", { class: "chat-feed" });
@@ -74,7 +75,7 @@ function initChatView(container, listKey, draftKey, options) {
       let editing = false;
       let unlocking = false;
       let unlockError = "";
-      const bubble = el("div", { class: "chat-bubble" });
+      const bubble = el("div", { class: "chat-bubble", "data-msg-id": msg.id });
 
       function persistMsg() {
         const all = loadChatList(listKey);
@@ -173,6 +174,19 @@ function initChatView(container, listKey, draftKey, options) {
         attachPlainTextPaste(contentEl);
         bubble.appendChild(contentEl);
 
+        if (linkable) {
+          const chips = renderLinkChips(
+            msg.links,
+            (link) => jumpToSummaryArchiveItem(link.id),
+            (link) =>
+              removeLinkFromEmotionalMsg(msg, link.id, () => {
+                persistMsg();
+                buildBubble();
+              })
+          );
+          if (chips) bubble.appendChild(chips);
+        }
+
         const meta = el("div", { class: "chat-bubble-meta" });
         meta.appendChild(el("span", { class: "chat-timestamp", text: formatTimestamp(msg.createdAt) }));
 
@@ -209,6 +223,21 @@ function initChatView(container, listKey, draftKey, options) {
                 editing = false;
                 buildBubble();
               }
+            })
+          );
+        }
+        if (linkable) {
+          actions.appendChild(
+            el("button", {
+              type: "button",
+              class: "bubble-icon-btn",
+              text: "🔗",
+              title: "קישור לסיכום",
+              onclick: () =>
+                addLinkFromEmotionalToSummary(msg, () => {
+                  persistMsg();
+                  buildBubble();
+                })
             })
           );
         }
@@ -271,5 +300,9 @@ function initDecisionsView(container) {
 }
 
 function initEmotionalView(container) {
-  initChatView(container, STORE_KEYS.emotional, STORE_KEYS.emotionalDraft, { protectable: true, disableSpellcheck: true });
+  initChatView(container, STORE_KEYS.emotional, STORE_KEYS.emotionalDraft, {
+    protectable: true,
+    disableSpellcheck: true,
+    linkable: true
+  });
 }

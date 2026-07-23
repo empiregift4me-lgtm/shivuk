@@ -116,6 +116,10 @@ function renderJournalTab(container) {
 }
 
 let journalArchiveOrder = "desc";
+// אילו רשומות ארכיון פתוחות כרגע - נשמר בזיכרון (לא ב-localStorage) כדי לאפשר "הרחב הכל/כווץ הכל",
+// באותה תבנית בדיוק כמו בארכיון ניהול האנרגיה
+let journalArchiveExpandedIds = new Set();
+let journalArchiveAllExpanded = false;
 
 function renderArchiveTab(container) {
   container.innerHTML = "";
@@ -134,6 +138,24 @@ function renderArchiveTab(container) {
   });
   wrap.appendChild(orderBtn);
 
+  // "הרחב הכל/כווץ הכל" - אותה תבנית בדיוק כמו בארכיון ניהול האנרגיה
+  const bulkToggleBtn = el("button", {
+    type: "button",
+    class: "energy-bulk-toggle-btn",
+    text: journalArchiveAllExpanded ? "︿ סגירת הכול" : "﹀ פתיחת הכול",
+    title: journalArchiveAllExpanded ? "סגירת כל הרשומות" : "פתיחת כל הרשומות",
+    onclick: () => {
+      journalArchiveAllExpanded = !journalArchiveAllExpanded;
+      if (journalArchiveAllExpanded) {
+        entries.forEach((e) => journalArchiveExpandedIds.add(entryKey(e.date, e.period)));
+      } else {
+        journalArchiveExpandedIds.clear();
+      }
+      renderArchiveTab(container);
+    }
+  });
+  wrap.appendChild(bulkToggleBtn);
+
   if (entries.length === 0) {
     wrap.appendChild(el("div", { class: "empty-state", text: "עדיין אין רשומות שמורות בארכיון." }));
     container.appendChild(wrap);
@@ -141,11 +163,13 @@ function renderArchiveTab(container) {
   }
 
   entries.forEach((entry) => {
+    const entryId = entryKey(entry.date, entry.period);
+    const isExpanded = journalArchiveExpandedIds.has(entryId);
     const item = el("div", { class: "archive-item" });
     const toggleBtn = el("button", { class: "archive-item-toggle", type: "button" }, [
       el("span", { class: "archive-date", text: `${formatDateHe(entry.date)}, ${PERIOD_LABELS[entry.period]}` }),
       el("span", { class: "archive-count", text: `${entry.exerciseIds.length} תרגילים` }),
-      el("span", { class: "archive-chevron", text: "︿" })
+      el("span", { class: "archive-chevron", text: isExpanded ? "︿" : "﹀" })
     ]);
     const deleteBtn = el("button", {
       class: "archive-delete",
@@ -161,16 +185,21 @@ function renderArchiveTab(container) {
       }
     });
     const head = el("div", { class: "archive-item-head" }, [toggleBtn, deleteBtn]);
-    const body = el("div", { class: "archive-item-body is-collapsed" });
+    const body = el("div", { class: "archive-item-body" + (isExpanded ? "" : " is-collapsed") });
     let built = false;
+    function buildIfNeeded() {
+      if (built) return;
+      const card = buildArchiveCard(entry.date, entry.period);
+      body.appendChild(card.element);
+      built = true;
+    }
+    if (isExpanded) buildIfNeeded();
     toggleBtn.addEventListener("click", () => {
       const collapsed = body.classList.toggle("is-collapsed");
       head.querySelector(".archive-chevron").textContent = collapsed ? "﹀" : "︿";
-      if (!collapsed && !built) {
-        const card = buildArchiveCard(entry.date, entry.period);
-        body.appendChild(card.element);
-        built = true;
-      }
+      if (collapsed) journalArchiveExpandedIds.delete(entryId);
+      else journalArchiveExpandedIds.add(entryId);
+      if (!collapsed) buildIfNeeded();
     });
     item.appendChild(head);
     item.appendChild(body);

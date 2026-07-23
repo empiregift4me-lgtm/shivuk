@@ -123,11 +123,20 @@ function renderTasksView(container) {
   const nextDayBtn = el("button", { type: "button", class: "util-btn", text: "▶", title: "יום קודם" });
   const todayBtn = el("button", { type: "button", class: "btn btn-ghost btn-small", text: "היום" });
   const addBreakBtn = el("button", { class: "btn btn-secondary btn-small", type: "button", text: "☕ הפסקה" });
+  // כפתור אייקון בלבד (בלי טקסט) - מעביר משימות שלא סומנו כבוצעו ליום הבא, באותו רעיון כמו
+  // "העברת עניינים שלא סומנו" שכבר קיים בסיכומים
+  const carryOverBtn = el("button", {
+    type: "button",
+    class: "util-btn",
+    text: "➡️",
+    title: "העברת משימות שלא הושלמו ליום הבא"
+  });
   dateNavRow.appendChild(nextDayBtn);
   dateNavRow.appendChild(dateLabel);
   dateNavRow.appendChild(prevDayBtn);
   dateNavRow.appendChild(todayBtn);
   dateNavRow.appendChild(addBreakBtn);
+  dateNavRow.appendChild(carryOverBtn);
   wrap.appendChild(dateNavRow);
 
   const summaryLine = el("p", { class: "task-summary" });
@@ -560,6 +569,32 @@ function renderTasksView(container) {
     updateDateLabel();
     renderList();
   }
+
+  function carryOverUnfinishedTasks() {
+    const unfinished = state.tasks.filter((t) => !t.isBreak && !t.done && (t.text || "").trim() !== "");
+    if (unfinished.length === 0) {
+      alert("אין משימות שלא הושלמו להעביר.");
+      return;
+    }
+    if (!confirm(`${unfinished.length} משימות לא הושלמו - להעביר אותן ליום הבא?`)) return;
+    const nextDateISO = addDaysISO(currentDate, 1);
+    const nextState = getDayTaskState(all, nextDateISO);
+    unfinished.forEach((t) => {
+      nextState.tasks.push({
+        id: "task_" + Date.now() + "_" + Math.random().toString(36).slice(2, 7),
+        text: t.text,
+        hours: t.hours,
+        minutes: t.minutes,
+        done: false,
+        isBreak: false
+      });
+    });
+    setDayTaskState(all, nextDateISO, nextState);
+    state.tasks = state.tasks.filter((t) => t.isBreak || t.done || (t.text || "").trim() === "");
+    persist();
+    renderList();
+  }
+  carryOverBtn.addEventListener("click", carryOverUnfinishedTasks);
 
   addBreakBtn.addEventListener("click", () => addTask(true));
   startInput.addEventListener("change", () => {

@@ -45,7 +45,7 @@ function pickRandomSample(arr, n) {
   return out;
 }
 
-function showInsightsModal(title, entries) {
+function showInsightsModal(title, entries, extraLine) {
   const counts = {};
   entries.forEach((e) => e.exerciseIds.forEach((id) => (counts[id] = (counts[id] || 0) + 1)));
   const topEntry = Object.entries(counts).sort((a, b) => b[1] - a[1])[0];
@@ -70,6 +70,8 @@ function showInsightsModal(title, entries) {
     sampleGratitude.forEach((line) => modal.appendChild(el("p", { class: "modal-quote", text: `"${line}"` })));
   }
 
+  if (extraLine) modal.appendChild(el("p", { class: "modal-line modal-line-strong", text: extraLine }));
+
   modal.appendChild(
     el("button", { class: "btn btn-primary", type: "button", text: "סגירה", onclick: () => overlay.remove() })
   );
@@ -78,4 +80,34 @@ function showInsightsModal(title, entries) {
     if (e.target === overlay) overlay.remove();
   });
   document.body.appendChild(overlay);
+}
+
+// משפטי עידוד קצרים לסיכום השבועי - נפרדים ממאגר המשפטים היומיים הארוכים יותר
+const WEEKLY_ENCOURAGEMENT_LINES = [
+  "כל שבוע שאת ממשיכה בו הוא עוד צעד קדימה, גם אם לא הרגיש ככה בזמן אמת.",
+  "העקביות שלך גדולה יותר ממה שנדמה לך כשאת בתוך השבוע עצמו.",
+  "שבוע נוסף של להראות לעצמך - זו לא פעולה קטנה.",
+  "גם השבועות הפחות מושלמים נספרים בדרך שלך קדימה.",
+  "את בונה כאן הרגל אמיתי, לא רק רצף של ימים.",
+  "תמשיכי כמה שהוא, בקצב שלך - זה מספיק."
+];
+
+// סיכום שבועי אוטומטי - מוצג פעם בשבוע, בימי ראשון בלבד, מיד אחרי המשפט הקבוע שמופיע לאחר הזנת הסיסמה
+function maybeShowWeeklyInsights() {
+  const today = todayISO();
+  const dayOfWeek = new Date(today + "T00:00:00").getDay(); // 0 = יום ראשון
+  if (dayOfWeek !== 0) return;
+
+  const prefs = loadPrefs();
+  if (prefs.weeklyInsightsShownDate === today) return;
+
+  const from = addDaysISO(today, -6);
+  const entries = Object.values(loadEntries()).filter((e) => e.saved && e.date >= from && e.date <= today);
+
+  prefs.weeklyInsightsShownDate = today;
+  savePrefs(prefs);
+
+  if (entries.length === 0) return;
+  const encouragement = WEEKLY_ENCOURAGEMENT_LINES[Math.floor(Math.random() * WEEKLY_ENCOURAGEMENT_LINES.length)];
+  showInsightsModal("סיכום השבוע שעבר", entries, encouragement);
 }

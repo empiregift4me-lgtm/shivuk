@@ -36,6 +36,9 @@ function initSummariesView(container) {
     );
   });
 
+  // חשיפה גלובלית - מאפשרת ניווט אל לשונית הארכיונים מבחוץ (למשל בלחיצה על צ'יפ קישור מתיעוד רגשי)
+  window.activateSummariesArchiveTab = () => activate("archive");
+
   activate("write");
 }
 
@@ -1063,9 +1066,29 @@ function renderSummaryArchiveTab(content, goToWriteTab) {
             type: "button",
             text: "ייצוא ל-PDF",
             onclick: () => exportSummaryToPDF(item)
+          }),
+          el("button", {
+            class: "btn btn-secondary btn-small",
+            type: "button",
+            text: "🔗 קישור לתיעוד רגשי",
+            onclick: () =>
+              addLinkFromSummaryToEmotional(item, () => {
+                persistItem();
+                buildBody();
+              })
           })
         ]);
         body.appendChild(topRow);
+        const chips = renderLinkChips(
+          item.links,
+          (link) => jumpToEmotionalMessage(link.id),
+          (link) =>
+            removeLinkFromSummary(item, link.id, () => {
+              persistItem();
+              buildBody();
+            })
+        );
+        if (chips) body.appendChild(chips);
         // מראה מעט "עמום" (opacity מופחת) בתצוגת ארכיון - אבחנה ויזואלית מיידית בין פגישה נעולה/עבר
         // לבין מסך עריכה חי, כדי שלא תתבלבל בין השניים במבט ראשון
         const viewRoot = el("div", { class: "summary-topics-wrap summary-archive-locked-view" });
@@ -1100,7 +1123,7 @@ function renderSummaryArchiveTab(content, goToWriteTab) {
       }
     });
 
-    const card = el("div", { class: "archive-item" }, [head, body]);
+    const card = el("div", { class: "archive-item", "data-summary-id": item.id }, [head, body]);
     wrap.appendChild(card);
   });
 

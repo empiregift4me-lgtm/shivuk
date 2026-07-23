@@ -42,6 +42,7 @@ function initLock() {
       hideLock();
       scheduleRelock();
       initDailyAffirmation();
+      maybeShowWeeklyInsights();
       maybeRunAutoBackup();
     } else {
       document.getElementById("lock-error").textContent = "סיסמה שגויה, נסי שוב.";
