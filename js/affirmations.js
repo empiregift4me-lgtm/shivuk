@@ -5,7 +5,6 @@ const DAILY_AFFIRMATION_RESET_HOUR = 6;
 const DAILY_AFFIRMATION_MAX_SHOWS = 3; // הצגה ראשונה מובטחת ביום + עד 2 הופעות נוספות אקראיות
 const DAILY_AFFIRMATION_EXTRA_CHANCE = 0.25;
 const DAILY_AFFIRMATION_CLOSE_DELAY_MS = 25 * 1000;
-const DAILY_AFFIRMATION_NO_REPEAT_DAYS = 14; // המשפט לא יחזור על עצמו בטווח של שבועיים
 
 // "היום" באפליקציה מתחיל ב-06:00 ולא בחצות הלילה
 function affirmationAppDay(ts) {
@@ -116,27 +115,37 @@ function showAffirmationSplash(sentence) {
   setTimeout(() => closeBtn.classList.add("is-ready"), DAILY_AFFIRMATION_CLOSE_DELAY_MS);
 }
 
-// בוחרת משפט חדש שלא הופיע באף אחד מה-DAILY_AFFIRMATION_NO_REPEAT_DAYS הימים האחרונים (אם אפשרי)
-function pickDailyAffirmationSentence(recentSentences) {
-  const excluded = new Set((recentSentences || []).slice(-DAILY_AFFIRMATION_NO_REPEAT_DAYS));
-  const pool = DAILY_AFFIRMATIONS.filter((s) => !excluded.has(s));
-  const candidates = pool.length > 0 ? pool : DAILY_AFFIRMATIONS;
-  return candidates[Math.floor(Math.random() * candidates.length)];
+// מערבבת עותק של רשימת המשפטים (Fisher-Yates) - "חפיסת קלפים" חדשה לסבב חדש
+function shuffleAffirmationDeck() {
+  const deck = DAILY_AFFIRMATIONS.slice();
+  for (let i = deck.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [deck[i], deck[j]] = [deck[j], deck[i]];
+  }
+  return deck;
+}
+
+// שולפת את המשפט הבא מהחפיסה - אם החפיסה ריקה (כל 50 המשפטים כבר הוצגו בסבב הזה), מערבבת חפיסה
+// חדשה, כך שאף משפט לא חוזר על עצמו עד שכל האחרים כבר הוצגו פעם אחת
+function drawNextAffirmation(deck) {
+  const currentDeck = Array.isArray(deck) && deck.length > 0 ? deck.slice() : shuffleAffirmationDeck();
+  const sentence = currentDeck.shift();
+  return { sentence, remainingDeck: currentDeck };
 }
 
 // נקראת מיד אחרי הזנת סיסמה מוצלחת - בוחרת (או שומרת) את משפט היום, ומציגה את החלונית פעם מובטחת אחרי איפוס
-// היום ב-06:00, ועד 2 פעמים נוספות באקראי במהלך אותו יום
+// היום ב-06:00, ועד 2 פעמים נוספות באקראי במהלך אותו יום.
+// אם ה-state הקיים עדיין בפורמט הישן (בלי affirmationDeck) - נשלף משפט חדש מיד, גם אם זה עדיין אותו
+// יום, כדי לתקן חד-פעמית מצב שבו משפטים חזרו על עצמם לפני שהיה מנגנון "חפיסה" שמונע את זה
 function initDailyAffirmation() {
   const now = Date.now();
   const currentAppDay = affirmationAppDay(now);
   let state = loadAffirmationState();
   let showSplash = false;
 
-  if (!state || state.appDay !== currentAppDay) {
-    const recentSentences = (state && state.recentSentences) || [];
-    const sentence = pickDailyAffirmationSentence(recentSentences);
-    const updatedRecent = recentSentences.concat([sentence]).slice(-DAILY_AFFIRMATION_NO_REPEAT_DAYS);
-    state = { sentence, appDay: currentAppDay, showsToday: 1, recentSentences: updatedRecent };
+  if (!state || state.appDay !== currentAppDay || !Array.isArray(state.affirmationDeck)) {
+    const { sentence, remainingDeck } = drawNextAffirmation(state && state.affirmationDeck);
+    state = { sentence, appDay: currentAppDay, showsToday: 1, affirmationDeck: remainingDeck };
     showSplash = true;
   } else if (state.showsToday < DAILY_AFFIRMATION_MAX_SHOWS && Math.random() < DAILY_AFFIRMATION_EXTRA_CHANCE) {
     state.showsToday += 1;
