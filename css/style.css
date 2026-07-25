@@ -1094,10 +1094,20 @@ select.field-input:focus {
 }
 .mantra-fav-btn:hover { background: var(--c-field); }
 .mantra-fav-btn.is-active { color: var(--c-highlight); }
-.mantra-sentence { font-size: 1.05rem; font-weight: 700; color: var(--text-light); line-height: 1.6; margin: 8px 0; }
-.mantra-count-label { font-size: 0.8rem; color: var(--text-submuted); min-height: 1.1em; margin-bottom: 4px; }
+.mantra-sentence {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--text-light);
+  line-height: 1.6;
+  margin: 8px 0;
+  text-shadow: 0 0 14px rgba(224, 177, 203, 0.3);
+}
+.mantra-count-label { font-size: 0.8rem; color: var(--text-submuted); min-height: 1.1em; margin-top: 6px; }
+/* רוחב+שוליים שליליים כדי לקזז בדיוק את הריפוד הפנימי של השדה - כך שהטקסט בתוך ההקלדה מתחיל
+   באותה נקודה בדיוק כמו שורת התאריך והמנטרה מעליו, לא עוד קצת פנימה */
 .mantra-retype-input {
-  width: 100%;
+  width: calc(100% + 20px);
+  margin: 0 -10px;
   padding: 8px 10px;
   background: var(--c-field);
   border: 1.5px solid var(--c-border);

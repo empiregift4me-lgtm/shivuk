@@ -18,9 +18,6 @@ function renderMantrasView(container) {
   headerRow.appendChild(backBtn);
   headerRow.appendChild(el("h2", { class: "panel-title", text: "🧘 תיעוד מנטרות" }));
   wrap.appendChild(headerRow);
-  wrap.appendChild(
-    el("p", { class: "panel-subtitle", text: "המשפטים החזקים ששמרת מהחלונית שאחרי הסיסמה - הקלידי אותם מחדש כתרגיל חיזוק." })
-  );
 
   const searchInput = el("input", {
     type: "text",
@@ -103,18 +100,16 @@ function renderMantrasView(container) {
 
     card.appendChild(el("p", { class: "mantra-sentence", text: mantra.sentence }));
 
-    const countLabel = el("div", {
-      class: "mantra-count-label",
-      text: mantra.typedCount > 0 ? `הקלדת את המשפט הזה ${mantra.typedCount} פעמים` : ""
-    });
-    card.appendChild(countLabel);
-
-    // שורת הקלדה חופשית - לא נשמרת בשום מקום, תמיד חוזרת ריקה. Enter סופר "הקלדה הושלמה" ומנקה את השורה
+    // שורת הקלדה חופשית - לא נשמרת בשום מקום, תמיד חוזרת ריקה. Enter סופר "הפנמה" ומנקה את השורה
     const retypeInput = el("input", {
       type: "text",
       class: "mantra-retype-input",
       placeholder: "הקלידי כאן את המשפט מחדש...",
       autocomplete: "off"
+    });
+    const countLabel = el("div", {
+      class: "mantra-count-label",
+      text: mantra.typedCount > 0 ? `הפנמת את המשפט הזה כבר ${mantra.typedCount} פעמים` : ""
     });
     retypeInput.addEventListener("keydown", (e) => {
       if (e.key !== "Enter") return;
@@ -125,11 +120,12 @@ function renderMantrasView(container) {
       if (item) {
         item.typedCount = (item.typedCount || 0) + 1;
         persist(log);
-        countLabel.textContent = `הקלדת את המשפט הזה ${item.typedCount} פעמים`;
+        countLabel.textContent = `הפנמת את המשפט הזה כבר ${item.typedCount} פעמים`;
       }
       retypeInput.value = "";
     });
     card.appendChild(retypeInput);
+    card.appendChild(countLabel);
 
     return card;
   }
