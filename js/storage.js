@@ -231,16 +231,33 @@ function formatDateHe(dateStr) {
   return new Intl.DateTimeFormat("he-IL", { weekday: "long", day: "numeric", month: "long", year: "numeric" }).format(d);
 }
 
-// כמה ימים רצופים (עד היום/אתמול) יש בהם לפחות רשומה שמורה אחת
+const JOURNAL_STREAK_GRACE_DAYS = 2; // עד יומיים חסרים בלי לשבור את הרצף - אותו היגיון כמו רצף "פעולות ערך עצמי" בלוח הבקרה
+
+function daysDiffISO(fromISO, toISO) {
+  return Math.round((new Date(toISO + "T00:00:00") - new Date(fromISO + "T00:00:00")) / 86400000);
+}
+
+// כמה ימים רצופים יש בהם לפחות רשומה שמורה אחת (בוקר או ערב), עם חסד של עד יומיים חסרים בלי
+// לשבור את הרצף - כדי שיום אחד שנשכח לא יאפס לגמרי רצף כתיבה ארוך
 function computeJournalStreak() {
   const entries = Object.values(loadEntries()).filter((e) => e.saved);
-  const datesWithEntry = new Set(entries.map((e) => e.date));
+  const datesWithEntry = Array.from(new Set(entries.map((e) => e.date))).sort();
+  if (datesWithEntry.length === 0) return 0;
+
   const today = todayISO();
-  let cursor = datesWithEntry.has(today) ? today : addDaysISO(today, -1);
+  const lastActive = datesWithEntry[datesWithEntry.length - 1];
+  // אם עברו יותר מ-2 ימים בלי אף רשומה מאז הרשומה האחרונה - אין רצף פעיל כרגע
+  if (daysDiffISO(lastActive, today) > JOURNAL_STREAK_GRACE_DAYS) return 0;
+
   let streak = 0;
-  while (datesWithEntry.has(cursor)) {
+  let prevDate = null;
+  datesWithEntry.forEach((dateStr) => {
+    if (prevDate) {
+      const gap = daysDiffISO(prevDate, dateStr) - 1;
+      if (gap > JOURNAL_STREAK_GRACE_DAYS) streak = 0;
+    }
     streak++;
-    cursor = addDaysISO(cursor, -1);
-  }
+    prevDate = dateStr;
+  });
   return streak;
 }

@@ -115,12 +115,6 @@ function renderDashboard(container) {
 
   const wrap = el("div", { class: "dashboard-wrap" });
   wrap.appendChild(el("h2", { class: "panel-title", text: "לוח הבקרה שלך" }));
-  wrap.appendChild(
-    el("p", {
-      class: "panel-subtitle",
-      text: 'מד ההתקדמות עולה לפי סך השורות שצברת אי-פעם בתרגיל "פעולות ערך עצמי" (בוקר וערב, כל הימים).'
-    })
-  );
 
   const gaugeSection = el("div", { class: "gauge-section" });
 
