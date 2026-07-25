@@ -100,12 +100,13 @@ function checkSelfWorthBonusNotification() {
 function computeSelfWorthProgress() {
   const totalLines = totalSelfWorthLines();
   const bonusState = checkSelfWorthBonusNotification();
+  const totalPoints = totalLines + bonusState.bonusEarned;
   return {
     totalLines,
     bonusEarned: bonusState.bonusEarned,
     streakDays: bonusState.streakDays,
-    totalPoints: totalLines + bonusState.bonusEarned,
-    percent: Math.min(100, (totalLines / SELF_WORTH_GAUGE_MAX) * 100)
+    totalPoints,
+    percent: Math.min(100, (totalPoints / SELF_WORTH_GAUGE_MAX) * 100)
   };
 }
 

@@ -5,7 +5,7 @@ let mantraSearchQuery = "";
 
 function renderMantrasView(container) {
   container.innerHTML = "";
-  const wrap = el("div", { class: "panel" });
+  const wrap = el("div", { class: "panel mantra-page" });
 
   const headerRow = el("div", { class: "energy-header-row" });
   const backBtn = el("button", {
@@ -17,19 +17,19 @@ function renderMantrasView(container) {
   });
   headerRow.appendChild(backBtn);
   headerRow.appendChild(el("h2", { class: "panel-title", text: "🧘 תיעוד מנטרות" }));
-  wrap.appendChild(headerRow);
 
   const searchInput = el("input", {
     type: "text",
     class: "field-input mantra-search-input",
-    placeholder: "חיפוש לפי תאריך או מילה מהמשפט..."
+    placeholder: "חיפוש..."
   });
   searchInput.value = mantraSearchQuery;
   searchInput.addEventListener("input", () => {
     mantraSearchQuery = searchInput.value;
     renderList();
   });
-  wrap.appendChild(searchInput);
+  headerRow.appendChild(searchInput);
+  wrap.appendChild(headerRow);
 
   const listEl = el("div", { class: "mantra-list" });
   wrap.appendChild(listEl);
@@ -100,16 +100,27 @@ function renderMantrasView(container) {
 
     card.appendChild(el("p", { class: "mantra-sentence", text: mantra.sentence }));
 
-    // שורת הקלדה חופשית - לא נשמרת בשום מקום, תמיד חוזרת ריקה. Enter סופר "הפנמה" ומנקה את השורה
+    // שורת הקלדה חופשית - לא נשמרת בשום מקום, תמיד חוזרת ריקה. Enter סופר "הפנמה" ומנקה את השורה.
+    // מוסתרת כברירת מחדל כדי לא לתפוס מקום - נפתחת בלחיצה על העיפרון ליד שורת המונה
     const retypeInput = el("input", {
       type: "text",
-      class: "mantra-retype-input",
+      class: "mantra-retype-input is-hidden",
       placeholder: "הקלידי כאן את המשפט מחדש...",
       autocomplete: "off"
     });
-    const countLabel = el("div", {
+    const countLabel = el("span", {
       class: "mantra-count-label",
       text: mantra.typedCount > 0 ? `הפנמת את המשפט הזה כבר ${mantra.typedCount} פעמים` : ""
+    });
+    const editToggleBtn = el("button", {
+      type: "button",
+      class: "mantra-edit-toggle",
+      text: "✏️",
+      title: "הקלדה מחדש כתרגיל חיזוק"
+    });
+    editToggleBtn.addEventListener("click", () => {
+      retypeInput.classList.toggle("is-hidden");
+      if (!retypeInput.classList.contains("is-hidden")) retypeInput.focus();
     });
     retypeInput.addEventListener("keydown", (e) => {
       if (e.key !== "Enter") return;
@@ -124,8 +135,9 @@ function renderMantrasView(container) {
       }
       retypeInput.value = "";
     });
+    const countRow = el("div", { class: "mantra-count-row" }, [countLabel, editToggleBtn]);
     card.appendChild(retypeInput);
-    card.appendChild(countLabel);
+    card.appendChild(countRow);
 
     return card;
   }

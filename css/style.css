@@ -1070,7 +1070,15 @@ select.field-input:focus {
 .energy-manual-actions { display: flex; gap: var(--space-sm); }
 
 /* ===== תיעוד מנטרות ===== */
-.mantra-search-input { width: 100%; margin: var(--space-sm) 0 var(--space); }
+.panel.mantra-page { background: none; border: none; box-shadow: none; padding: 0; }
+.mantra-search-input {
+  width: 120px;
+  max-width: 38%;
+  margin-inline-start: auto;
+  margin-block: 0;
+  padding: 6px 8px;
+  font-size: 0.85rem;
+}
 .mantra-list { display: flex; flex-direction: column; gap: var(--space-sm); }
 .mantra-card {
   background: var(--c-panel);
@@ -1099,15 +1107,26 @@ select.field-input:focus {
   font-weight: 700;
   color: var(--text-light);
   line-height: 1.6;
-  margin: 8px 0;
+  margin: 2px 0 8px;
   text-shadow: 0 0 14px rgba(224, 177, 203, 0.3);
 }
-.mantra-count-label { font-size: 0.8rem; color: var(--text-submuted); min-height: 1.1em; margin-top: 6px; }
-/* רוחב+שוליים שליליים כדי לקזז בדיוק את הריפוד הפנימי של השדה - כך שהטקסט בתוך ההקלדה מתחיל
-   באותה נקודה בדיוק כמו שורת התאריך והמנטרה מעליו, לא עוד קצת פנימה */
+.mantra-count-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 6px; }
+.mantra-count-label { font-size: 0.8rem; color: var(--text-submuted); min-height: 1.1em; }
+.mantra-edit-toggle {
+  flex: 0 0 auto;
+  border: none;
+  background: transparent;
+  color: var(--text-submuted);
+  font-size: 0.95rem;
+  cursor: pointer;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+}
+.mantra-edit-toggle:hover { background: var(--c-field); }
 .mantra-retype-input {
-  width: calc(100% + 20px);
-  margin: 0 -10px;
+  width: 100%;
+  margin: 0 0 8px;
   padding: 8px 10px;
   background: var(--c-field);
   border: 1.5px solid var(--c-border);
@@ -1116,6 +1135,7 @@ select.field-input:focus {
   font-family: inherit;
   font-size: 0.9rem;
 }
+.mantra-retype-input.is-hidden { display: none; }
 .mantra-retype-input:focus { outline: none; border-color: var(--c-highlight); }
 
 /* ===== משפטי שפע ===== */
