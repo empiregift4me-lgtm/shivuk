@@ -1,6 +1,6 @@
 // מעטפת האתר - ניווט בין דשבורד/יומן/סיכומים/החלטות דרך תפריט צד
 
-const SECTIONS = ["dashboard", "journal", "summaries", "decisions", "emotional", "tasks", "energy"];
+const SECTIONS = ["dashboard", "journal", "summaries", "decisions", "emotional", "tasks", "energy", "mantras"];
 const LAZY_SECTION_INIT = {
   summaries: initSummariesView
 };
@@ -24,6 +24,9 @@ function showSection(name) {
     initDecisionsView(document.getElementById("decisions-view"));
   } else if (name === "emotional") {
     initEmotionalView(document.getElementById("emotional-view"));
+  } else if (name === "mantras") {
+    // מתעדכן בכל כניסה, כדי לשקף מנטרות חדשות שנשמרו מהחלונית שאחרי הסיסמה
+    renderMantrasView(document.getElementById("mantras-view"));
   } else if (LAZY_SECTION_INIT[name] && !sectionsInitialized[name]) {
     LAZY_SECTION_INIT[name](document.getElementById(`${name}-view`));
     sectionsInitialized[name] = true;

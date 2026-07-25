@@ -16,7 +16,8 @@ const STORE_KEYS = {
   selfWorthBonusState: "self_worth_bonus_state_v1",
   taskManagement: "daily_tasks_v1",
   bigGoals: "big_goals_v1",
-  energyLog: "energy_log_v1"
+  energyLog: "energy_log_v1",
+  mantraLog: "mantra_log_v1"
 };
 
 const PERIODS = ["morning", "evening"];
@@ -193,6 +194,18 @@ function loadEnergyLog() {
 
 function saveEnergyLog(list) {
   safeSetItem(STORE_KEYS.energyLog, JSON.stringify(list));
+}
+
+function loadMantraLog() {
+  try {
+    return JSON.parse(localStorage.getItem(STORE_KEYS.mantraLog)) || [];
+  } catch (e) {
+    return [];
+  }
+}
+
+function saveMantraLog(list) {
+  safeSetItem(STORE_KEYS.mantraLog, JSON.stringify(list));
 }
 
 // אחסון גנרי לפי מפתח - משמש גם ל"החלטות עסקיות חשובות" וגם ל"תיעוד רגשי" (אותו מנגנון, שני יומני-צ'אט נפרדים)

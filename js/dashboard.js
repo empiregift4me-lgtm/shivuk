@@ -114,7 +114,16 @@ function renderDashboard(container) {
   const progress = computeSelfWorthProgress();
 
   const wrap = el("div", { class: "dashboard-wrap" });
-  wrap.appendChild(el("h2", { class: "panel-title", text: "לוח הבקרה שלך" }));
+  const titleRow = el("div", { class: "dashboard-title-row" }, [
+    el("h2", { class: "panel-title", text: "לוח הבקרה שלך" }),
+    el("button", {
+      type: "button",
+      class: "btn btn-secondary btn-small",
+      text: "🧘 תיעוד מנטרות",
+      onclick: () => showSection("mantras")
+    })
+  ]);
+  wrap.appendChild(titleRow);
 
   const gaugeSection = el("div", { class: "gauge-section" });
 

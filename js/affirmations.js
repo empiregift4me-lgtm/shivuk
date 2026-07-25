@@ -87,16 +87,38 @@ function renderAffirmationHeadline(sentence) {
   line.classList.add("is-visible");
 }
 
+// שומרת את משפט היום (פעם אחת בלבד ליום, גם אם החלונית מוצגת כמה פעמים) לתיעוד המנטרות
+function saveMantraForToday(sentence) {
+  const date = affirmationAppDay(Date.now());
+  const log = loadMantraLog();
+  if (log.some((m) => m.date === date)) return;
+  log.push({ id: "mantra_" + Date.now(), date, sentence, favorite: false, typedCount: 0 });
+  saveMantraLog(log);
+}
+
 function showAffirmationSplash(sentence) {
   const overlay = el("div", { class: "affirmation-overlay" });
   const particles = Array.from({ length: 12 }).map((_, i) => el("span", { class: `affirmation-particle p${i}` }));
   const closeBtn = el("button", { type: "button", class: "affirmation-close", title: "סגירה", text: "✕" });
+  const alreadySaved = loadMantraLog().some((m) => m.date === affirmationAppDay(Date.now()));
+  const saveBtn = el("button", {
+    type: "button",
+    class: "affirmation-save-btn",
+    text: alreadySaved ? "✓ נשמר לתיעוד המנטרות" : "💾 שמירה לתיעוד המנטרות"
+  });
+  if (alreadySaved) saveBtn.disabled = true;
+  saveBtn.addEventListener("click", () => {
+    saveMantraForToday(sentence);
+    saveBtn.textContent = "✓ נשמר לתיעוד המנטרות";
+    saveBtn.disabled = true;
+  });
   const card = el("div", { class: "affirmation-card" }, [
     el("div", { class: "affirmation-glow" }),
     ...particles,
     closeBtn,
     el("p", { class: "affirmation-text", text: sentence }),
-    el("input", { type: "text", class: "affirmation-input", autocomplete: "off" })
+    el("input", { type: "text", class: "affirmation-input", autocomplete: "off" }),
+    saveBtn
   ]);
   overlay.appendChild(card);
   document.body.appendChild(overlay);
@@ -111,8 +133,11 @@ function showAffirmationSplash(sentence) {
 
   closeBtn.addEventListener("click", dismiss);
   requestAnimationFrame(() => overlay.classList.add("is-visible"));
-  // כפתור הסגירה נשאר חסום כדי שהמשפט באמת ייקלט, לפני שאפשר לסגור אותו
-  setTimeout(() => closeBtn.classList.add("is-ready"), DAILY_AFFIRMATION_CLOSE_DELAY_MS);
+  // כפתור הסגירה וכפתור השמירה נשארים חסומים כדי שהמשפט באמת ייקלט, לפני שאפשר לסגור/לשמור
+  setTimeout(() => {
+    closeBtn.classList.add("is-ready");
+    saveBtn.classList.add("is-ready");
+  }, DAILY_AFFIRMATION_CLOSE_DELAY_MS);
 }
 
 // מערבבת עותק של רשימת המשפטים (Fisher-Yates) - "חפיסת קלפים" חדשה לסבב חדש

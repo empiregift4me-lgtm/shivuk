@@ -116,6 +116,7 @@ body {
   justify-content: space-between;
 }
 
+/* צף וקבוע בפינה הימנית-עליונה של המסך, כדי שיהיה נגיש תמיד גם כשגוללים למטה בעמוד ארוך */
 .sidebar-toggle-btn {
   font-family: inherit;
   border: 1px solid var(--c-border);
@@ -126,9 +127,15 @@ body {
   height: 40px;
   font-size: 1.2rem;
   cursor: pointer;
-  flex: 0 0 auto;
+  position: fixed;
+  top: var(--space);
+  right: var(--space);
+  z-index: 150;
+  box-shadow: var(--shadow-card);
 }
 .sidebar-toggle-btn:hover { background: var(--c-panel); }
+/* מרווח שמור בראש השורה, במקום שהכפתור הצף היה תופס קודם, כדי שכותרת האתר לא תיכנס מתחתיו */
+.top-bar-row { padding-inline-end: 48px; }
 
 .affirmation-headline {
   display: none;
@@ -309,6 +316,27 @@ body {
 .affirmation-close.is-ready { opacity: 1; pointer-events: auto; cursor: pointer; }
 .affirmation-close:hover { background: rgba(255, 255, 255, 0.2); }
 
+.affirmation-save-btn {
+  position: relative;
+  z-index: 2;
+  margin: var(--space-lg) auto 0;
+  display: block;
+  padding: 8px 18px;
+  border-radius: 999px;
+  border: 1px solid var(--c-border);
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--text-light);
+  font-family: inherit;
+  font-size: 0.85rem;
+  cursor: not-allowed;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.5s ease, background 0.15s ease;
+}
+.affirmation-save-btn.is-ready { opacity: 1; pointer-events: auto; cursor: pointer; }
+.affirmation-save-btn:hover { background: rgba(255, 255, 255, 0.2); }
+.affirmation-save-btn:disabled { cursor: default; opacity: 0.65 !important; }
+
 .site-title {
   font-size: 1.3rem;
   font-weight: 700;
@@ -394,6 +422,8 @@ body {
 
 /* ===== לוח בקרה - מד התקדמות מדחום ===== */
 .dashboard-wrap { padding: var(--space) 0; }
+.dashboard-title-row { display: flex; align-items: center; justify-content: flex-start; flex-wrap: wrap; gap: var(--space); }
+.dashboard-title-row .panel-title { margin: 0; }
 .gauge-section {
   display: flex;
   align-items: flex-start;
@@ -1038,6 +1068,45 @@ select.field-input:focus {
 .energy-manual-field { display: flex; flex-direction: column; gap: 4px; }
 .energy-manual-field .field-input { width: auto; }
 .energy-manual-actions { display: flex; gap: var(--space-sm); }
+
+/* ===== תיעוד מנטרות ===== */
+.mantra-search-input { width: 100%; margin: var(--space-sm) 0 var(--space); }
+.mantra-list { display: flex; flex-direction: column; gap: var(--space-sm); }
+.mantra-card {
+  background: var(--c-panel);
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+}
+.mantra-card-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.mantra-date { font-size: 0.8rem; color: var(--text-submuted); }
+.mantra-fav-btn {
+  flex: 0 0 auto;
+  border: none;
+  background: transparent;
+  color: var(--text-submuted);
+  font-size: 1.1rem;
+  cursor: pointer;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  margin-inline-start: auto;
+}
+.mantra-fav-btn:hover { background: var(--c-field); }
+.mantra-fav-btn.is-active { color: var(--c-highlight); }
+.mantra-sentence { font-size: 1.05rem; font-weight: 700; color: var(--text-light); line-height: 1.6; margin: 8px 0; }
+.mantra-count-label { font-size: 0.8rem; color: var(--text-submuted); min-height: 1.1em; margin-bottom: 4px; }
+.mantra-retype-input {
+  width: 100%;
+  padding: 8px 10px;
+  background: var(--c-field);
+  border: 1.5px solid var(--c-border);
+  border-radius: var(--radius-sm);
+  color: var(--text-light);
+  font-family: inherit;
+  font-size: 0.9rem;
+}
+.mantra-retype-input:focus { outline: none; border-color: var(--c-highlight); }
 
 /* ===== משפטי שפע ===== */
 .quotes-grid { display: flex; flex-direction: column; gap: var(--space-sm); }
