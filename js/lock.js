@@ -26,7 +26,7 @@ function showLock() {
   document.getElementById("lock-error").textContent = "";
   const quietBtn = document.getElementById("lock-quiet-btn");
   quietBtn.disabled = false;
-  quietBtn.textContent = "🏠 לבד בבית - השהיית נעילה לשעה";
+  quietBtn.title = "לבד בבית - השהיית נעילה לשעה";
   setTimeout(() => document.getElementById("lock-password").focus(), 50);
 }
 
@@ -64,6 +64,6 @@ function initLock() {
     quietModeUntil = Date.now() + QUIET_MODE_MS;
     const btn = document.getElementById("lock-quiet-btn");
     btn.disabled = true;
-    btn.textContent = "✓ מצב רגוע פעיל לשעה הקרובה";
+    btn.title = "מצב רגוע פעיל לשעה הקרובה";
   });
 }
