@@ -180,6 +180,13 @@ const EXERCISES = [
     config: { rowIcon: "✨", placeholder: "פעולת ערך...", maxLines: 50, showCount: true }
   },
   {
+    id: "positive-collection",
+    period: "evening",
+    name: "אוסף חיובי",
+    type: "dynamic-list",
+    config: { rowIcon: "✨", placeholder: "דבר חיובי...", maxLines: 50, showCount: true }
+  },
+  {
     id: "daily-reflection",
     period: "evening",
     name: "חשבון נפש יומי",
