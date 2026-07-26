@@ -151,7 +151,7 @@ body {
   position: fixed;
   top: var(--space);
   left: var(--space);
-  z-index: 901;
+  z-index: 1001;
   box-shadow: var(--shadow-card);
   transition: opacity 0.3s ease, background 0.3s ease;
 }
@@ -168,12 +168,14 @@ body {
   opacity: 0.4;
 }
 
-/* שכבת ההחשכה - מכסה את כל המסך במלואו, שחור מוחלט, מעל כל תוכן האתר (אך מתחת למסך הנעילה) */
+/* שכבת ההחשכה - מכסה את כל המסך במלואו, שחור מוחלט, מעל כל תוכן האתר כולל מסך הנעילה עצמו.
+   ברירת המחדל (ב-HTML) היא פעילה, כך שבכל רענון של הדף המצב הטבעי הוא מסך שחור עם מסך הסיסמה
+   מתחתיו - הזנת הסיסמה עדיין עובדת כי השדה תמיד ממוקד אוטומטית (focus) גם מתחת לשכבה השחורה */
 .blackout-overlay {
   position: fixed;
   inset: 0;
   background: #000;
-  z-index: 900;
+  z-index: 1000;
 }
 .blackout-overlay.is-hidden { display: none; }
 

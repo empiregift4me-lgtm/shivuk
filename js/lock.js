@@ -1,7 +1,7 @@
 // נעילת מסך בסיסמה - נועלת עם טעינת הדף, ונועלת מחדש כל שעה
 
 const LOCK_PASSWORD = "31059111";
-const LOCK_INTERVAL_MS = 60 * 60 * 1000;
+const LOCK_INTERVAL_MS = 15 * 60 * 1000;
 let lockTimer = null;
 
 // שילוב מקשים סמוי: Ctrl+Alt+Shift+L (קיצור של LOCK), כשמסך הנעילה מוצג - מאפשר כניסה עם אנטר בלבד בלי הסיסמה
