@@ -106,11 +106,11 @@ function showAffirmationSplash(sentence) {
     class: "affirmation-save-btn",
     text: alreadySaved ? "✓ נשמר לתיעוד המנטרות" : "💾 שמירה לתיעוד המנטרות"
   });
-  if (alreadySaved) saveBtn.disabled = true;
+  // הכפתור משמש גם לשמירה וגם לסגירת החלונית, בדיוק כמו כפתור ה-X (saveMantraForToday לא כפולה גם אם כבר נשמר היום)
   saveBtn.addEventListener("click", () => {
     saveMantraForToday(sentence);
     saveBtn.textContent = "✓ נשמר לתיעוד המנטרות";
-    saveBtn.disabled = true;
+    dismiss();
   });
   const card = el("div", { class: "affirmation-card" }, [
     el("div", { class: "affirmation-glow" }),
