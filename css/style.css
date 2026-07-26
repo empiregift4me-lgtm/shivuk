@@ -74,6 +74,19 @@
 }
 .lock-input:focus { outline: none; border-color: var(--c-highlight); }
 .lock-error { color: var(--c-highlight); font-size: 0.9rem; min-height: 1.2em; }
+.lock-quiet-btn {
+  font-family: inherit;
+  font-size: 0.8rem;
+  color: var(--text-submuted);
+  background: transparent;
+  border: 1px dashed var(--c-border);
+  border-radius: var(--radius-sm);
+  padding: 8px;
+  cursor: pointer;
+  margin-top: 4px;
+}
+.lock-quiet-btn:hover { background: var(--c-field); color: var(--text-light); }
+.lock-quiet-btn:disabled { cursor: default; opacity: 0.6; }
 
 * { box-sizing: border-box; }
 
