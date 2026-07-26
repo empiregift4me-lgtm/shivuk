@@ -135,7 +135,47 @@ body {
 }
 .sidebar-toggle-btn:hover { background: var(--c-panel); }
 /* מרווח שמור בראש השורה, במקום שהכפתור הצף היה תופס קודם, כדי שכותרת האתר לא תיכנס מתחתיו */
-.top-bar-row { padding-inline-end: 48px; }
+.top-bar-row { padding-inline-end: 48px; padding-inline-start: 48px; }
+
+/* כפתור החשכת מסך - צף בצד השני (שמאל), מראה כמו כפתור התפריט אך בצד הנגדי */
+.blackout-toggle-btn {
+  font-family: inherit;
+  border: 1px solid var(--c-border);
+  background: var(--c-card);
+  color: var(--text-light);
+  border-radius: var(--radius-sm);
+  width: 40px;
+  height: 40px;
+  font-size: 1.2rem;
+  cursor: pointer;
+  position: fixed;
+  top: var(--space);
+  left: var(--space);
+  z-index: 901;
+  box-shadow: var(--shadow-card);
+  transition: opacity 0.3s ease, background 0.3s ease;
+}
+.blackout-toggle-btn:hover { background: var(--c-panel); }
+/* במצב פעיל הכפתור לא נעלם - הוא מתעמעם מאוד כדי לא להאיר את החדר, אבל נשאר ניתן ללחיצה כדי לחזור למצב רגיל */
+.blackout-toggle-btn.is-active {
+  opacity: 0.1;
+  background: #000;
+  border-color: rgba(255, 255, 255, 0.15);
+  box-shadow: none;
+}
+.blackout-toggle-btn.is-active:hover,
+.blackout-toggle-btn.is-active:focus-visible {
+  opacity: 0.4;
+}
+
+/* שכבת ההחשכה - מכסה את כל המסך במלואו, שחור מוחלט, מעל כל תוכן האתר (אך מתחת למסך הנעילה) */
+.blackout-overlay {
+  position: fixed;
+  inset: 0;
+  background: #000;
+  z-index: 900;
+}
+.blackout-overlay.is-hidden { display: none; }
 
 .affirmation-headline {
   display: none;

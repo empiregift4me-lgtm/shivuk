@@ -68,6 +68,16 @@ function initShell() {
   });
   document.getElementById("sidebar-overlay").addEventListener("click", closeSidebar);
   document.getElementById("site-title").addEventListener("click", () => showSection("dashboard"));
+
+  // כפתור החשכת מסך - נשמר הפוקוס בתיבת ההקלדה הפעילה (למשל אם היא באמצע כתיבה), כדי שאפשר יהיה
+  // להמשיך להקליד "בעיניים עצומות" בלי שהלחיצה על הכפתור תעביר את הפוקוס אליו
+  const blackoutToggle = document.getElementById("blackout-toggle");
+  const blackoutOverlay = document.getElementById("blackout-overlay");
+  blackoutToggle.addEventListener("mousedown", (e) => e.preventDefault());
+  blackoutToggle.addEventListener("click", () => {
+    blackoutOverlay.classList.toggle("is-hidden");
+    blackoutToggle.classList.toggle("is-active", !blackoutOverlay.classList.contains("is-hidden"));
+  });
   document.querySelectorAll(".sidebar-item").forEach((btn) => {
     btn.addEventListener("click", () => showSection(btn.dataset.section));
   });
