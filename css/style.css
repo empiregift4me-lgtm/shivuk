@@ -1349,6 +1349,9 @@ select.field-input:focus {
   flex-direction: column;
 }
 .exercises-dropdown.is-collapsed { display: none; }
+.exercises-dropdown-columns { display: flex; gap: var(--space); align-items: flex-start; }
+.exercises-dropdown-column { flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; }
+.exercises-dropdown-column + .exercises-dropdown-column { border-inline-start: 1px solid var(--c-border); padding-inline-start: var(--space); }
 .dropdown-section-label {
   font-size: 0.85rem;
   font-weight: 700;

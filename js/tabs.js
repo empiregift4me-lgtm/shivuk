@@ -286,10 +286,14 @@ function buildExercisesMenu(nav, exBtn) {
   function openMenu() {
     dropdown.innerHTML = "";
     const date = journalViewDate;
+    // בוקר/ערב זה לצד זה בשני טורים, במקום עמודה ארוכה אחת שדורשת גלילה - כך שכל התרגילים
+    // נראים בבת אחת
+    const columnsWrap = el("div", { class: "exercises-dropdown-columns" });
     PERIODS.forEach((p) => {
-      dropdown.appendChild(el("div", { class: "dropdown-section-label", text: PERIOD_LABELS[p] }));
+      const column = el("div", { class: "exercises-dropdown-column" });
+      column.appendChild(el("div", { class: "dropdown-section-label", text: PERIOD_LABELS[p] }));
       EXERCISES.filter((e) => e.period === p).forEach((ex) => {
-        dropdown.appendChild(
+        column.appendChild(
           el("button", {
             type: "button",
             class: "dropdown-item",
@@ -307,7 +311,9 @@ function buildExercisesMenu(nav, exBtn) {
           })
         );
       });
+      columnsWrap.appendChild(column);
     });
+    dropdown.appendChild(columnsWrap);
     dropdown.classList.remove("is-collapsed");
     exBtn.classList.add("is-active");
   }
