@@ -940,6 +940,13 @@ function renderSummaryWriteTab(content) {
     title: "מוסיפה תיבת כתיבה חופשית מיד אחרי העניין שבו עומדים כרגע"
   });
   topRow.appendChild(freewriteAtFocusBtn);
+  let allCollapsed = false;
+  const collapseAllBtn = el("button", {
+    type: "button",
+    class: "btn btn-secondary btn-small",
+    text: "כווץ הכל"
+  });
+  topRow.appendChild(collapseAllBtn);
 
   if (topics.length === 0) {
     topics.push(newSummaryTopic());
@@ -952,6 +959,11 @@ function renderSummaryWriteTab(content) {
   const editorHandle = buildTopicsEditor(editorRoot, topics, persistDraft, { readOnly: false, hideAddButton: true });
   addTopicBtn.addEventListener("click", () => editorHandle.addTopic());
   freewriteAtFocusBtn.addEventListener("click", () => editorHandle.addFreewriteNearFocus());
+  collapseAllBtn.addEventListener("click", () => {
+    allCollapsed = !allCollapsed;
+    editorHandle.setAllCollapsed(allCollapsed);
+    collapseAllBtn.textContent = allCollapsed ? "הרחב הכל" : "כווץ הכל";
+  });
 
   dateInput.addEventListener("change", persistDraft);
   topicInput.addEventListener("input", persistDraft);

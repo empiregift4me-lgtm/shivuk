@@ -73,10 +73,13 @@ function initShell() {
   // להמשיך להקליד "בעיניים עצומות" בלי שהלחיצה על הכפתור תעביר את הפוקוס אליו
   const blackoutToggle = document.getElementById("blackout-toggle");
   const blackoutOverlay = document.getElementById("blackout-overlay");
+  const blackoutIndicator = document.getElementById("blackout-indicator");
   blackoutToggle.addEventListener("mousedown", (e) => e.preventDefault());
   blackoutToggle.addEventListener("click", () => {
     blackoutOverlay.classList.toggle("is-hidden");
-    blackoutToggle.classList.toggle("is-active", !blackoutOverlay.classList.contains("is-hidden"));
+    const isActive = !blackoutOverlay.classList.contains("is-hidden");
+    blackoutToggle.classList.toggle("is-active", isActive);
+    blackoutIndicator.classList.toggle("is-hidden", !isActive);
   });
   document.querySelectorAll(".sidebar-item").forEach((btn) => {
     btn.addEventListener("click", () => showSection(btn.dataset.section));
