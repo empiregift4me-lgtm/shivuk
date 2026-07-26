@@ -231,8 +231,10 @@ function renderFiltersTab(container) {
       renderResults();
     }
   });
+  const countBadge = el("span", { class: "filter-count-badge", title: "מספר התוצאות שנמצאו לתרגיל הנבחר" });
+  const sortGroup = el("div", { class: "filter-sort-group" }, [orderBtn, countBadge]);
   controls.appendChild(select);
-  controls.appendChild(orderBtn);
+  controls.appendChild(sortGroup);
   wrap.appendChild(controls);
 
   const results = el("div", { class: "filter-results" });
@@ -243,6 +245,7 @@ function renderFiltersTab(container) {
     const exId = select.value;
     const instance = getExerciseById(exId);
     const entries = allEntriesSorted(order).filter((e) => e.saved && e.exerciseIds.includes(exId));
+    countBadge.textContent = entries.length;
     if (entries.length === 0) {
       results.appendChild(el("div", { class: "empty-state", text: "עדיין אין רשומות לתרגיל הזה." }));
       return;

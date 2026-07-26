@@ -1429,7 +1429,21 @@ select.field-input:focus {
 .archive-item-body.is-collapsed { display: none; }
 
 /* ===== סינונים ===== */
-.filter-controls { display: flex; gap: var(--space-sm); margin-bottom: var(--space-lg); flex-wrap: wrap; }
+.filter-controls { display: flex; gap: var(--space-sm); margin-bottom: var(--space-lg); flex-wrap: wrap; align-items: center; }
+.filter-sort-group { display: flex; gap: var(--space-sm); align-items: center; }
+.filter-count-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 34px;
+  height: 34px;
+  padding: 0 6px;
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius-sm);
+  color: var(--c-highlight);
+  font-size: 0.9rem;
+  font-weight: 700;
+}
 .filter-select { max-width: 280px; }
 .filter-results { display: flex; flex-direction: column; gap: var(--space); }
 .filter-result-block {
