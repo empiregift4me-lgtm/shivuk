@@ -918,10 +918,10 @@ select.field-input:focus {
 .dynamic-row.has-reason .field-input { flex: 1 1 0; min-width: 0; width: auto; }
 .reason-label { flex: 0 0 auto; color: var(--text-submuted); font-size: 0.9rem; }
 .dynamic-list-trailing { margin-top: var(--space); display: flex; flex-direction: column; gap: var(--space-sm); }
-/* תווית + שדה על אותה שורה, מראה סטנדרטי וטבעי - לא כותרת שאלה מודגשת */
-.trailing-field-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-.trailing-field-label { color: var(--text-light); font-size: 0.95rem; flex: 1 1 auto; min-width: 160px; }
-.trailing-field-row .field-input { flex: 2 1 220px; width: auto; }
+/* תווית ומיד מתחתיה שדה ההקלדה, בלי רווח - מראה סטנדרטי וטבעי, לא כותרת שאלה מודגשת */
+.trailing-field-row { display: flex; flex-direction: column; gap: 2px; }
+.trailing-field-label { color: var(--text-light); font-size: 0.95rem; }
+.trailing-field-row .field-input { width: 100%; }
 
 /* ===== הסכם האמינות ===== */
 .trust-strip {
