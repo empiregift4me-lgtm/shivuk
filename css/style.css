@@ -542,9 +542,11 @@ body {
 
 .bonus-toast {
   position: fixed;
-  bottom: 24px;
+  /* למעלה, לא למטה - כדי לא לכסות תוכן/שדות הקלדה שבתחתית מסכים ארוכים כמו היומן */
+  top: 70px;
   left: 50%;
-  transform: translateX(-50%) translateY(20px);
+  max-width: min(92vw, 420px);
+  transform: translateX(-50%) translateY(-20px);
   background: var(--c-card);
   border: 1px solid var(--c-highlight);
   color: var(--text-light);
