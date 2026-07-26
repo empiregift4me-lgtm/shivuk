@@ -22,7 +22,7 @@ function maybeShowMonthlyInsights() {
 
   if (entries.length === 0) return;
   const monthLabel = new Intl.DateTimeFormat("he-IL", { month: "long", year: "numeric" }).format(new Date(prevMonthDate + "T00:00:00"));
-  showInsightsModal(`תובנות מהחודש שחלף — ${monthLabel}`, entries);
+  showInsightsModal(`תובנות מהחודש שחלף — ${monthLabel}`, entries, null, true);
 }
 
 function showManualInsights() {
@@ -33,7 +33,7 @@ function showManualInsights() {
     alert("עדיין אין מספיק רשומות שמורות ב-30 הימים האחרונים כדי להציג תובנות.");
     return;
   }
-  showInsightsModal("תובנות מ-30 הימים האחרונים", entries);
+  showInsightsModal("תובנות מ-30 הימים האחרונים", entries, null, true);
 }
 
 function pickRandomSample(arr, n) {
@@ -45,7 +45,7 @@ function pickRandomSample(arr, n) {
   return out;
 }
 
-function showInsightsModal(title, entries, extraLine) {
+function showInsightsModal(title, entries, extraLine, showTrustLine) {
   const counts = {};
   entries.forEach((e) => e.exerciseIds.forEach((id) => (counts[id] = (counts[id] || 0) + 1)));
   const topEntry = Object.entries(counts).sort((a, b) => b[1] - a[1])[0];
@@ -71,6 +71,11 @@ function showInsightsModal(title, entries, extraLine) {
   }
 
   if (extraLine) modal.appendChild(el("p", { class: "modal-line modal-line-strong", text: extraLine }));
+
+  if (showTrustLine) {
+    const now = new Date();
+    modal.appendChild(el("p", { class: "modal-line", text: `🔗 החודש קיימתי לעצמי: ${keptCountInMonth(now.getFullYear(), now.getMonth())} הבטחות` }));
+  }
 
   modal.appendChild(
     el("button", { class: "btn btn-primary", type: "button", text: "סגירה", onclick: () => overlay.remove() })

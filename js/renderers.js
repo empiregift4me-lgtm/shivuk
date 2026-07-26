@@ -156,11 +156,12 @@ const RENDERERS = {
       const trailingData = (data && data.trailing) || {};
       const trailingWrap = el("div", { class: "dynamic-list-trailing" });
       cfg.trailingFields.forEach((field) => {
-        trailingWrap.appendChild(el("p", { class: "exercise-question", text: field.label }));
-        const input = el("input", { type: "text", class: "field-input line-input", placeholder: field.placeholder || "" });
+        const input = el("input", { type: "text", class: "field-input", placeholder: field.placeholder || "" });
         input.value = trailingData[field.key] || "";
         input.disabled = !!readOnly;
-        trailingWrap.appendChild(input);
+        // תווית + שדה על אותה שורה (כמו המשך טבעי של שורה, לא כותרת שאלה מודגשת) - עוטפים גם אם
+        // התווית ארוכה ולא נכנסת, כדי שיישאר קריא במסכים צרים
+        trailingWrap.appendChild(el("div", { class: "trailing-field-row" }, [el("span", { class: "trailing-field-label", text: field.label }), input]));
         trailingInputs.push({ key: field.key, input });
       });
       wrap.appendChild(trailingWrap);
@@ -394,6 +395,74 @@ const RENDERERS = {
       tas.push(ta);
     });
     return { el: wrap, getData: () => ({ answers: tas.map((t) => t.value) }) };
+  },
+
+  "trust-agreement"(instance, data, readOnly) {
+    const wrap = el("div", { class: "exercise-body" });
+    wrap.appendChild(el("p", { class: "exercise-note", text: "הבטחה אחת - קטנה עד שאי אפשר לא לקיים אותה." }));
+
+    const textInput = el("input", { type: "text", class: "field-input", placeholder: "אפתח את הקובץ ואסתכל 60 שניות" });
+    textInput.disabled = !!readOnly;
+    wrap.appendChild(textInput);
+
+    wrap.appendChild(el("p", { class: "exercise-note trust-scope-label", text: "עד מתי:" }));
+    const pillsRow = el("div", { class: "period-pills" });
+    let scope = "half";
+    const scopeOptions = [
+      { id: "half", label: "חצי שעה" },
+      { id: "today", label: "היום" },
+      { id: "tomorrow", label: "מחר" }
+    ];
+    function renderScopePills() {
+      pillsRow.innerHTML = "";
+      scopeOptions.forEach((opt) => {
+        const btn = el("button", {
+          type: "button",
+          class: "period-pill" + (scope === opt.id ? " is-active" : ""),
+          text: opt.label
+        });
+        if (readOnly) btn.disabled = true;
+        else btn.addEventListener("click", () => { scope = opt.id; renderScopePills(); });
+        pillsRow.appendChild(btn);
+      });
+    }
+    renderScopePills();
+    wrap.appendChild(pillsRow);
+
+    if (!readOnly) {
+      const warningNote = el("p", { class: "exercise-note trust-open-warning is-hidden", text: "יש כבר 3 הבטחות פתוחות. שווה להכריע בהן קודם." });
+      function checkOpenWarning() {
+        warningNote.classList.toggle("is-hidden", openPromises().length < TRUST_OPEN_WARNING_THRESHOLD);
+      }
+      checkOpenWarning();
+      wrap.appendChild(warningNote);
+
+      const registerBtn = el("button", { type: "button", class: "btn btn-primary btn-small", text: "רישום ההבטחה" });
+      registerBtn.disabled = true;
+      const confirmNote = el("span", { class: "trust-confirm-note" });
+      textInput.addEventListener("input", () => {
+        registerBtn.disabled = !textInput.value.trim();
+      });
+      registerBtn.addEventListener("click", () => {
+        if (!textInput.value.trim()) return;
+        addTrustPromise(textInput.value, scope);
+        textInput.value = "";
+        scope = "half";
+        renderScopePills();
+        registerBtn.disabled = true;
+        confirmNote.textContent = "נרשם.";
+        setTimeout(() => {
+          confirmNote.textContent = "";
+        }, 2000);
+        checkOpenWarning();
+        refreshTrustStrip();
+      });
+      wrap.appendChild(registerBtn);
+      wrap.appendChild(confirmNote);
+    }
+
+    // אין data מתמשך לתרגיל הזה בכוונה - ההבטחה עצמה חיה ב-trustLedger, עצמאית לגמרי מהיומן
+    return { el: wrap, getData: () => ({}) };
   },
 
   "story-split"(instance, data, readOnly) {

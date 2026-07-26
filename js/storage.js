@@ -18,7 +18,8 @@ const STORE_KEYS = {
   bigGoals: "big_goals_v1",
   energyLog: "energy_log_v1",
   mantraLog: "mantra_log_v1",
-  selfWorthReminderState: "self_worth_reminder_state_v1"
+  selfWorthReminderState: "self_worth_reminder_state_v1",
+  trustLedger: "trustLedger"
 };
 
 const PERIODS = ["morning", "evening"];

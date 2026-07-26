@@ -131,6 +131,13 @@ const EXERCISES = [
     }
   },
   {
+    id: "trust-agreement",
+    period: "morning",
+    name: "הסכם האמינות",
+    type: "trust-agreement",
+    config: {}
+  },
+  {
     id: "identity-statement",
     period: "morning",
     name: "הצהרת זהות",

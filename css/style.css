@@ -915,7 +915,49 @@ select.field-input:focus {
 .dynamic-list-count { margin: 8px 0 0; font-size: 0.85rem; color: var(--text-submuted); opacity: 0.75; }
 .dynamic-row.has-reason .field-input { flex: 1 1 0; min-width: 0; width: auto; }
 .reason-label { flex: 0 0 auto; color: var(--text-submuted); font-size: 0.9rem; }
-.dynamic-list-trailing { margin-top: var(--space); }
+.dynamic-list-trailing { margin-top: var(--space); display: flex; flex-direction: column; gap: var(--space-sm); }
+/* תווית + שדה על אותה שורה, מראה סטנדרטי וטבעי - לא כותרת שאלה מודגשת */
+.trailing-field-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.trailing-field-label { color: var(--text-light); font-size: 0.95rem; flex: 1 1 auto; min-width: 160px; }
+.trailing-field-row .field-input { flex: 2 1 220px; width: auto; }
+
+/* ===== הסכם האמינות ===== */
+.trust-strip {
+  background: var(--c-card);
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius);
+  padding: var(--space);
+  margin-bottom: var(--space);
+}
+.trust-balance { display: flex; align-items: center; justify-content: space-between; gap: var(--space-sm); font-weight: 600; color: var(--text-light); flex-wrap: wrap; }
+.trust-divider { height: 1px; background: var(--c-border); margin: var(--space-sm) 0; }
+.trust-empty { color: var(--text-submuted); margin: 0; }
+.trust-empty-hint { color: var(--text-submuted); font-size: 0.9rem; margin: 4px 0 0; }
+.trust-row { padding: var(--space-sm) 0; border-top: 1px solid var(--c-border); }
+.trust-row:first-of-type { border-top: none; padding-top: 0; }
+.trust-text { font-size: 1.05rem; color: var(--text-light); margin: 0 0 6px; }
+.trust-meta { display: flex; flex-wrap: wrap; gap: 4px 10px; font-size: 0.85rem; color: var(--text-submuted); margin: 0 0 8px; }
+.trust-late { font-size: 0.85rem; color: var(--text-submuted); margin: 0 0 8px; }
+.trust-acts { display: flex; gap: 8px; flex-wrap: wrap; }
+.trust-scope-label { margin: var(--space-sm) 0 4px; }
+.trust-open-warning { color: var(--text-submuted); font-size: 0.85rem; }
+.trust-open-warning.is-hidden { display: none; }
+.trust-confirm-note { color: var(--text-submuted); font-size: 0.85rem; margin-inline-start: 8px; }
+
+.trust-archive-section { margin-top: var(--space); }
+.trust-archive-title { margin: 0 0 var(--space-sm); }
+.trust-archive-row { display: flex; gap: 10px; padding: var(--space-sm) 0; border-top: 1px solid var(--c-border); }
+.trust-archive-row:first-of-type { border-top: none; padding-top: 0; }
+.trust-archive-mark { flex: 0 0 auto; font-size: 1.1rem; width: 22px; text-align: center; }
+.trust-archive-mark.is-kept { color: #8fbf8f; }
+.trust-archive-mark.is-missed { color: #b58f6e; }
+.trust-archive-text-col { flex: 1 1 auto; }
+.trust-calibration-footnote { color: var(--text-submuted); font-size: 0.85rem; margin-top: var(--space-sm); }
+
+@media (max-width: 360px) {
+  .trust-acts { flex-direction: column; }
+  .trust-acts .btn { width: 100%; }
+}
 
 /* ===== ניהול משימות היום ===== */
 .task-layout-breakout {

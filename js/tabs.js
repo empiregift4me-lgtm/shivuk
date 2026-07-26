@@ -15,6 +15,7 @@ function currentActivePeriod(date) {
 
 function renderJournalTab(container) {
   container.innerHTML = "";
+  container.appendChild(renderTrustStrip());
   const date = journalViewDate;
   const isToday = date === todayISO();
   const wrap = el("div", { class: "day-card" });
@@ -158,8 +159,6 @@ function renderArchiveTab(container) {
 
   if (entries.length === 0) {
     wrap.appendChild(el("div", { class: "empty-state", text: "עדיין אין רשומות שמורות בארכיון." }));
-    container.appendChild(wrap);
-    return;
   }
 
   entries.forEach((entry) => {
@@ -207,6 +206,9 @@ function renderArchiveTab(container) {
   });
 
   container.appendChild(wrap);
+
+  const trustSection = buildTrustArchiveSection();
+  if (trustSection) container.appendChild(trustSection);
 }
 
 function renderFiltersTab(container) {
