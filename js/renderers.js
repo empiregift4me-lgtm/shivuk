@@ -56,7 +56,8 @@ const RENDERERS = {
 
   "dynamic-list"(instance, data, readOnly) {
     const cfg = instance.config;
-    const items = (data && data.items && data.items.length ? data.items : [""]).slice();
+    const emptyRow = cfg.splitReason ? { action: "", reason: "" } : "";
+    const items = (data && data.items && data.items.length ? data.items : [emptyRow]).slice();
     const wrap = el("div", { class: "exercise-body" });
     if (cfg.topLabel) wrap.appendChild(el("p", { class: "exercise-note", text: cfg.topLabel }));
     const list = el("div", { class: "dynamic-list" });
@@ -65,8 +66,9 @@ const RENDERERS = {
     const countLabel = cfg.showCount ? el("p", { class: "dynamic-list-count" }) : null;
     if (countLabel) wrap.appendChild(countLabel);
 
+    // סופרים שורות עם תוכן (לא הזנות בודדות) - כדי שבמתכונת "פעולה + כי + סיבה" שורה אחת לא תיספר פעמיים
     function filledCount() {
-      return Array.from(list.querySelectorAll("input")).filter((i) => i.value.trim().length).length;
+      return Array.from(list.children).filter((row) => Array.from(row.querySelectorAll("input")).some((i) => i.value.trim().length)).length;
     }
 
     function updateCount() {
@@ -75,26 +77,55 @@ const RENDERERS = {
 
     function addRow(val) {
       if (list.children.length >= (cfg.maxLines || 50)) return null;
-      const row = el("div", { class: "dynamic-row" });
+      const row = el("div", { class: "dynamic-row" + (cfg.splitReason ? " has-reason" : "") });
       if (cfg.rowIcon) row.appendChild(el("span", { class: "row-icon", text: cfg.rowIcon }));
-      const input = el("input", { type: "text", class: "field-input", placeholder: cfg.placeholder || "" });
-      input.value = val || "";
-      input.disabled = !!readOnly;
-      input.addEventListener("input", updateCount);
-      input.addEventListener("keydown", (e) => {
-        if (e.key === "Enter") {
-          e.preventDefault();
-          const isLast = row === list.lastElementChild;
-          if (isLast) {
-            const newRow = addRow("");
-            if (newRow) newRow.querySelector("input").focus();
-          } else {
-            const next = row.nextElementSibling;
-            if (next) next.querySelector("input").focus();
-          }
+
+      // תאימות לאחור: רשומות ישנות שנשמרו כמחרוזת פשוטה (לפני הוספת "כי") ממשיכות להיות מוצגות
+      // במלואן בשדה הפעולה, בלי לאבד תוכן, גם אם התרגיל עכשיו מוגדר עם splitReason
+      const isLegacyString = typeof val === "string";
+      const actionVal = cfg.splitReason ? (isLegacyString ? val : val && val.action) : val;
+
+      const actionInput = el("input", { type: "text", class: "field-input", placeholder: cfg.placeholder || "" });
+      actionInput.value = actionVal || "";
+      actionInput.disabled = !!readOnly;
+      actionInput.addEventListener("input", updateCount);
+      row.appendChild(actionInput);
+
+      let reasonInput = null;
+      if (cfg.splitReason) {
+        row.appendChild(el("span", { class: "reason-label", text: "כי" }));
+        reasonInput = el("input", { type: "text", class: "field-input", placeholder: cfg.reasonPlaceholder || "" });
+        reasonInput.value = (isLegacyString ? "" : val && val.reason) || "";
+        reasonInput.disabled = !!readOnly;
+        reasonInput.addEventListener("input", updateCount);
+        row.appendChild(reasonInput);
+      }
+
+      function focusNextOrNewRow() {
+        const isLast = row === list.lastElementChild;
+        if (isLast) {
+          const newRow = addRow(emptyRow);
+          if (newRow) newRow.querySelector("input").focus();
+        } else {
+          const next = row.nextElementSibling;
+          if (next) next.querySelector("input").focus();
         }
+      }
+
+      actionInput.addEventListener("keydown", (e) => {
+        if (e.key !== "Enter") return;
+        e.preventDefault();
+        if (reasonInput) reasonInput.focus();
+        else focusNextOrNewRow();
       });
-      row.appendChild(input);
+      if (reasonInput) {
+        reasonInput.addEventListener("keydown", (e) => {
+          if (e.key !== "Enter") return;
+          e.preventDefault();
+          focusNextOrNewRow();
+        });
+      }
+
       if (!readOnly) {
         row.appendChild(
           el("button", {
@@ -104,7 +135,10 @@ const RENDERERS = {
             title: "מחיקת שורה",
             onclick: () => {
               if (list.children.length > 1) row.remove();
-              else input.value = "";
+              else {
+                actionInput.value = "";
+                if (reasonInput) reasonInput.value = "";
+              }
               updateCount();
             }
           })
@@ -117,11 +151,43 @@ const RENDERERS = {
     items.forEach((v) => addRow(v));
     updateCount();
 
+    const trailingInputs = [];
+    if (cfg.trailingFields && cfg.trailingFields.length) {
+      const trailingData = (data && data.trailing) || {};
+      const trailingWrap = el("div", { class: "dynamic-list-trailing" });
+      cfg.trailingFields.forEach((field) => {
+        trailingWrap.appendChild(el("p", { class: "exercise-question", text: field.label }));
+        const input = el("input", { type: "text", class: "field-input line-input", placeholder: field.placeholder || "" });
+        input.value = trailingData[field.key] || "";
+        input.disabled = !!readOnly;
+        trailingWrap.appendChild(input);
+        trailingInputs.push({ key: field.key, input });
+      });
+      wrap.appendChild(trailingWrap);
+    }
+
     return {
       el: wrap,
-      getData: () => ({
-        items: Array.from(list.querySelectorAll("input")).map((i) => i.value.trim()).filter((v) => v.length)
-      })
+      getData: () => {
+        const result = {
+          items: Array.from(list.children)
+            .map((row) => {
+              if (cfg.splitReason) {
+                const inputs = row.querySelectorAll("input");
+                return { action: inputs[0].value.trim(), reason: inputs[1].value.trim() };
+              }
+              return row.querySelector("input").value.trim();
+            })
+            .filter((item) => (cfg.splitReason ? item.action || item.reason : item.length))
+        };
+        if (trailingInputs.length) {
+          result.trailing = {};
+          trailingInputs.forEach(({ key, input }) => {
+            result.trailing[key] = input.value;
+          });
+        }
+        return result;
+      }
     };
   },
 

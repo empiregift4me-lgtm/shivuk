@@ -121,8 +121,14 @@ const EXERCISES = [
     id: "self-compassion",
     period: "morning",
     name: "חמלה עצמית",
-    type: "freetext",
-    config: { rows: 5, note: "כתבי 2-3 משפטים של חמלה עצמית.", placeholder: "..." }
+    type: "fixed-questions",
+    config: {
+      questions: [
+        "תארי מה עובר עליך ברגע זה באמת?",
+        "פרטי איך אנושיות משותפת עוזרת לך כעת?",
+        "מה היית אומרת לחברה טובה שהייתה במצב הזה?"
+      ]
+    }
   },
   {
     id: "identity-statement",
@@ -177,7 +183,19 @@ const EXERCISES = [
     period: "evening",
     name: "פעולות ערך עצמי",
     type: "dynamic-list",
-    config: { rowIcon: "✨", placeholder: "פעולת ערך...", maxLines: 50, showCount: true }
+    config: {
+      rowIcon: "✨",
+      placeholder: "פעולת ערך...",
+      splitReason: true,
+      reasonPlaceholder: "...",
+      maxLines: 50,
+      showCount: true,
+      trailingFields: [
+        { key: "provesToday", label: "היום הזה מוכיח" },
+        { key: "praiseFor", label: "אומרת לעצמי כל הכבוד על" },
+        { key: "whatItMeans", label: "מה כל זה אומר עלי?" }
+      ]
+    }
   },
   {
     id: "positive-collection",

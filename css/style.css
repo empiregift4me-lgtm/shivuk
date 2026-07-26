@@ -913,6 +913,9 @@ select.field-input:focus {
 }
 .row-remove:hover { background: var(--c-highlight); color: #231942; }
 .dynamic-list-count { margin: 8px 0 0; font-size: 0.85rem; color: var(--text-submuted); opacity: 0.75; }
+.dynamic-row.has-reason .field-input { flex: 1 1 0; min-width: 0; width: auto; }
+.reason-label { flex: 0 0 auto; color: var(--text-submuted); font-size: 0.9rem; }
+.dynamic-list-trailing { margin-top: var(--space); }
 
 /* ===== ניהול משימות היום ===== */
 .task-layout-breakout {
