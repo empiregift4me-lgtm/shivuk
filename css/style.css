@@ -782,12 +782,10 @@ body {
 .period-pill.is-active { background: var(--c-accent); color: #231942; border-color: var(--c-accent); }
 .period-pill.is-done { color: var(--text-submuted); border-style: dashed; cursor: default; opacity: 0.75; }
 
-.exercise-block {
-  background: var(--c-panel);
-  border: 1px solid var(--c-border);
-  border-radius: var(--radius-sm);
-  padding: var(--space);
-}
+/* בלי תיבה עצמאית משלו - כל תרגיל כבר מגיע עם המבנה הפנימי שלו (טבלה, שדות וכו'), שמספק
+   מספיק הפרדה חזותית; קו דק בין תרגילים עוקבים באותו יום מספיק כדי להפריד ביניהם */
+.exercise-block { padding: 0; }
+.exercise-block + .exercise-block { border-top: 1px solid var(--c-border); padding-top: var(--space); }
 
 .exercise-block-header {
   display: flex;
