@@ -401,13 +401,16 @@ const RENDERERS = {
     const wrap = el("div", { class: "exercise-body" });
     wrap.appendChild(el("p", { class: "exercise-note", text: "הבטחה אחת - קטנה עד שאי אפשר לא לקיים אותה." }));
 
+    // הטקסט שעדיין לא נרשם נשמר כטיוטה בתוך רשומת היום עצמה (לא ב-trustLedger) - כדי ששחזור
+    // מקרי של תיבת התרגיל (למשל בעקבות הוספת תרגיל אחר לאותו יום) לא ימחק מה שכבר הוקלד
     const textInput = el("input", { type: "text", class: "field-input", placeholder: "אפתח את הקובץ ואסתכל 60 שניות" });
+    textInput.value = (data && data.draftText) || "";
     textInput.disabled = !!readOnly;
     wrap.appendChild(textInput);
 
     wrap.appendChild(el("p", { class: "exercise-note trust-scope-label", text: "עד מתי:" }));
     const pillsRow = el("div", { class: "period-pills" });
-    let scope = "half";
+    let scope = (data && data.draftScope) || "half";
     const scopeOptions = [
       { id: "half", label: "חצי שעה" },
       { id: "today", label: "היום" },
@@ -438,7 +441,7 @@ const RENDERERS = {
       wrap.appendChild(warningNote);
 
       const registerBtn = el("button", { type: "button", class: "btn btn-primary btn-small", text: "רישום ההבטחה" });
-      registerBtn.disabled = true;
+      registerBtn.disabled = !textInput.value.trim();
       const confirmNote = el("span", { class: "trust-confirm-note" });
       textInput.addEventListener("input", () => {
         registerBtn.disabled = !textInput.value.trim();
@@ -447,6 +450,7 @@ const RENDERERS = {
         if (!textInput.value.trim()) return;
         addTrustPromise(textInput.value, scope);
         textInput.value = "";
+        textInput.dispatchEvent(new Event("input", { bubbles: true }));
         scope = "half";
         renderScopePills();
         registerBtn.disabled = true;
@@ -461,8 +465,9 @@ const RENDERERS = {
       wrap.appendChild(confirmNote);
     }
 
-    // אין data מתמשך לתרגיל הזה בכוונה - ההבטחה עצמה חיה ב-trustLedger, עצמאית לגמרי מהיומן
-    return { el: wrap, getData: () => ({}) };
+    // ההבטחה עצמה (אחרי רישום) חיה אך ורק ב-trustLedger, עצמאית לגמרי מהיומן - כאן נשמרת רק
+    // טיוטת הטקסט שעדיין לא נרשמה, כדי לשרוד רינדור מחדש מקרי של תיבת התרגיל
+    return { el: wrap, getData: () => ({ draftText: textInput.value, draftScope: scope }) };
   },
 
   "story-split"(instance, data, readOnly) {
