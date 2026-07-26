@@ -7,6 +7,18 @@ const LOCK_INTERVAL_MS = 15 * 60 * 1000;
 const QUIET_MODE_MS = 60 * 60 * 1000;
 let quietModeUntil = 0;
 let lockTimer = null;
+let quietIndicatorTimer = null;
+
+// מסנכרנת את העיגול הסגול שמופיע מתחת לכפתור ההחשכה (בכל מסך באתר) עם מצב "מצב רגוע" בפועל,
+// וקובעת טיימר שיסתיר אותו אוטומטית בדיוק ברגע שהשעה חולפת, בלי להמתין לפעולה נוספת מהמשתמשת
+function syncQuietIndicator() {
+  const indicator = document.getElementById("blackout-indicator");
+  if (!indicator) return;
+  const active = Date.now() < quietModeUntil;
+  indicator.classList.toggle("is-hidden", !active);
+  clearTimeout(quietIndicatorTimer);
+  if (active) quietIndicatorTimer = setTimeout(syncQuietIndicator, quietModeUntil - Date.now());
+}
 
 // שילוב מקשים סמוי: Ctrl+Alt+Shift+L (קיצור של LOCK), כשמסך הנעילה מוצג - מאפשר כניסה עם אנטר בלבד בלי הסיסמה
 let bypassArmed = false;
@@ -65,5 +77,8 @@ function initLock() {
     const btn = document.getElementById("lock-quiet-btn");
     btn.disabled = true;
     btn.title = "מצב רגוע פעיל לשעה הקרובה";
+    syncQuietIndicator();
   });
+
+  syncQuietIndicator();
 }
