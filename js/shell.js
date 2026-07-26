@@ -13,6 +13,9 @@ function showSection(name) {
   if (name === "dashboard") {
     // מתעדכן בכל כניסה, לא רק פעם אחת - כדי שהמד תמיד ישקף נתונים טריים
     renderDashboard(document.getElementById("dashboard-view"));
+  } else if (name === "journal") {
+    // בדיקת תזכורת "48 שעות בלי פעולות ערך עצמי" בכל כניסה למסך היומן
+    checkSelfWorthReminder();
   } else if (name === "tasks") {
     // מתעדכן בכל כניסה, כדי שהתאריך המוצג תמיד יתחיל מ"היום" האמיתי
     renderTasksView(document.getElementById("tasks-view"));

@@ -86,6 +86,75 @@ function showBonusNotification(days, gained) {
   }, 4500);
 }
 
+const SELF_WORTH_REMINDER_MIN_DAYS = 2; // "48 שעות" - נספר ביחידות של ימים מלאים, כמו שאר מנגנון חסד הרצף
+const SELF_WORTH_REMINDER_GAP_MS = 5 * 60 * 60 * 1000; // הפרש של כמה שעות בין שתי ההתראות
+const SELF_WORTH_REMINDER_WINDOW_MS = 24 * 60 * 60 * 1000; // חלון של 24 שעות שבו עוד מציגים תזכורות (סה"כ עד פעמיים)
+
+function loadSelfWorthReminderState() {
+  try {
+    return JSON.parse(localStorage.getItem(STORE_KEYS.selfWorthReminderState));
+  } catch (e) {
+    return null;
+  }
+}
+
+function saveSelfWorthReminderState(state) {
+  safeSetItem(STORE_KEYS.selfWorthReminderState, JSON.stringify(state));
+}
+
+// התאריך האחרון (אם יש) שבו מולאה לפחות שורה אחת בתרגיל "פעולות ערך עצמי"
+function lastSelfWorthActiveDate() {
+  const dates = Object.values(loadEntries())
+    .filter((e) => e.data && e.data[SELF_WORTH_EXERCISE_ID] && e.data[SELF_WORTH_EXERCISE_ID].items && e.data[SELF_WORTH_EXERCISE_ID].items.length)
+    .map((e) => e.date);
+  return dates.length ? dates.sort().pop() : null;
+}
+
+function showSelfWorthReminderToast(daysSince) {
+  const toast = el("div", { class: "bonus-toast is-warning" }, [
+    el("span", { class: "bonus-toast-icon", text: "⚠️" }),
+    el("span", { text: `כבר ${daysSince} ימים שלא מילאת "פעולות ערך עצמי" - אל תאבדי את הרצף והבונוסים שצברת!` })
+  ]);
+  document.body.appendChild(toast);
+  requestAnimationFrame(() => toast.classList.add("is-visible"));
+  setTimeout(() => {
+    toast.classList.remove("is-visible");
+    setTimeout(() => toast.remove(), 400);
+  }, 6000);
+}
+
+// נבדקת בכל כניסה למסך היומן - אם עברו 48+ שעות (יומיים מלאים בלוח השנה) מאז המילוי האחרון של
+// "פעולות ערך עצמי", מציגה תזכורת עד פעמיים בהפרש של כמה שעות, ורק בתוך 24 השעות הראשונות מרגע
+// שהחריגה זוהתה לראשונה - כדי לא להטריד שוב ושוב בלי סוף אחרי שהחלון הרלוונטי חלף
+function checkSelfWorthReminder() {
+  const lastDate = lastSelfWorthActiveDate();
+  const today = todayISO();
+  const daysSince = lastDate ? daysBetweenISO(lastDate, today) : Infinity;
+  const violationKey = lastDate || "never";
+
+  if (daysSince < SELF_WORTH_REMINDER_MIN_DAYS) {
+    saveSelfWorthReminderState(null);
+    return;
+  }
+
+  let state = loadSelfWorthReminderState();
+  if (!state || state.violationKey !== violationKey) {
+    state = { violationKey, firstDetectedAt: Date.now(), remindersShown: 0, lastReminderAt: 0 };
+  }
+
+  const now = Date.now();
+  const windowOpen = now - state.firstDetectedAt <= SELF_WORTH_REMINDER_WINDOW_MS;
+  const gapOk = state.remindersShown === 0 || now - state.lastReminderAt >= SELF_WORTH_REMINDER_GAP_MS;
+
+  if (windowOpen && state.remindersShown < 2 && gapOk) {
+    showSelfWorthReminderToast(daysSince);
+    state.remindersShown += 1;
+    state.lastReminderAt = now;
+  }
+
+  saveSelfWorthReminderState(state);
+}
+
 // בודקת אם נחצתה דרגת בונוס חדשה מאז הבדיקה הקודמת, ואם כן מציגה הודעה קופצת; מחזירה את המצב המעודכן
 function checkSelfWorthBonusNotification() {
   const prev = loadSelfWorthBonusState();

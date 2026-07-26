@@ -562,6 +562,7 @@ body {
 }
 .bonus-toast.is-visible { opacity: 1; transform: translateX(-50%) translateY(0); }
 .bonus-toast-icon { font-size: 1.3rem; }
+.bonus-toast.is-warning { border-color: #e0b13d; }
 
 .app-header {
   text-align: center;
