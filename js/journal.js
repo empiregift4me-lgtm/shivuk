@@ -53,8 +53,10 @@ function renderExerciseBlocks(entry, cardBody, isLocked, activeBlocks) {
   });
 }
 
-// עורך טיוטה - תמיד במצב עריכה, בשימוש בלשונית "יומן" הראשית בלבד
-function buildDraftEditor(date, period, onSaved) {
+// עורך טיוטה - תמיד במצב עריכה, בשימוש בלשונית "יומן" הראשית בלבד. כפתור השמירה מתרנדר לתוך
+// saveButtonHost (שורת התאריך/מחווני בוקר-ערב שמעניקה לשונית "יומן"), לא לתוך root - כדי שיהיה
+// גלוי תמיד בראש המסך ולא רק בתחתית רשימת התרגילים
+function buildDraftEditor(date, period, onSaved, saveButtonHost) {
   const root = el("div", { class: "day-card" });
   let activeBlocks = [];
 
@@ -107,23 +109,27 @@ function buildDraftEditor(date, period, onSaved) {
     }
     root.appendChild(cardBody);
 
-    if (entry.exerciseIds.length > 0) {
-      root.appendChild(
-        el("button", {
-          class: "btn btn-primary btn-save",
-          type: "button",
-          text: `שמירת ${PERIOD_LABELS[period]}`,
-          onclick: () => {
-            const fresh = captureAll();
-            fresh.saved = true;
-            fresh.savedAt = Date.now();
-            upsertEntry(fresh);
-            document.dispatchEvent(new CustomEvent("entries-changed", { detail: { date, period } }));
-            celebrateSave();
-            if (typeof onSaved === "function") onSaved();
-          }
-        })
-      );
+    if (saveButtonHost) {
+      saveButtonHost.innerHTML = "";
+      if (entry.exerciseIds.length > 0) {
+        saveButtonHost.appendChild(
+          el("button", {
+            class: "journal-save-flag-btn",
+            type: "button",
+            title: `שמירת ${PERIOD_LABELS[period]}`,
+            text: "🏁",
+            onclick: () => {
+              const fresh = captureAll();
+              fresh.saved = true;
+              fresh.savedAt = Date.now();
+              upsertEntry(fresh);
+              document.dispatchEvent(new CustomEvent("entries-changed", { detail: { date, period } }));
+              celebrateSave();
+              if (typeof onSaved === "function") onSaved();
+            }
+          })
+        );
+      }
     }
   }
 

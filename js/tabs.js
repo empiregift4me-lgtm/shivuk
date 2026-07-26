@@ -26,7 +26,8 @@ function renderJournalTab(container) {
   header.appendChild(streakNote);
   wrap.appendChild(header);
 
-  // ---- ניווט בין ימים - כדי לאפשר להשלים יומן חסר של יום קודם ----
+  // ---- שורה מאוחדת: ניווט בין ימים + מחווני בוקר/ערב + כפתור שמירה בולט (🏁) בקצה השמאלי ----
+  const controlsRow = el("div", { class: "journal-controls-row" });
   const dateNavRow = el("div", { class: "task-date-nav" });
   const prevDayBtn = el("button", { type: "button", class: "util-btn", text: "◀", title: "יום הבא" });
   const nextDayBtn = el("button", { type: "button", class: "util-btn", text: "▶", title: "יום קודם" });
@@ -34,7 +35,7 @@ function renderJournalTab(container) {
   dateNavRow.appendChild(nextDayBtn);
   dateNavRow.appendChild(todayBtn);
   dateNavRow.appendChild(prevDayBtn);
-  wrap.appendChild(dateNavRow);
+  controlsRow.appendChild(dateNavRow);
 
   function goToDate(dateISO) {
     journalViewDate = dateISO;
@@ -53,7 +54,11 @@ function renderJournalTab(container) {
   }
 
   const pillsRow = el("div", { class: "period-pills" });
-  wrap.appendChild(pillsRow);
+  controlsRow.appendChild(pillsRow);
+
+  const saveButtonHost = el("div", { class: "journal-save-host" });
+  controlsRow.appendChild(saveButtonHost);
+  wrap.appendChild(controlsRow);
 
   const editorHost = el("div");
   wrap.appendChild(editorHost);
@@ -89,6 +94,7 @@ function renderJournalTab(container) {
 
   function renderEditor() {
     editorHost.innerHTML = "";
+    saveButtonHost.innerHTML = "";
     if (editorInstance && editorInstance.destroy) editorInstance.destroy();
     if (!activePeriod) {
       editorHost.appendChild(
@@ -99,12 +105,17 @@ function renderJournalTab(container) {
       );
       return;
     }
-    editorInstance = buildDraftEditor(date, activePeriod, () => {
-      setActivePeriod(currentActivePeriod(date));
-      renderStreak();
-      renderPills();
-      renderEditor();
-    });
+    editorInstance = buildDraftEditor(
+      date,
+      activePeriod,
+      () => {
+        setActivePeriod(currentActivePeriod(date));
+        renderStreak();
+        renderPills();
+        renderEditor();
+      },
+      saveButtonHost
+    );
     editorHost.appendChild(editorInstance.element);
   }
 

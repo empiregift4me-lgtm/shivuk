@@ -982,6 +982,26 @@ select.field-input:focus {
 .task-main-panel { flex: 1 1 700px; min-width: 360px; }
 .task-goals-panel { flex: 0 0 480px; max-width: 100%; }
 .task-date-nav { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: var(--space-sm); }
+
+/* שורה מאוחדת: ניווט ימים + מחווני בוקר/ערב + כפתור שמירה בולט בקצה השמאלי */
+.journal-controls-row { display: flex; align-items: center; flex-wrap: wrap; gap: var(--space); margin-bottom: var(--space); }
+.journal-controls-row .task-date-nav { margin-bottom: 0; }
+.journal-controls-row .period-pills { margin-bottom: 0; }
+.journal-save-host { margin-inline-start: auto; }
+.journal-save-flag-btn {
+  font-family: inherit;
+  border: none;
+  background: var(--c-highlight);
+  color: #231942;
+  border-radius: 50%;
+  width: 44px;
+  height: 44px;
+  font-size: 1.4rem;
+  cursor: pointer;
+  box-shadow: var(--shadow-hover);
+  transition: transform 0.15s ease;
+}
+.journal-save-flag-btn:hover { transform: scale(1.06); }
 .task-date-label { font-weight: 700; color: var(--text-light); min-width: 160px; text-align: center; }
 .task-progress-track {
   height: 6px;
