@@ -920,6 +920,17 @@ function renderSummaryWriteTab(content) {
   topicInput.value = draft.topic || "";
   const titleGroup = el("div", { class: "summary-title-group" }, [topicInput, savedLabel]);
   headerRow.appendChild(titleGroup);
+
+  // כפתור "כווץ/הרחב הכל" יושב במרכז שורת הכותרת, במרווח שבין שדה הנושא לתאריך - ולא כשורה
+  // נפרדת בתחתית העמוד, כדי לנצל את הרווח הריק שהיה שם ולא להוסיף עוד שורת כפתורים
+  let allCollapsed = false;
+  const collapseAllBtn = el("button", {
+    type: "button",
+    class: "btn btn-secondary btn-small summary-collapse-all-btn",
+    text: "כווץ הכל"
+  });
+  headerRow.appendChild(collapseAllBtn);
+
   const dateRow = el("div", { class: "session-date-row" });
   dateRow.appendChild(el("label", { class: "session-date-label", text: "תאריך הפגישה:" }));
   const dateInput = el("input", { type: "date", class: "field-input session-date-input" });
@@ -940,13 +951,6 @@ function renderSummaryWriteTab(content) {
     title: "מוסיפה תיבת כתיבה חופשית מיד אחרי העניין שבו עומדים כרגע"
   });
   topRow.appendChild(freewriteAtFocusBtn);
-  let allCollapsed = false;
-  const collapseAllBtn = el("button", {
-    type: "button",
-    class: "btn btn-secondary btn-small",
-    text: "כווץ הכל"
-  });
-  topRow.appendChild(collapseAllBtn);
 
   if (topics.length === 0) {
     topics.push(newSummaryTopic());
