@@ -19,7 +19,9 @@ const STORE_KEYS = {
   energyLog: "energy_log_v1",
   mantraLog: "mantra_log_v1",
   selfWorthReminderState: "self_worth_reminder_state_v1",
-  trustLedger: "trustLedger"
+  trustLedger: "trustLedger",
+  trustDraft: "trust_draft_v1",
+  quietModeUntil: "quiet_mode_until_v1"
 };
 
 const PERIODS = ["morning", "evening"];

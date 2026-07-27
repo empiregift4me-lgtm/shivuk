@@ -15,7 +15,10 @@ function currentActivePeriod(date) {
 
 function renderJournalTab(container) {
   container.innerHTML = "";
-  container.appendChild(renderTrustStrip());
+  const trustRow = el("div", { class: "trust-section-row" });
+  trustRow.appendChild(renderTrustStrip());
+  trustRow.appendChild(renderTrustWidget());
+  container.appendChild(trustRow);
   const date = journalViewDate;
   const isToday = date === todayISO();
   const wrap = el("div", { class: "day-card" });

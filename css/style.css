@@ -89,6 +89,20 @@
 }
 .lock-quiet-btn:hover { background: var(--c-field); }
 .lock-quiet-btn:disabled { cursor: default; opacity: 0.35; }
+.lock-quiet-form { display: flex; align-items: center; justify-content: center; gap: 6px; margin: 0 0 4px; }
+.lock-quiet-form.is-hidden { display: none; }
+.lock-quiet-hours-input {
+  font-family: inherit;
+  font-size: 0.95rem;
+  text-align: center;
+  width: 64px;
+  background: var(--c-field);
+  color: var(--text-light);
+  border: 1.5px solid var(--c-border);
+  border-radius: var(--radius-sm);
+  padding: 6px;
+}
+.lock-quiet-hours-input:focus { outline: none; border-color: var(--c-highlight); }
 
 * { box-sizing: border-box; }
 
@@ -183,9 +197,8 @@ body {
   opacity: 0.4;
 }
 
-/* חיווי ויזואלי קטן מתחת לכפתור ההחשכה - לא קשור להחשכה עצמה, אלא מציג אם "מצב רגוע" (השהיית
-   הנעילה המהירה לשעה, שמופעלת בכפתור הסגול במסך הסיסמה) פעיל כרגע, כדי שיהיה אפשר לדעת
-   "במבט אחד" בכל מסך באתר אם המצב הזה עדיין דולק */
+/* חיווי ויזואלי קטן מתחת לכפתור ההחשכה - מציג אם "מצב רגוע" (השהיית הנעילה וההחשכה למספר שעות,
+   שמופעלת בכפתור הסגול במסך הסיסמה) פעיל כרגע. ניתן ללחיצה: מבטל את המצב ונועל+מחשיך מיד מחדש */
 .blackout-indicator {
   position: fixed;
   top: calc(var(--space) + 40px + 4px);
@@ -194,7 +207,10 @@ body {
   font-size: 0.75rem;
   line-height: 1;
   z-index: 1001;
-  pointer-events: none;
+  cursor: pointer;
+  border: none;
+  background: transparent;
+  padding: 4px;
 }
 .blackout-indicator.is-hidden { display: none; }
 
@@ -654,45 +670,43 @@ body {
 .util-btn:hover { background: var(--c-card); color: var(--text-light); }
 
 /* ===== ניווט לשוניות ===== */
-/* גריד עוטף במקום רצועת פילים גוללת - כל הלשוניות נראות בבת אחת, בלי גלילה אופקית וללא הידוק */
+/* רקע ורדרד-כהה ייחודי (שונה גם מהעמוד וגם מכרטיסי התוכן), כדי שהרצועה תיראה כאלמנט נפרד וברור */
 .tab-nav {
   display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  background: var(--c-card);
-  border: 1px solid var(--c-border);
-  border-radius: var(--radius);
-  padding: 8px;
+  gap: 6px;
+  background: linear-gradient(135deg, #4a3958, #3d2f52);
+  border: 1px solid var(--c-highlight);
+  border-radius: 999px;
+  padding: 6px;
   margin-bottom: var(--space-lg);
   box-shadow: var(--shadow-card);
+  overflow-x: auto;
   position: sticky;
   top: var(--space-sm);
   z-index: 10;
 }
 
 .tab-btn {
-  flex: 1 1 28%;
-  min-width: 96px;
+  flex: 1 1 auto;
   white-space: nowrap;
-  border: 1px solid transparent;
+  border: none;
   background: transparent;
   color: var(--text-submuted);
   font-family: inherit;
-  font-size: 1rem;
+  font-size: 1.05rem;
   font-weight: 500;
-  padding: 10px 12px;
-  border-radius: var(--radius-sm);
+  padding: 10px 14px;
+  border-radius: 999px;
   cursor: pointer;
-  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+  transition: background 0.15s ease, color 0.15s ease;
 }
 
-.tab-btn:hover { background: var(--c-panel); color: var(--text-light); border-color: var(--c-border); }
+.tab-btn:hover { background: var(--c-panel); color: var(--text-light); }
 
 .tab-btn.is-active {
   background: var(--c-accent);
   color: #231942;
   font-weight: 700;
-  border-color: var(--c-accent);
 }
 
 /* ===== פאנלים כלליים ===== */
@@ -945,12 +959,67 @@ select.field-input:focus {
 .trailing-field-row .field-input { width: 100%; }
 
 /* ===== הסכם האמינות ===== */
+/* שורה משותפת לרצועת ההבטחות + טופס רישום ההבטחה - הטופס תופס עמודה קבועה קטנה כשהוא סגור
+   (רק כפתור טריגר) כך שהרצועה ממלאת את שאר הרוחב "בגודלה הטבעי", ומתחלקת איתו 50/50 רק כשהוא פתוח */
+.trust-section-row {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-sm);
+  margin-bottom: var(--space);
+}
+.trust-section-row .trust-strip {
+  flex: 1 1 0;
+  min-width: 0;
+  margin-bottom: 0;
+}
 .trust-strip {
   background: var(--c-card);
   border: 1px solid var(--c-border);
   border-radius: var(--radius);
   padding: var(--space);
   margin-bottom: var(--space);
+}
+.trust-widget {
+  flex: 0 0 auto;
+}
+.trust-widget-trigger {
+  font-family: inherit;
+  border: none;
+  background: var(--c-highlight);
+  color: #231942;
+  border-radius: 50%;
+  width: 44px;
+  height: 44px;
+  font-size: 1.2rem;
+  cursor: pointer;
+  box-shadow: var(--shadow-card);
+  transition: transform 0.15s ease;
+}
+.trust-widget-trigger:hover { transform: scale(1.06); }
+.trust-widget.is-open {
+  flex: 1 1 0;
+  min-width: 0;
+  background: var(--c-card);
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius);
+  padding: var(--space);
+}
+.trust-widget-header { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--space-sm); }
+.trust-widget-header .exercise-note { margin: 0; }
+.trust-widget-close {
+  flex: 0 0 auto;
+  border: none;
+  background: transparent;
+  color: var(--text-submuted);
+  font-size: 1rem;
+  cursor: pointer;
+  padding: 0 0 0 4px;
+  line-height: 1.2;
+}
+.trust-widget-close:hover { color: var(--text-light); }
+@media (max-width: 480px) {
+  .trust-section-row { flex-wrap: wrap; }
+  .trust-widget.is-open { flex: 1 1 100%; }
 }
 .trust-balance { display: flex; align-items: center; justify-content: space-between; gap: var(--space-sm); font-weight: 600; color: var(--text-light); flex-wrap: wrap; }
 .trust-divider { height: 1px; background: var(--c-border); margin: var(--space-sm) 0; }
@@ -1326,18 +1395,19 @@ select.field-input:focus {
   line-height: 1.8;
 }
 
-/* ===== הצהרות חיוביות (וריאנט מובחן של משפטי כח) ===== */
+/* ===== הצהרות חיוביות (וריאנט מובחן של משפטי כח, בפלטת הצבעים של היומן) ===== */
 .quotes-grid--positive { gap: 14px; }
 .quote-card--positive {
   position: relative;
-  background: linear-gradient(135deg, #f6d692, #e2a63f);
-  color: #3b2a12;
+  background: linear-gradient(135deg, var(--c-accent), var(--c-highlight));
+  color: #231942;
   padding: 16px 40px 16px 16px;
   border-radius: 18px;
   font-size: 1.05rem;
   font-weight: 600;
   line-height: 1.8;
-  box-shadow: 0 4px 14px rgba(226, 166, 63, 0.35);
+  border: 1px solid var(--c-border);
+  box-shadow: 0 4px 14px rgba(224, 177, 203, 0.3);
 }
 .quote-card--positive::before {
   content: "✨";

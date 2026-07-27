@@ -1,23 +1,46 @@
-// נעילת מסך בסיסמה - נועלת עם טעינת הדף, ונועלת מחדש כל שעה
+// נעילת מסך בסיסמה - נועלת עם טעינת הדף, ונועלת מחדש כל 15 דקות
 
 const LOCK_PASSWORD = "31059111";
 const LOCK_INTERVAL_MS = 15 * 60 * 1000;
-// "לבד בבית" - השהיה זמנית של קצב הנעילה המהיר לשעה אחת, נשמרת רק בזיכרון (לא ב-localStorage) כדי
-// שרענון מכוון של הדף תמיד יבטל אותה ויחזיר את ברירת המחדל (נעילה כל 15 דקות + מסך שחור)
-const QUIET_MODE_MS = 60 * 60 * 1000;
-let quietModeUntil = 0;
+
+// "לבד בבית" - השהיה של הנעילה ושל ההחשכה למספר שעות לבחירה, נשמרת ב-localStorage כדי שגם
+// רענון מכוון של הדף לא יבטל אותה. הדרך היחידה לבטל לפני הזמן היא לחיצה על החיווי הסגול הפעיל
+// (מתחת לכפתור ההחשכה בתוך המערכת), שגם נועלת ומחשיכה מחדש באותה הלחיצה
 let lockTimer = null;
 let quietIndicatorTimer = null;
+
+function loadQuietModeUntil() {
+  const raw = localStorage.getItem(STORE_KEYS.quietModeUntil);
+  const n = raw ? Number(raw) : 0;
+  return Number.isFinite(n) ? n : 0;
+}
+
+function saveQuietModeUntil(ts) {
+  safeSetItem(STORE_KEYS.quietModeUntil, String(ts));
+}
+
+function clearQuietMode() {
+  saveQuietModeUntil(0);
+}
+
+function setBlackoutActive(active) {
+  const overlay = document.getElementById("blackout-overlay");
+  const toggle = document.getElementById("blackout-toggle");
+  if (!overlay || !toggle) return;
+  overlay.classList.toggle("is-hidden", !active);
+  toggle.classList.toggle("is-active", active);
+}
 
 // מסנכרנת את העיגול הסגול שמופיע מתחת לכפתור ההחשכה (בכל מסך באתר) עם מצב "מצב רגוע" בפועל,
 // וקובעת טיימר שיסתיר אותו אוטומטית בדיוק ברגע שהשעה חולפת, בלי להמתין לפעולה נוספת מהמשתמשת
 function syncQuietIndicator() {
   const indicator = document.getElementById("blackout-indicator");
   if (!indicator) return;
-  const active = Date.now() < quietModeUntil;
+  const until = loadQuietModeUntil();
+  const active = Date.now() < until;
   indicator.classList.toggle("is-hidden", !active);
   clearTimeout(quietIndicatorTimer);
-  if (active) quietIndicatorTimer = setTimeout(syncQuietIndicator, quietModeUntil - Date.now());
+  if (active) quietIndicatorTimer = setTimeout(syncQuietIndicator, until - Date.now());
 }
 
 // שילוב מקשים סמוי: Ctrl+Alt+Shift+L (קיצור של LOCK), כשמסך הנעילה מוצג - מאפשר כניסה עם אנטר בלבד בלי הסיסמה
@@ -36,9 +59,8 @@ function showLock() {
   overlay.classList.remove("is-hidden");
   document.getElementById("lock-password").value = "";
   document.getElementById("lock-error").textContent = "";
-  const quietBtn = document.getElementById("lock-quiet-btn");
-  quietBtn.disabled = false;
-  quietBtn.title = "לבד בבית - השהיית נעילה לשעה";
+  document.getElementById("lock-quiet-form").classList.add("is-hidden");
+  document.getElementById("lock-quiet-hours").value = "";
   setTimeout(() => document.getElementById("lock-password").focus(), 50);
 }
 
@@ -48,22 +70,43 @@ function hideLock() {
 
 function scheduleRelock() {
   clearTimeout(lockTimer);
-  const interval = Date.now() < quietModeUntil ? QUIET_MODE_MS : LOCK_INTERVAL_MS;
-  lockTimer = setTimeout(showLock, interval);
+  const until = loadQuietModeUntil();
+  const now = Date.now();
+  if (now < until) {
+    // בתום "מצב רגוע" - חוזרים אוטומטית למצב המוגן המלא: נעילה + החשכה
+    lockTimer = setTimeout(() => {
+      clearQuietMode();
+      setBlackoutActive(true);
+      syncQuietIndicator();
+      showLock();
+    }, until - now);
+  } else {
+    lockTimer = setTimeout(showLock, LOCK_INTERVAL_MS);
+  }
+}
+
+function afterUnlock() {
+  hideLock();
+  scheduleRelock();
+  initDailyAffirmation();
+  maybeShowWeeklyInsights();
+  maybeRunAutoBackup();
 }
 
 function initLock() {
+  // אם "מצב רגוע" עדיין בתוקף (למשל אחרי רענון דף) - נכנסים ישר בלי סיסמה ובלי החשכה
+  if (Date.now() < loadQuietModeUntil()) {
+    setBlackoutActive(false);
+    afterUnlock();
+  }
+
   const form = document.getElementById("lock-form");
   form.addEventListener("submit", (e) => {
     e.preventDefault();
     const val = document.getElementById("lock-password").value;
     if (val === LOCK_PASSWORD || bypassArmed) {
       bypassArmed = false;
-      hideLock();
-      scheduleRelock();
-      initDailyAffirmation();
-      maybeShowWeeklyInsights();
-      maybeRunAutoBackup();
+      afterUnlock();
     } else {
       document.getElementById("lock-error").textContent = "סיסמה שגויה, נסי שוב.";
       document.getElementById("lock-password").value = "";
@@ -72,12 +115,42 @@ function initLock() {
   });
   document.getElementById("lock-password").focus();
 
+  const quietForm = document.getElementById("lock-quiet-form");
+  const quietHoursInput = document.getElementById("lock-quiet-hours");
+
   document.getElementById("lock-quiet-btn").addEventListener("click", () => {
-    quietModeUntil = Date.now() + QUIET_MODE_MS;
-    const btn = document.getElementById("lock-quiet-btn");
-    btn.disabled = true;
-    btn.title = "מצב רגוע פעיל לשעה הקרובה";
+    quietForm.classList.toggle("is-hidden");
+    if (!quietForm.classList.contains("is-hidden")) {
+      quietHoursInput.value = "";
+      quietHoursInput.focus();
+    }
+  });
+
+  function armQuietMode() {
+    const hours = parseFloat(quietHoursInput.value);
+    if (!hours || hours <= 0) return;
+    saveQuietModeUntil(Date.now() + hours * 60 * 60 * 1000);
+    setBlackoutActive(false);
     syncQuietIndicator();
+    afterUnlock();
+  }
+
+  document.getElementById("lock-quiet-confirm").addEventListener("click", armQuietMode);
+  quietHoursInput.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      armQuietMode();
+    }
+  });
+
+  // לחיצה על החיווי הסגול הפעיל (מצב רגוע) בתוך המערכת מבטלת מיד את מצב הרגוע וחוזרת למסך
+  // שחור + סיסמה, כאילו נכנסים לגמרי מחדש
+  document.getElementById("blackout-indicator").addEventListener("click", () => {
+    clearTimeout(lockTimer);
+    clearQuietMode();
+    syncQuietIndicator();
+    setBlackoutActive(true);
+    showLock();
   });
 
   syncQuietIndicator();

@@ -11,7 +11,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700&display=swap" rel="stylesheet" />
 
-<link rel="stylesheet" href="css/style.css?v=103" />
+<link rel="stylesheet" href="css/style.css?v=104" />
 </head>
 <body>
   <div id="lock-overlay" class="lock-overlay">
@@ -19,7 +19,11 @@
       <div class="lock-icon">🔒</div>
       <div class="lock-label-row">
         <p class="lock-label">היומן נעול - יש להזין סיסמה</p>
-        <button type="button" id="lock-quiet-btn" class="lock-quiet-btn" title="לבד בבית - השהיית נעילה לשעה">🟣</button>
+        <button type="button" id="lock-quiet-btn" class="lock-quiet-btn" title="לבד בבית - השהיית נעילה וההחשכה למספר שעות">🟣</button>
+      </div>
+      <div id="lock-quiet-form" class="lock-quiet-form is-hidden">
+        <input id="lock-quiet-hours" type="number" class="lock-quiet-hours-input" placeholder="שעות" min="1" max="72" />
+        <button type="button" id="lock-quiet-confirm" class="btn btn-ghost btn-small">אישור</button>
       </div>
       <input id="lock-password" type="password" class="lock-input" placeholder="סיסמה" autocomplete="off" />
       <button type="submit" class="btn btn-primary">כניסה</button>
@@ -37,7 +41,7 @@
 
   <div id="sidebar-overlay" class="sidebar-overlay is-hidden"></div>
   <button id="blackout-toggle" class="blackout-toggle-btn is-active" type="button" title="החשכת מסך להקלדה בעיניים עצומות">🌑</button>
-  <span id="blackout-indicator" class="blackout-indicator is-hidden" title="מצב רגוע פעיל">🟣</span>
+  <span id="blackout-indicator" class="blackout-indicator is-hidden" title="מצב רגוע פעיל - לחיצה תבטל ותנעל מחדש מיד">🟣</span>
   <button id="music-toggle" class="music-toggle-btn" type="button" title="נגן מוזיקת רקע">▶</button>
   <div id="music-player-container" class="music-player-container"></div>
   <div id="blackout-overlay" class="blackout-overlay"></div>
@@ -113,33 +117,33 @@
 
   <script src="vendor/html2pdf.bundle.min.js"></script>
   <script src="https://accounts.google.com/gsi/client" async defer></script>
-  <script src="js/music.js?v=103"></script>
-  <script src="js/lock.js?v=103"></script>
-  <script src="js/data.js?v=103"></script>
-  <script src="js/storage.js?v=103"></script>
-  <script src="js/payments.js?v=103"></script>
-  <script src="js/prefs.js?v=103"></script>
-  <script src="js/backup.js?v=103"></script>
-  <script src="js/drive.js?v=103"></script>
-  <script src="js/renderers.js?v=103"></script>
-  <script src="js/trust.js?v=103"></script>
-  <script src="js/links.js?v=103"></script>
-  <script src="js/affirmations.js?v=103"></script>
-  <script src="js/celebrate.js?v=103"></script>
-  <script src="js/timer.js?v=103"></script>
-  <script src="js/journal.js?v=103"></script>
-  <script src="js/pdf.js?v=103"></script>
-  <script src="js/habits.js?v=103"></script>
-  <script src="js/insights.js?v=103"></script>
-  <script src="js/tabs.js?v=103"></script>
-  <script src="js/richtext.js?v=103"></script>
-  <script src="js/summaries.js?v=103"></script>
-  <script src="js/decisions.js?v=103"></script>
-  <script src="js/energy.js?v=103"></script>
-  <script src="js/mantras.js?v=103"></script>
-  <script src="js/tasks.js?v=103"></script>
-  <script src="js/dashboard.js?v=103"></script>
-  <script src="js/shell.js?v=103"></script>
-  <script src="js/app.js?v=103"></script>
+  <script src="js/music.js?v=104"></script>
+  <script src="js/lock.js?v=104"></script>
+  <script src="js/data.js?v=104"></script>
+  <script src="js/storage.js?v=104"></script>
+  <script src="js/payments.js?v=104"></script>
+  <script src="js/prefs.js?v=104"></script>
+  <script src="js/backup.js?v=104"></script>
+  <script src="js/drive.js?v=104"></script>
+  <script src="js/renderers.js?v=104"></script>
+  <script src="js/trust.js?v=104"></script>
+  <script src="js/links.js?v=104"></script>
+  <script src="js/affirmations.js?v=104"></script>
+  <script src="js/celebrate.js?v=104"></script>
+  <script src="js/timer.js?v=104"></script>
+  <script src="js/journal.js?v=104"></script>
+  <script src="js/pdf.js?v=104"></script>
+  <script src="js/habits.js?v=104"></script>
+  <script src="js/insights.js?v=104"></script>
+  <script src="js/tabs.js?v=104"></script>
+  <script src="js/richtext.js?v=104"></script>
+  <script src="js/summaries.js?v=104"></script>
+  <script src="js/decisions.js?v=104"></script>
+  <script src="js/energy.js?v=104"></script>
+  <script src="js/mantras.js?v=104"></script>
+  <script src="js/tasks.js?v=104"></script>
+  <script src="js/dashboard.js?v=104"></script>
+  <script src="js/shell.js?v=104"></script>
+  <script src="js/app.js?v=104"></script>
 </body>
 </html>

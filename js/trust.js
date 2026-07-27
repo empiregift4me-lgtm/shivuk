@@ -190,7 +190,7 @@ function buildTrustStripElement() {
   const open = openPromises().sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
   if (open.length === 0) {
     container.appendChild(el("p", { class: "trust-empty", text: "אין הבטחה פתוחה." }));
-    container.appendChild(el("p", { class: "trust-empty-hint", text: 'לרישום - לשונית "תרגילים" › הסכם האמינות' }));
+    container.appendChild(el("p", { class: "trust-empty-hint", text: "לרישום - לחצי על 🏁 שלצד הרצועה" }));
   } else {
     open.forEach((promise) => container.appendChild(buildTrustRow(promise)));
   }
@@ -212,6 +212,138 @@ function refreshTrustStrip() {
   const fresh = buildTrustStripElement();
   trustStripEl.replaceWith(fresh);
   trustStripEl = fresh;
+}
+
+// טופס רישום ההבטחה - עצמאי לגמרי מהיומן (לא תלוי תאריך/תקופה), כדי שיוכל להופיע קבוע
+// לצד רצועת ההבטחות במקום כתרגיל נבחר בתוך רשימת התרגילים היומית. במצב סגור זה רק כפתור
+// טריגר קטן; לחיצה עליו פותחת את הטופס המלא וגורמת לרצועה לצמצם ולחלוק את השורה איתו.
+// אחרי רישום מוצלח הטופס נסגר שוב מעצמו והרצועה חוזרת לתפוס את כל רוחב השורה
+let trustComposeOpen = false;
+
+function loadTrustDraft() {
+  try {
+    return JSON.parse(localStorage.getItem(STORE_KEYS.trustDraft)) || {};
+  } catch (e) {
+    return {};
+  }
+}
+
+function saveTrustDraft(draft) {
+  safeSetItem(STORE_KEYS.trustDraft, JSON.stringify(draft));
+}
+
+function buildTrustWidgetElement() {
+  const box = el("div", { class: "trust-widget" + (trustComposeOpen ? " is-open" : "") });
+
+  if (!trustComposeOpen) {
+    box.appendChild(
+      el("button", {
+        type: "button",
+        class: "trust-widget-trigger",
+        title: "רישום הבטחה חדשה",
+        text: "🏁",
+        onclick: () => {
+          trustComposeOpen = true;
+          refreshTrustWidget();
+        }
+      })
+    );
+    return box;
+  }
+
+  const headerRow = el("div", { class: "trust-widget-header" }, [
+    el("p", { class: "exercise-note", text: "הבטחה אחת - קטנה עד שאי אפשר לא לקיים אותה." }),
+    el("button", {
+      type: "button",
+      class: "trust-widget-close",
+      title: "סגירה",
+      text: "✕",
+      onclick: () => {
+        trustComposeOpen = false;
+        refreshTrustWidget();
+      }
+    })
+  ]);
+  box.appendChild(headerRow);
+
+  const draft = loadTrustDraft();
+  const textInput = el("input", { type: "text", class: "field-input", placeholder: "אפתח את הקובץ ואסתכל 60 שניות" });
+  textInput.value = draft.text || "";
+  box.appendChild(textInput);
+
+  box.appendChild(el("p", { class: "exercise-note trust-scope-label", text: "עד מתי:" }));
+  const pillsRow = el("div", { class: "period-pills trust-scope-row" });
+  let scope = draft.scope || "half";
+  const scopeOptions = [
+    { id: "half", label: "חצי שעה" },
+    { id: "today", label: "היום" },
+    { id: "tomorrow", label: "מחר" }
+  ];
+
+  const registerBtn = el("button", { type: "button", class: "trust-register-flag-btn", title: "רישום ההבטחה", text: "🏁" });
+  const warningNote = el("p", { class: "exercise-note trust-open-warning is-hidden", text: "יש כבר 3 הבטחות פתוחות. שווה להכריע בהן קודם." });
+
+  function persistDraft() {
+    saveTrustDraft({ text: textInput.value, scope });
+  }
+
+  function renderScopePills() {
+    pillsRow.innerHTML = "";
+    scopeOptions.forEach((opt) => {
+      pillsRow.appendChild(
+        el("button", {
+          type: "button",
+          class: "period-pill" + (scope === opt.id ? " is-active" : ""),
+          text: opt.label,
+          onclick: () => {
+            scope = opt.id;
+            renderScopePills();
+            persistDraft();
+          }
+        })
+      );
+    });
+    pillsRow.appendChild(registerBtn);
+  }
+  renderScopePills();
+  box.appendChild(pillsRow);
+
+  function checkOpenWarning() {
+    warningNote.classList.toggle("is-hidden", openPromises().length < TRUST_OPEN_WARNING_THRESHOLD);
+  }
+  checkOpenWarning();
+  box.appendChild(warningNote);
+
+  registerBtn.disabled = !textInput.value.trim();
+  textInput.addEventListener("input", () => {
+    registerBtn.disabled = !textInput.value.trim();
+    persistDraft();
+  });
+
+  registerBtn.addEventListener("click", () => {
+    if (!textInput.value.trim()) return;
+    addTrustPromise(textInput.value, scope);
+    saveTrustDraft({});
+    trustComposeOpen = false;
+    refreshTrustWidget();
+    refreshTrustStrip();
+  });
+
+  return box;
+}
+
+let trustWidgetEl = null;
+
+function renderTrustWidget() {
+  trustWidgetEl = buildTrustWidgetElement();
+  return trustWidgetEl;
+}
+
+function refreshTrustWidget() {
+  if (!trustWidgetEl || !trustWidgetEl.parentNode) return;
+  const fresh = buildTrustWidgetElement();
+  trustWidgetEl.replaceWith(fresh);
+  trustWidgetEl = fresh;
 }
 
 // קטע קריאה-בלבד בלשונית "ארכיונים" - מציג הבטחות שהוכרעו (kept/missed), משויך ליום ההכרעה
