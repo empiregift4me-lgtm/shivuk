@@ -1275,7 +1275,7 @@ select.field-input:focus {
 .mantra-retype-input.is-hidden { display: none; }
 .mantra-retype-input:focus { outline: none; border-color: var(--c-highlight); }
 
-/* ===== משפטי שפע ===== */
+/* ===== משפטי כח ===== */
 .quotes-grid { display: flex; flex-direction: column; gap: var(--space-sm); }
 .quote-card {
   background: linear-gradient(135deg, var(--c-highlight), var(--c-border));

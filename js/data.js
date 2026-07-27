@@ -78,7 +78,7 @@ const EXERCISES = [
   {
     id: "abundance-quotes",
     period: "morning",
-    name: "משפטי שפע",
+    name: "משפטי כח",
     type: "quotes-random",
     config: { bank: QUOTE_BANK_ABUNDANCE, count: 3 }
   },
