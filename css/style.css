@@ -149,8 +149,8 @@ body {
   box-shadow: var(--shadow-card);
 }
 .sidebar-toggle-btn:hover { background: var(--c-panel); }
-/* מרווח שמור בראש השורה, במקום שהכפתור הצף היה תופס קודם, כדי שכותרת האתר לא תיכנס מתחתיו */
-.top-bar-row { padding-inline-end: 48px; padding-inline-start: 48px; }
+/* מרווח שמור בראש השורה, במקום שהכפתורים הצפים היו תופסים קודם, כדי שכותרת האתר לא תיכנס מתחתיהם */
+.top-bar-row { padding-inline-end: 48px; padding-inline-start: 96px; }
 
 /* כפתור החשכת מסך - צף בצד השני (שמאל), מראה כמו כפתור התפריט אך בצד הנגדי */
 .blackout-toggle-btn {
@@ -197,6 +197,26 @@ body {
   pointer-events: none;
 }
 .blackout-indicator.is-hidden { display: none; }
+
+/* כפתור נגן מוזיקת רקע - צף ליד כפתור ההחשכה, אימוג'י פליי/פאוז יחיד בלי ציר זמן */
+.music-toggle-btn {
+  font-family: inherit;
+  border: 1px solid var(--c-border);
+  background: var(--c-card);
+  color: var(--text-light);
+  border-radius: var(--radius-sm);
+  width: 40px;
+  height: 40px;
+  font-size: 1.1rem;
+  cursor: pointer;
+  position: fixed;
+  top: var(--space);
+  left: calc(var(--space) + 48px);
+  z-index: 901;
+  box-shadow: var(--shadow-card);
+}
+.music-toggle-btn:hover { background: var(--c-panel); }
+.music-player-container { position: fixed; width: 0; height: 0; overflow: hidden; opacity: 0; pointer-events: none; }
 
 /* שכבת ההחשכה - מכסה את כל המסך במלואו, שחור מוחלט, מעל כל תוכן האתר כולל מסך הנעילה עצמו.
    ברירת המחדל (ב-HTML) היא פעילה, כך שבכל רענון של הדף המצב הטבעי הוא מסך שחור עם מסך הסיסמה
@@ -634,42 +654,45 @@ body {
 .util-btn:hover { background: var(--c-card); color: var(--text-light); }
 
 /* ===== ניווט לשוניות ===== */
+/* גריד עוטף במקום רצועת פילים גוללת - כל הלשוניות נראות בבת אחת, בלי גלילה אופקית וללא הידוק */
 .tab-nav {
   display: flex;
-  gap: 6px;
+  flex-wrap: wrap;
+  gap: 8px;
   background: var(--c-card);
   border: 1px solid var(--c-border);
-  border-radius: 999px;
-  padding: 6px;
+  border-radius: var(--radius);
+  padding: 8px;
   margin-bottom: var(--space-lg);
   box-shadow: var(--shadow-card);
-  overflow-x: auto;
   position: sticky;
   top: var(--space-sm);
   z-index: 10;
 }
 
 .tab-btn {
-  flex: 1 1 auto;
+  flex: 1 1 28%;
+  min-width: 96px;
   white-space: nowrap;
-  border: none;
+  border: 1px solid transparent;
   background: transparent;
   color: var(--text-submuted);
   font-family: inherit;
-  font-size: 1.05rem;
+  font-size: 1rem;
   font-weight: 500;
-  padding: 10px 14px;
-  border-radius: 999px;
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
   cursor: pointer;
-  transition: background 0.15s ease, color 0.15s ease;
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
 }
 
-.tab-btn:hover { background: var(--c-panel); color: var(--text-light); }
+.tab-btn:hover { background: var(--c-panel); color: var(--text-light); border-color: var(--c-border); }
 
 .tab-btn.is-active {
   background: var(--c-accent);
   color: #231942;
   font-weight: 700;
+  border-color: var(--c-accent);
 }
 
 /* ===== פאנלים כלליים ===== */
@@ -933,8 +956,8 @@ select.field-input:focus {
 .trust-divider { height: 1px; background: var(--c-border); margin: var(--space-sm) 0; }
 .trust-empty { color: var(--text-submuted); margin: 0; }
 .trust-empty-hint { color: var(--text-submuted); font-size: 0.9rem; margin: 4px 0 0; }
-.trust-row { padding: var(--space-sm) 0; border-top: 1px solid var(--c-border); }
-.trust-row:first-of-type { border-top: none; padding-top: 0; }
+.trust-row { padding: var(--space-sm) 0; }
+.trust-row + .trust-row { border-top: 1px solid var(--c-border); }
 .trust-text { font-size: 1.05rem; color: var(--text-light); margin: 0 0 6px; }
 .trust-meta { display: flex; flex-wrap: wrap; gap: 4px 10px; font-size: 0.85rem; color: var(--text-submuted); margin: 0 0 8px; }
 .trust-late { font-size: 0.85rem; color: var(--text-submuted); margin: 0 0 8px; }
@@ -943,11 +966,27 @@ select.field-input:focus {
 .trust-open-warning { color: var(--text-submuted); font-size: 0.85rem; }
 .trust-open-warning.is-hidden { display: none; }
 .trust-confirm-note { color: var(--text-submuted); font-size: 0.85rem; margin-inline-start: 8px; }
+.trust-register-flag-btn {
+  font-family: inherit;
+  border: none;
+  background: var(--c-highlight);
+  color: #231942;
+  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  font-size: 1.1rem;
+  cursor: pointer;
+  flex: 0 0 auto;
+  box-shadow: var(--shadow-card);
+  transition: transform 0.15s ease, opacity 0.15s ease;
+}
+.trust-register-flag-btn:hover:not(:disabled) { transform: scale(1.06); }
+.trust-register-flag-btn:disabled { opacity: 0.4; cursor: default; }
 
 .trust-archive-section { margin-top: var(--space); }
 .trust-archive-title { margin: 0 0 var(--space-sm); }
-.trust-archive-row { display: flex; gap: 10px; padding: var(--space-sm) 0; border-top: 1px solid var(--c-border); }
-.trust-archive-row:first-of-type { border-top: none; padding-top: 0; }
+.trust-archive-row { display: flex; gap: 10px; padding: var(--space-sm) 0; }
+.trust-archive-row + .trust-archive-row { border-top: 1px solid var(--c-border); }
 .trust-archive-mark { flex: 0 0 auto; font-size: 1.1rem; width: 22px; text-align: center; }
 .trust-archive-mark.is-kept { color: #8fbf8f; }
 .trust-archive-mark.is-missed { color: #b58f6e; }
@@ -1285,6 +1324,27 @@ select.field-input:focus {
   font-size: 1.05rem;
   font-weight: 500;
   line-height: 1.8;
+}
+
+/* ===== הצהרות חיוביות (וריאנט מובחן של משפטי כח) ===== */
+.quotes-grid--positive { gap: 14px; }
+.quote-card--positive {
+  position: relative;
+  background: linear-gradient(135deg, #f6d692, #e2a63f);
+  color: #3b2a12;
+  padding: 16px 40px 16px 16px;
+  border-radius: 18px;
+  font-size: 1.05rem;
+  font-weight: 600;
+  line-height: 1.8;
+  box-shadow: 0 4px 14px rgba(226, 166, 63, 0.35);
+}
+.quote-card--positive::before {
+  content: "✨";
+  position: absolute;
+  top: 12px;
+  right: 14px;
+  font-size: 1.1rem;
 }
 
 /* ===== טבלת מטרות / הפרדת עובדה מסיפור ===== */

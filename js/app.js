@@ -4,6 +4,7 @@ document.addEventListener("DOMContentLoaded", () => {
   initShell();
   initTabs();
   initTimer();
+  initMusicToggle();
   maybeShowMonthlyInsights();
 
   document.getElementById("insights-btn").addEventListener("click", showManualInsights);

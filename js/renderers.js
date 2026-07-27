@@ -196,9 +196,10 @@ const RENDERERS = {
     const cfg = instance.config;
     let selected = data && data.selected;
     if (!selected || !selected.length) selected = pickRandom(cfg.bank, cfg.count);
-    const wrap = el("div", { class: "exercise-body quotes-grid" });
+    const variantSuffix = cfg.variant ? ` quotes-grid--${cfg.variant}` : "";
+    const wrap = el("div", { class: "exercise-body quotes-grid" + variantSuffix });
     selected.forEach((i) => {
-      wrap.appendChild(el("div", { class: "quote-card", text: cfg.bank[i] }));
+      wrap.appendChild(el("div", { class: "quote-card" + (cfg.variant ? ` quote-card--${cfg.variant}` : ""), text: cfg.bank[i] }));
     });
     return { el: wrap, getData: () => ({ selected }) };
   },
@@ -409,13 +410,19 @@ const RENDERERS = {
     wrap.appendChild(textInput);
 
     wrap.appendChild(el("p", { class: "exercise-note trust-scope-label", text: "עד מתי:" }));
-    const pillsRow = el("div", { class: "period-pills" });
+    const pillsRow = el("div", { class: "period-pills trust-scope-row" });
     let scope = (data && data.draftScope) || "half";
     const scopeOptions = [
       { id: "half", label: "חצי שעה" },
       { id: "today", label: "היום" },
       { id: "tomorrow", label: "מחר" }
     ];
+
+    // כפתור הרישום עצמו - אייקון בודד (🏁) בתוך שורת הבחירה "עד מתי", לא כפתור טקסט נפרד בשורה משלו
+    const registerBtn = el("button", { type: "button", class: "trust-register-flag-btn", title: "רישום ההבטחה", text: "🏁" });
+    const confirmNote = el("span", { class: "trust-confirm-note" });
+    const warningNote = el("p", { class: "exercise-note trust-open-warning is-hidden", text: "יש כבר 3 הבטחות פתוחות. שווה להכריע בהן קודם." });
+
     function renderScopePills() {
       pillsRow.innerHTML = "";
       scopeOptions.forEach((opt) => {
@@ -428,21 +435,20 @@ const RENDERERS = {
         else btn.addEventListener("click", () => { scope = opt.id; renderScopePills(); });
         pillsRow.appendChild(btn);
       });
+      if (!readOnly) pillsRow.appendChild(registerBtn);
     }
     renderScopePills();
     wrap.appendChild(pillsRow);
 
     if (!readOnly) {
-      const warningNote = el("p", { class: "exercise-note trust-open-warning is-hidden", text: "יש כבר 3 הבטחות פתוחות. שווה להכריע בהן קודם." });
       function checkOpenWarning() {
         warningNote.classList.toggle("is-hidden", openPromises().length < TRUST_OPEN_WARNING_THRESHOLD);
       }
       checkOpenWarning();
       wrap.appendChild(warningNote);
+      wrap.appendChild(confirmNote);
 
-      const registerBtn = el("button", { type: "button", class: "btn btn-primary btn-small", text: "רישום ההבטחה" });
       registerBtn.disabled = !textInput.value.trim();
-      const confirmNote = el("span", { class: "trust-confirm-note" });
       textInput.addEventListener("input", () => {
         registerBtn.disabled = !textInput.value.trim();
       });
@@ -461,8 +467,6 @@ const RENDERERS = {
         checkOpenWarning();
         refreshTrustStrip();
       });
-      wrap.appendChild(registerBtn);
-      wrap.appendChild(confirmNote);
     }
 
     // ההבטחה עצמה (אחרי רישום) חיה אך ורק ב-trustLedger, עצמאית לגמרי מהיומן - כאן נשמרת רק
