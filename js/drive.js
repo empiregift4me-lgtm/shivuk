@@ -165,24 +165,42 @@ async function driveUploadSummaryPDF(item, onPersist) {
   }
 }
 
+async function driveFetchBackupPayload() {
+  await driveEnsureToken();
+  const fileId = await driveFindBackupFileId();
+  if (!fileId) {
+    alert("לא נמצא קובץ גיבוי בדרייב שלך. צריך קודם ללחוץ על \"שמירה לדרייב\" לפחות פעם אחת.");
+    return null;
+  }
+  const res = await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`, {
+    headers: { Authorization: `Bearer ${driveAccessToken}` }
+  });
+  if (!res.ok) throw new Error("קריאת הקובץ מהדרייב נכשלה.");
+  return res.json();
+}
+
 async function driveRestoreBackup() {
   try {
-    await driveEnsureToken();
-    const fileId = await driveFindBackupFileId();
-    if (!fileId) {
-      alert("לא נמצא קובץ גיבוי בדרייב שלך. צריך קודם ללחוץ על \"שמירה לדרייב\" לפחות פעם אחת.");
-      return;
-    }
     if (!confirm("שחזור מהדרייב יחליף את כל הנתונים הקיימים באתר. להמשיך?")) return;
-    const res = await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`, {
-      headers: { Authorization: `Bearer ${driveAccessToken}` }
-    });
-    if (!res.ok) throw new Error("קריאת הקובץ מהדרייב נכשלה.");
-    const payload = await res.json();
+    const payload = await driveFetchBackupPayload();
+    if (!payload) return;
     applyBackupPayload(payload);
     alert("השחזור מהדרייב הושלם בהצלחה! העמוד ייטען מחדש.");
     location.reload();
   } catch (e) {
     alert("לא הצלחתי לשחזר מהדרייב: " + e.message);
+  }
+}
+
+// מיזוג מהדרייב - כמו שחזור, אבל מוסיף את מה שחסר בלי למחוק נתונים קיימים בדפדפן הזה
+async function driveMergeBackup() {
+  try {
+    const payload = await driveFetchBackupPayload();
+    if (!payload) return;
+    mergeBackupPayload(payload);
+    alert("המיזוג מהדרייב הושלם בהצלחה! העמוד ייטען מחדש.");
+    location.reload();
+  } catch (e) {
+    alert("לא הצלחתי למזג מהדרייב: " + e.message);
   }
 }
