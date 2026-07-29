@@ -17,6 +17,47 @@ function daysBetweenISO(aISO, bISO) {
   return Math.round((b - a) / 86400000);
 }
 
+// השהיית ספירת ימים - לבקשת המשתמשת, בזמן שהאתר חסום אצלה חיצונית (בדיקת נט פרי) ואין לה גישה
+// בפועל כדי למלא "פעולות ערך עצמי". כל עוד ההשהיה פתוחה (from קיים, to עדיין ריק) - שום פער בין
+// שני תאריכים לא נספר נגד הרצף, ותזכורת "לא מילאת X ימים" לא מוצגת בכלל.
+// לסיים את ההשהיה (כשהגישה חוזרת, לפי בקשה מפורשת של המשתמשת): saveSelfWorthPause({ from: pause.from, to: todayISO() })
+// בכוונה לא למחוק את ה-pause לגמרי (null) - כדי שההזנקה האוטומטית למטה לא תפעיל אותה שוב בטעות
+function loadSelfWorthPause() {
+  try {
+    return JSON.parse(localStorage.getItem(STORE_KEYS.selfWorthPause));
+  } catch (e) {
+    return null;
+  }
+}
+
+function saveSelfWorthPause(pause) {
+  safeSetItem(STORE_KEYS.selfWorthPause, pause ? JSON.stringify(pause) : "");
+}
+
+function isSelfWorthPauseOpenEnded() {
+  const pause = loadSelfWorthPause();
+  return !!(pause && pause.from && !pause.to);
+}
+
+// מפעילה את ההשהיה אוטומטית בפעם הראשונה שהאתר נטען (מכל מכשיר) אחרי הבקשה - כדי שההשהיה
+// תכסה נכון את כל חלון החסימה, לא משנה כמה זמן ייקח לנט פרי לאשר. פועלת פעם אחת בלבד: אם כבר
+// קיימת רשומת השהיה כלשהי (גם אם כבר סומנה כפתורה עם "to") - לא נוגעים בה שוב
+const SELF_WORTH_PAUSE_AUTO_FROM = "2026-07-29";
+function maybeAutoArmSelfWorthPause() {
+  if (loadSelfWorthPause()) return;
+  saveSelfWorthPause({ from: SELF_WORTH_PAUSE_AUTO_FROM });
+}
+
+// כמה ימים בטווח [startISO, endISO] (כולל) חופפים לחלון ההשהיה, ולכן "נמחלים" ולא נספרים כפער אמיתי
+function excusedDaysInRange(startISO, endISO, pause) {
+  if (!pause || !pause.from || startISO > endISO) return 0;
+  const rangeStart = pause.from > startISO ? pause.from : startISO;
+  const effectiveTo = pause.to || endISO;
+  const rangeEnd = effectiveTo < endISO ? effectiveTo : endISO;
+  if (rangeStart > rangeEnd) return 0;
+  return daysBetweenISO(rangeStart, rangeEnd) + 1;
+}
+
 function loadSelfWorthBonusState() {
   try {
     return JSON.parse(localStorage.getItem(STORE_KEYS.selfWorthBonusState)) || { bonusEarned: 0, lastTier: 0, streakDays: 0 };
@@ -39,6 +80,7 @@ function totalSelfWorthLines() {
 // רצף ימים (לא משנה בוקר/ערב) שבהם מולא לפחות פריט אחד בתרגיל, עם חסד של עד יומיים חסרים בלי לשבור את הרצף,
 // ובונוסים שנצברים בכל דרגה (5/10/15/20) ונשארים מוקנים לצמיתות גם אם הרצף הנוכחי מתאפס אחר כך
 function computeSelfWorthStreakBonus() {
+  const pause = loadSelfWorthPause();
   const activeDatesSet = new Set();
   Object.values(loadEntries()).forEach((e) => {
     const items = e.data && e.data[SELF_WORTH_EXERCISE_ID] && e.data[SELF_WORTH_EXERCISE_ID].items;
@@ -53,7 +95,9 @@ function computeSelfWorthStreakBonus() {
 
   activeDates.forEach((dateStr) => {
     if (prevDate) {
-      const gap = daysBetweenISO(prevDate, dateStr) - 1;
+      let gap = daysBetweenISO(prevDate, dateStr) - 1;
+      // ימים שנופלים בתוך חלון ההשהיה לא נספרים כפער אמיתי נגד הרצף
+      gap = Math.max(0, gap - excusedDaysInRange(addDaysISO(prevDate, 1), addDaysISO(dateStr, -1), pause));
       if (gap > SELF_WORTH_GRACE_DAYS) {
         streakDays = 0;
         lastTier = 0;
@@ -127,6 +171,9 @@ function showSelfWorthReminderToast(daysSince) {
 // "פעולות ערך עצמי", מציגה תזכורת עד פעמיים בהפרש של כמה שעות, ורק בתוך 24 השעות הראשונות מרגע
 // שהחריגה זוהתה לראשונה - כדי לא להטריד שוב ושוב בלי סוף אחרי שהחלון הרלוונטי חלף
 function checkSelfWorthReminder() {
+  // בהשהיה פתוחה (עדיין בלי "to") לא מציגים בכלל את תזכורת "לא מילאת X ימים"
+  if (isSelfWorthPauseOpenEnded()) return;
+
   const lastDate = lastSelfWorthActiveDate();
   const today = todayISO();
   const daysSince = lastDate ? daysBetweenISO(lastDate, today) : Infinity;
