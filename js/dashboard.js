@@ -48,6 +48,16 @@ function maybeAutoArmSelfWorthPause() {
   saveSelfWorthPause({ from: SELF_WORTH_PAUSE_AUTO_FROM });
 }
 
+// סוגרת את ההשהיה אוטומטית בפעם הראשונה שהאתר נטען אחרי שהגישה חזרה מנט פרי - "to" מסומן
+// כהיום הזה, כך שרק הפער עד לרגע הזה נמחל, והספירה הרגילה ממשיכה כרגיל מכאן ואילך. חד-פעמית:
+// לאחר שנסגרה (יש "to") הקריאה הזו לא עושה כלום יותר, בטוח להשאיר אותה קבועה בקוד
+function maybeAutoResolveSelfWorthPause() {
+  const pause = loadSelfWorthPause();
+  if (pause && pause.from && !pause.to) {
+    saveSelfWorthPause({ from: pause.from, to: todayISO() });
+  }
+}
+
 // כמה ימים בטווח [startISO, endISO] (כולל) חופפים לחלון ההשהיה, ולכן "נמחלים" ולא נספרים כפער אמיתי
 function excusedDaysInRange(startISO, endISO, pause) {
   if (!pause || !pause.from || startISO > endISO) return 0;

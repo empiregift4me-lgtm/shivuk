@@ -1,5 +1,6 @@
 document.addEventListener("DOMContentLoaded", () => {
   maybeAutoArmSelfWorthPause();
+  maybeAutoResolveSelfWorthPause();
   initLock();
   applyFontScale();
   initShell();
