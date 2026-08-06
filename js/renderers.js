@@ -79,6 +79,7 @@ const RENDERERS = {
       if (list.children.length >= (cfg.maxLines || 50)) return null;
       const row = el("div", { class: "dynamic-row" + (cfg.splitReason ? " has-reason" : "") });
       if (cfg.rowIcon) row.appendChild(el("span", { class: "row-icon", text: cfg.rowIcon }));
+      if (cfg.rowPrefixText) row.appendChild(el("span", { class: "sentence-prefix", text: cfg.rowPrefixText }));
 
       // תאימות לאחור: רשומות ישנות שנשמרו כמחרוזת פשוטה (לפני הוספת "כי") ממשיכות להיות מוצגות
       // במלואן בשדה הפעולה, בלי לאבד תוכן, גם אם התרגיל עכשיו מוגדר עם splitReason

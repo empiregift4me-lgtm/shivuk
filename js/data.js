@@ -324,6 +324,13 @@ const EXERCISES = [
     name: "הצהרות חיוביות",
     type: "quotes-random",
     config: { bank: QUOTE_BANK_POSITIVE_AFFIRMATIONS, count: 5, variant: "positive" }
+  },
+  {
+    id: "felt-good-when",
+    period: "evening",
+    name: "הרגשתי טוב",
+    type: "dynamic-list",
+    config: { rowPrefixText: "הרגשתי טוב כש", placeholder: "...", maxLines: 50 }
   }
 ];
 
