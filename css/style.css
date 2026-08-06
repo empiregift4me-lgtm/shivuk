@@ -733,7 +733,6 @@ body {
 
 .empty-state {
   background: var(--c-panel);
-  border: 1px dashed var(--c-border);
   border-radius: var(--radius-sm);
   padding: var(--space-lg);
   text-align: center;

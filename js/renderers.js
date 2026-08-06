@@ -423,11 +423,17 @@ const RENDERERS = {
     tbody.appendChild(splitHead);
     tbody.appendChild(splitBody);
 
+    const truthRowHead = el("tr", {}, el("th", { colspan: "2", text: "והאמת היא ש..." }));
+    const truthTa = makeAutoTextarea((data && data.truth) || "", "חלונית להשלמה בכתיבה חופשית...", 3, readOnly);
+    const truthRowBody = el("tr", {}, el("td", { colspan: "2" }, truthTa));
+    tbody.appendChild(truthRowHead);
+    tbody.appendChild(truthRowBody);
+
     wrap.appendChild(table);
 
     return {
       el: wrap,
-      getData: () => ({ story: storyTa.value, facts: factsTa.value, selfStory: selfStoryTa.value })
+      getData: () => ({ story: storyTa.value, facts: factsTa.value, selfStory: selfStoryTa.value, truth: truthTa.value })
     };
   }
 };

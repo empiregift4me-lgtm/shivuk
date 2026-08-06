@@ -923,11 +923,11 @@ function renderSummaryWriteTab(content) {
 
   // כפתור "כווץ/הרחב הכל" יושב במרכז שורת הכותרת, במרווח שבין שדה הנושא לתאריך - ולא כשורה
   // נפרדת בתחתית העמוד, כדי לנצל את הרווח הריק שהיה שם ולא להוסיף עוד שורת כפתורים
-  let allCollapsed = false;
+  let allCollapsed = true;
   const collapseAllBtn = el("button", {
     type: "button",
     class: "btn btn-secondary btn-small summary-collapse-all-btn",
-    text: "כווץ הכל"
+    text: "הרחב הכל"
   });
   headerRow.appendChild(collapseAllBtn);
 
@@ -960,7 +960,7 @@ function renderSummaryWriteTab(content) {
   const editorRoot = el("div", { class: "summary-topics-wrap" });
   wrap.appendChild(editorRoot);
   wrap.appendChild(topRow);
-  const editorHandle = buildTopicsEditor(editorRoot, topics, persistDraft, { readOnly: false, hideAddButton: true });
+  const editorHandle = buildTopicsEditor(editorRoot, topics, persistDraft, { readOnly: false, hideAddButton: true, collapsedByDefault: true });
   addTopicBtn.addEventListener("click", () => editorHandle.addTopic());
   freewriteAtFocusBtn.addEventListener("click", () => editorHandle.addFreewriteNearFocus());
   collapseAllBtn.addEventListener("click", () => {

@@ -258,13 +258,6 @@ const EXERCISES = [
     }
   },
   {
-    id: "fear-management-evening",
-    period: "evening",
-    name: "ניהול פחדים",
-    type: "freetext",
-    config: { rows: 7, note: "כתבי במשך 3 דקות רצופות את כל הפחדים והמחשבות השליליות שעולים לך בראש.", placeholder: "..." }
-  },
-  {
     id: "three-progress",
     period: "evening",
     name: "3 התקדמויות",
