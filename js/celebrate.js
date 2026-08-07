@@ -31,7 +31,7 @@ const CHIMES = [
 ];
 
 function burstConfettiExplosion() {
-  const colors = ["#ddd0e6", "#e0b1cb", "#9f86c0", "#f6f1fb"];
+  const colors = ["#E4B168", "#DE9E45", "#3E3760", "#F5F2FA"];
   const container = el("div", { class: "confetti-layer" });
   document.body.appendChild(container);
   for (let i = 0; i < 36; i++) {

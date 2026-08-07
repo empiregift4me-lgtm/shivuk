@@ -96,8 +96,8 @@ function attachPlainTextPaste(editableEl) {
 }
 
 // צבע הדגשה עמוק מספיק שהטקסט הבהיר של האפליקציה נשאר קריא מעליו (בניגוד לוורוד הבהיר שדומה מדי לצבע הטקסט)
-const MINI_TOOLBAR_HIGHLIGHT_COLOR = "#5e548e";
-const MAIN_TOOLBAR_HIGHLIGHT_COLOR = "#e0b1cb";
+const MINI_TOOLBAR_HIGHLIGHT_COLOR = "#3E3760";
+const MAIN_TOOLBAR_HIGHLIGHT_COLOR = "#6F4E20";
 
 function colorsMatch(a, b) {
   if (!a || !b) return false;

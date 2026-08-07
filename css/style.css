@@ -1,17 +1,20 @@
 /* ===== מערכת עיצוב - כהה ואינטימי ===== */
+/* מינימליזם דמדומים: מערכת עומק שכבתית בגוני סגול-אינדיגו (רקע < כרטיס < משטח מוגבה), עם
+   אקצנט זהב אחד ויחיד (--c-accent / --c-highlight זהים בכוונה) שמור לרגעי חיוביות/פעולה,
+   ואדום-חלודה מאופק ייעודי לשגיאה בלבד (#CE7860 / #CE7860 למטה בקובץ) */
 :root {
-  --c-page: #231942;
-  --c-card: #4a4270;
-  --c-panel: #3a3260;
-  --c-field: #574f82;
-  --c-border: #9f86c0;
-  --c-accent: #ddd0e6;
-  --c-accent-hover: #c9b6d6;
-  --c-highlight: #e0b1cb;
-  --c-muted-btn: #5e548e;
+  --c-page: #241F38;
+  --c-card: #322C4C;
+  --c-panel: #3E3760;
+  --c-field: #3E3760;
+  --c-border: rgba(245, 242, 250, 0.14);
+  --c-accent: #E4B168;
+  --c-accent-hover: #DE9E45;
+  --c-highlight: #E4B168;
+  --c-muted-btn: #3E3760;
 
-  --text-light: #f6f1fb;
-  --text-submuted: #cdb9e6;
+  --text-light: #F5F2FA;
+  --text-submuted: #AFA8C4;
 
   --space: 16px;
   --space-sm: 8px;
@@ -38,7 +41,7 @@
 .lock-overlay {
   position: fixed;
   inset: 0;
-  background: #231942;
+  background: #241F38;
   z-index: 999;
   display: flex;
   align-items: center;
@@ -74,7 +77,7 @@
   letter-spacing: 2px;
 }
 .lock-input:focus { outline: none; border-color: var(--c-highlight); }
-.lock-error { color: var(--c-highlight); font-size: 0.9rem; min-height: 1.2em; }
+.lock-error { color: #CE7860; font-size: 0.9rem; min-height: 1.2em; }
 .lock-quiet-btn {
   font-family: inherit;
   font-size: 1rem;
@@ -257,14 +260,14 @@ body {
   padding: 7px 16px;
   border-radius: 999px;
   color: var(--text-light);
-  background: linear-gradient(135deg, rgba(224, 177, 203, 0.16), rgba(157, 134, 192, 0.16));
-  border: 1px solid rgba(224, 177, 203, 0.4);
+  background: linear-gradient(135deg, rgba(228, 177, 104, 0.16), rgba(62, 55, 96, 0.16));
+  border: 1px solid rgba(228, 177, 104, 0.4);
   animation: affirmation-headline-pulse 3s ease-in-out infinite;
 }
 .affirmation-headline.is-visible { display: block; }
 @keyframes affirmation-headline-pulse {
-  0%, 100% { box-shadow: 0 0 6px rgba(224, 177, 203, 0.25); border-color: rgba(224, 177, 203, 0.35); }
-  50% { box-shadow: 0 0 18px rgba(224, 177, 203, 0.7); border-color: rgba(224, 177, 203, 0.85); }
+  0%, 100% { box-shadow: 0 0 6px rgba(228, 177, 104, 0.25); border-color: rgba(228, 177, 104, 0.35); }
+  50% { box-shadow: 0 0 18px rgba(228, 177, 104, 0.7); border-color: rgba(228, 177, 104, 0.85); }
 }
 
 .affirmation-headline-text {
@@ -289,7 +292,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: radial-gradient(circle at 50% 40%, rgba(74, 66, 112, 0.6), rgba(35, 25, 66, 0.94));
+  background: radial-gradient(circle at 50% 40%, rgba(50, 44, 76, 0.6), rgba(36, 31, 56, 0.94));
   background-size: 200% 200%;
   backdrop-filter: blur(6px);
   -webkit-backdrop-filter: blur(6px);
@@ -314,8 +317,8 @@ body {
   justify-content: center;
   padding: 56px 44px;
   border-radius: 28px;
-  background: rgba(74, 66, 112, 0.35);
-  border: 1px solid rgba(221, 208, 230, 0.35);
+  background: rgba(50, 44, 76, 0.35);
+  border: 1px solid rgba(228, 177, 104, 0.35);
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.08);
   backdrop-filter: blur(18px);
   -webkit-backdrop-filter: blur(18px);
@@ -325,14 +328,14 @@ body {
 }
 .affirmation-overlay.is-visible .affirmation-card { transform: scale(1); animation: affirmation-breathe 4s ease-in-out infinite; }
 @keyframes affirmation-breathe {
-  0%, 100% { box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35), 0 0 30px rgba(224, 177, 203, 0.2); }
-  50% { box-shadow: 0 8px 46px rgba(0, 0, 0, 0.4), 0 0 80px rgba(224, 177, 203, 0.6); }
+  0%, 100% { box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35), 0 0 30px rgba(228, 177, 104, 0.2); }
+  50% { box-shadow: 0 8px 46px rgba(0, 0, 0, 0.4), 0 0 80px rgba(228, 177, 104, 0.6); }
 }
 
 .affirmation-glow {
   position: absolute;
   inset: -25%;
-  background: conic-gradient(from 0deg, rgba(224, 177, 203, 0.35), rgba(157, 134, 192, 0.2), rgba(224, 177, 203, 0.35));
+  background: conic-gradient(from 0deg, rgba(228, 177, 104, 0.35), rgba(62, 55, 96, 0.2), rgba(228, 177, 104, 0.35));
   filter: blur(38px);
   animation: affirmation-rotate 7s linear infinite;
   z-index: 0;
@@ -380,8 +383,8 @@ body {
   animation: affirmation-pulse 2.4s ease-in-out infinite;
 }
 @keyframes affirmation-pulse {
-  0%, 100% { text-shadow: 0 0 18px rgba(224, 177, 203, 0.45); transform: scale(1); }
-  50% { text-shadow: 0 0 55px rgba(224, 177, 203, 1); transform: scale(1.035); }
+  0%, 100% { text-shadow: 0 0 18px rgba(228, 177, 104, 0.45); transform: scale(1); }
+  50% { text-shadow: 0 0 55px rgba(228, 177, 104, 1); transform: scale(1.035); }
 }
 
 .affirmation-input {
@@ -399,7 +402,7 @@ body {
   font-size: 13px;
   text-align: right;
 }
-.affirmation-input:focus { outline: none; border-color: var(--c-highlight); box-shadow: 0 0 0 3px rgba(224, 177, 203, 0.2); }
+.affirmation-input:focus { outline: none; border-color: var(--c-highlight); box-shadow: 0 0 0 3px rgba(228, 177, 104, 0.2); }
 
 .affirmation-close {
   position: absolute;
@@ -515,7 +518,7 @@ body {
   transition: width 0.3s ease;
 }
 .storage-meter-fill.is-warning { background: #e8b13a; }
-.storage-meter-fill.is-danger { background: #d9534f; }
+.storage-meter-fill.is-danger { background: #CE7860; }
 .storage-meter-text { font-size: 0.75rem; color: var(--text-submuted); margin-top: 6px; }
 
 .app-section.is-hidden { display: none; }
@@ -560,7 +563,7 @@ body {
   top: 0;
   left: 0;
   right: 0;
-  background: linear-gradient(to bottom, #3a3260 0%, #3a3260 calc(100% - 34px), rgba(58, 50, 96, 0) 100%);
+  background: linear-gradient(to bottom, #3E3760 0%, #3E3760 calc(100% - 34px), rgba(62, 55, 96, 0) 100%);
   transition: height 0.6s ease;
 }
 .gauge-mark {
@@ -669,14 +672,14 @@ body {
   transition: background 0.15s ease, color 0.15s ease;
 }
 .util-btn:hover { background: var(--c-card); color: var(--text-light); }
-.util-btn.is-active { background: var(--c-highlight); color: #231942; border-color: var(--c-highlight); }
+.util-btn.is-active { background: var(--c-highlight); color: #241F38; border-color: var(--c-highlight); }
 
 /* ===== ניווט לשוניות ===== */
 /* רקע ורדרד-כהה ייחודי (שונה גם מהעמוד וגם מכרטיסי התוכן), כדי שהרצועה תיראה כאלמנט נפרד וברור */
 .tab-nav {
   display: flex;
   gap: 6px;
-  background: linear-gradient(135deg, #4a3958, #3d2f52);
+  background: linear-gradient(135deg, var(--c-panel), var(--c-page));
   border: 1px solid var(--c-highlight);
   border-radius: 999px;
   padding: 6px;
@@ -707,7 +710,7 @@ body {
 
 .tab-btn.is-active {
   background: var(--c-accent);
-  color: #231942;
+  color: #241F38;
   font-weight: 700;
 }
 
@@ -817,7 +820,7 @@ body {
   transition: background 0.15s ease, border-color 0.15s ease;
 }
 .period-pill:hover:not(:disabled) { background: var(--c-panel); }
-.period-pill.is-active { background: var(--c-accent); color: #231942; border-color: var(--c-accent); }
+.period-pill.is-active { background: var(--c-accent); color: #241F38; border-color: var(--c-accent); }
 .period-pill.is-done { color: var(--text-submuted); border-style: dashed; cursor: default; opacity: 0.75; }
 
 /* בלי תיבה עצמאית משלו - כל תרגיל כבר מגיע עם המבנה הפנימי שלו (טבלה, שדות וכו'), שמספק
@@ -861,7 +864,7 @@ body {
   padding: 4px 8px;
   border-radius: var(--radius-sm);
 }
-.block-remove:hover { background: var(--c-highlight); color: #231942; }
+.block-remove:hover { background: var(--c-highlight); color: #241F38; }
 
 .btn-save { width: 100%; margin-top: var(--space-sm); font-size: 1.15rem; padding: 14px; }
 /* בסיכומים כפתור השמירה קומפקטי וממוקד במקום פס ברוחב מלא - נראה כמו פעולה ראשית ברורה, לא רקע */
@@ -882,11 +885,11 @@ body {
 }
 .btn:active { transform: translateY(1px); }
 
-.btn-primary { background: var(--c-accent); color: #231942; box-shadow: 0 2px 8px rgba(190, 149, 196, 0.35); }
-.btn-primary:hover { background: var(--c-accent-hover); box-shadow: 0 4px 12px rgba(190, 149, 196, 0.45); }
+.btn-primary { background: var(--c-accent); color: #241F38; box-shadow: 0 2px 8px rgba(228, 177, 104, 0.35); }
+.btn-primary:hover { background: var(--c-accent-hover); box-shadow: 0 4px 12px rgba(228, 177, 104, 0.45); }
 
 .btn-secondary { background: var(--c-muted-btn); color: var(--text-light); }
-.btn-secondary:hover { background: var(--c-border); color: #231942; }
+.btn-secondary:hover { background: var(--c-border); color: #241F38; }
 
 .btn-ghost { background: transparent; color: var(--c-highlight); border: 1px solid var(--c-border); }
 .btn-ghost:hover { background: var(--c-panel); border-color: var(--c-highlight); color: var(--text-light); }
@@ -918,7 +921,7 @@ select.field-input {
 .field-textarea:focus,
 select.field-input:focus {
   border-color: var(--c-highlight);
-  box-shadow: 0 0 0 3px rgba(224, 177, 203, 0.2);
+  box-shadow: 0 0 0 3px rgba(228, 177, 104, 0.2);
 }
 
 .field-input:disabled,
@@ -949,7 +952,7 @@ select.field-input:focus {
   border: none; background: transparent; color: var(--text-submuted);
   font-size: 1.1rem; cursor: pointer; width: 26px; height: 26px; border-radius: 50%; flex: 0 0 auto;
 }
-.row-remove:hover { background: var(--c-highlight); color: #231942; }
+.row-remove:hover { background: var(--c-highlight); color: #241F38; }
 .dynamic-list-count { margin: 8px 0 0; font-size: 0.85rem; color: var(--text-submuted); opacity: 0.75; }
 .dynamic-row.has-reason .field-input { flex: 1 1 0; min-width: 0; width: auto; }
 .reason-label { flex: 0 0 auto; color: var(--text-submuted); font-size: 0.9rem; }
@@ -987,7 +990,7 @@ select.field-input:focus {
   font-family: inherit;
   border: none;
   background: var(--c-highlight);
-  color: #231942;
+  color: #241F38;
   border-radius: 50%;
   width: 44px;
   height: 44px;
@@ -1040,7 +1043,7 @@ select.field-input:focus {
   font-family: inherit;
   border: none;
   background: var(--c-highlight);
-  color: #231942;
+  color: #241F38;
   border-radius: 50%;
   width: 36px;
   height: 36px;
@@ -1099,7 +1102,7 @@ select.field-input:focus {
   font-family: inherit;
   border: none;
   background: var(--c-highlight);
-  color: #231942;
+  color: #241F38;
   border-radius: 50%;
   width: 44px;
   height: 44px;
@@ -1161,10 +1164,10 @@ select.field-input:focus {
   transition: background 0.15s ease;
 }
 .task-list > .task-item-wrap:last-child .task-row { border-bottom: none; }
-.task-row.is-break { background: rgba(224, 177, 203, 0.16); border-radius: var(--radius-sm); }
+.task-row.is-break { background: rgba(228, 177, 104, 0.16); border-radius: var(--radius-sm); }
 .task-row.is-done .task-text-input { text-decoration: line-through; opacity: 0.6; }
 .task-row.is-dragging { opacity: 0.4; }
-.task-row.drag-over { background: rgba(224, 177, 203, 0.25); border-radius: var(--radius-sm); }
+.task-row.drag-over { background: rgba(228, 177, 104, 0.25); border-radius: var(--radius-sm); }
 .task-drag-handle {
   flex: 0 0 auto;
   cursor: grab;
@@ -1237,7 +1240,7 @@ select.field-input:focus {
   border-radius: 50%;
   border: none;
   background: var(--c-accent);
-  color: #231942;
+  color: #241F38;
   font-weight: 700;
   cursor: pointer;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
@@ -1285,7 +1288,7 @@ select.field-input:focus {
   border-color: var(--c-accent);
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
 }
-.energy-manual-type-btn.is-active .energy-filter-count { color: #231942; font-weight: 700; }
+.energy-manual-type-btn.is-active .energy-filter-count { color: #241F38; font-weight: 700; }
 .energy-actions-group { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
 .energy-bulk-toggle-btn {
   font-family: inherit;
@@ -1354,7 +1357,7 @@ select.field-input:focus {
   color: var(--text-light);
   line-height: 1.6;
   margin: 2px 0 8px;
-  text-shadow: 0 0 14px rgba(224, 177, 203, 0.3);
+  text-shadow: 0 0 14px rgba(228, 177, 104, 0.3);
 }
 .mantra-count-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 6px; }
 .mantra-count-label { font-size: 0.8rem; color: var(--text-submuted); min-height: 1.1em; }
@@ -1388,7 +1391,7 @@ select.field-input:focus {
 .quotes-grid { display: flex; flex-direction: column; gap: var(--space-sm); }
 .quote-card {
   background: linear-gradient(135deg, var(--c-highlight), var(--c-border));
-  color: #231942;
+  color: #241F38;
   padding: 14px 16px;
   border-radius: var(--radius-sm);
   font-size: 1.05rem;
@@ -1401,14 +1404,14 @@ select.field-input:focus {
 .quote-card--positive {
   position: relative;
   background: linear-gradient(135deg, var(--c-accent), var(--c-highlight));
-  color: #231942;
+  color: #241F38;
   padding: 16px 40px 16px 16px;
   border-radius: 18px;
   font-size: 1.05rem;
   font-weight: 600;
   line-height: 1.8;
   border: 1px solid var(--c-border);
-  box-shadow: 0 4px 14px rgba(224, 177, 203, 0.3);
+  box-shadow: 0 4px 14px rgba(228, 177, 104, 0.3);
 }
 .quote-card--positive::before {
   content: "✨";
@@ -1464,7 +1467,7 @@ select.field-input:focus {
   border: 1px solid var(--c-border); background: transparent; color: var(--text-light);
   border-radius: 6px; padding: 4px 10px; font-size: 0.85rem; cursor: pointer; font-family: inherit;
 }
-.tb-btn:hover { background: var(--c-highlight); color: #231942; }
+.tb-btn:hover { background: var(--c-highlight); color: #241F38; }
 .evidence-editable {
   min-height: 90px;
   border: 1.5px solid var(--c-border);
@@ -1477,7 +1480,7 @@ select.field-input:focus {
   text-align: right;
 }
 .evidence-editable:focus { outline: none; border-color: var(--c-highlight); }
-.evidence-editable mark { background: var(--c-highlight); color: #231942; }
+.evidence-editable mark { background: var(--c-highlight); color: #241F38; }
 .evidence-image { max-width: 100%; border-radius: 8px; margin: 8px 0; display: block; }
 
 /* ===== תפריט נפתח - לשונית תרגילים ===== */
@@ -1672,7 +1675,7 @@ select.field-input:focus {
 .habit-controls { display: flex; align-items: center; gap: var(--space-sm); }
 .habit-streak {
   background: var(--c-accent);
-  color: #231942;
+  color: #241F38;
   font-weight: 700;
   font-size: 0.95rem;
   padding: 6px 12px;
@@ -1684,7 +1687,7 @@ select.field-input:focus {
   border: none; background: transparent; color: var(--text-submuted); font-size: 1.2rem; cursor: pointer;
   width: 26px; height: 26px; border-radius: 50%;
 }
-.habit-remove:hover { background: var(--c-highlight); color: #231942; }
+.habit-remove:hover { background: var(--c-highlight); color: #241F38; }
 
 /* ===== חלונית תובנות חודשיות ===== */
 .modal-overlay {
@@ -1728,7 +1731,7 @@ select.field-input:focus {
   font-size: 0.9rem;
   cursor: pointer;
 }
-.link-picker-row:hover { background: var(--c-highlight); color: #231942; }
+.link-picker-row:hover { background: var(--c-highlight); color: #241F38; }
 .link-chips-row { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0; }
 .link-chip {
   display: flex;
@@ -1762,8 +1765,8 @@ select.field-input:focus {
 .link-chip-remove:hover { background: var(--c-muted-btn); color: var(--text-light); }
 /* הבהוב עדין שמסמן היכן נחתו אחרי ניווט דרך קישור */
 @keyframes link-jump-pulse {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(212, 175, 235, 0); }
-  25% { box-shadow: 0 0 0 4px rgba(212, 175, 235, 0.6); }
+  0%, 100% { box-shadow: 0 0 0 0 rgba(228, 177, 104, 0); }
+  25% { box-shadow: 0 0 0 4px rgba(228, 177, 104, 0.6); }
 }
 .link-jump-highlight { animation: link-jump-pulse 1s ease-in-out 2; border-radius: var(--radius-sm); }
 
@@ -1791,7 +1794,7 @@ select.field-input:focus {
   cursor: pointer;
 }
 .sub-tab-btn:hover { background: var(--c-panel); color: var(--text-light); }
-.sub-tab-btn.is-active { background: var(--c-accent); color: #231942; font-weight: 700; }
+.sub-tab-btn.is-active { background: var(--c-accent); color: #241F38; font-weight: 700; }
 
 /* ===== סרגל כלים לעריכה עשירה ===== */
 .rt-toolbar {
@@ -1817,8 +1820,8 @@ select.field-input:focus {
   font-size: 0.85rem;
   cursor: pointer;
 }
-.rt-btn:hover { background: var(--c-highlight); color: #231942; }
-.rt-btn.is-active { background: var(--c-highlight); color: #231942; }
+.rt-btn:hover { background: var(--c-highlight); color: #241F38; }
+.rt-btn.is-active { background: var(--c-highlight); color: #241F38; }
 
 /* ===== סיכומים - נושא -> עניינים -> כתיבה חופשית ===== */
 /* תיבה נפרדת ומובחנת לפרטי הפגישה (נושא/תאריך/נשמר), כדי שלא תיראה מחוברת לרשימת הנושאים שמתחתיה -
@@ -1871,7 +1874,7 @@ select.field-input:focus {
   cursor: pointer;
   border: 1px solid var(--c-border);
 }
-.paid-badge.is-paid { background: var(--c-accent); color: #231942; border-color: var(--c-accent); font-weight: 600; }
+.paid-badge.is-paid { background: var(--c-accent); color: #241F38; border-color: var(--c-accent); font-weight: 600; }
 .paid-badge:hover { filter: brightness(1.1); }
 .checklist-line { list-style: none; margin: 4px 0; display: flex; align-items: flex-start; gap: 6px; }
 .checklist-mark { width: 16px; height: 16px; margin-top: 3px; flex-shrink: 0; cursor: pointer; }
@@ -1909,7 +1912,7 @@ select.field-input:focus {
 /* סדר קבוע ועקבי: תוכן (וי, טקסט) מתחיל מימין; כל אייקוני הפעולה (חץ, מחיקה, גרירה) מקובצים בצד שמאל */
 .summary-item-row { display: flex; align-items: center; gap: 8px; }
 .summary-item.is-dragging { opacity: 0.4; }
-.summary-item.drag-over { background: rgba(224, 177, 203, 0.15); }
+.summary-item.drag-over { background: rgba(228, 177, 104, 0.15); }
 .summary-item.is-done .summary-item-text-input,
 .summary-item.is-done .summary-item-text-view { text-decoration: line-through; opacity: 0.65; }
 /* שורת ה"עניין" היא העוגן הוויזואלי המרכזי של כל בלוק - גדולה ומודגשת משמעותית משאר הטקסט,
@@ -2005,7 +2008,7 @@ select.field-input:focus {
 }
 .summary-add-conclusions-btn:hover {
   background: var(--c-highlight);
-  color: #231942;
+  color: #241F38;
   border-color: var(--c-highlight);
   transform: translateY(-1px);
   box-shadow: 0 3px 8px rgba(0, 0, 0, 0.25);
@@ -2066,7 +2069,7 @@ select.field-input:focus {
   text-align: center;
 }
 .summary-add-item-line { flex: 1 1 auto; height: 1px; background: var(--c-border); }
-.summary-add-item-row:hover .summary-add-item-circle { background: var(--c-highlight); color: #231942; border-color: var(--c-highlight); }
+.summary-add-item-row:hover .summary-add-item-circle { background: var(--c-highlight); color: #241F38; border-color: var(--c-highlight); }
 .summary-add-item-row:hover .summary-add-item-line { background: var(--c-highlight); opacity: 0.6; }
 .summary-topic-story-btn {
   flex: 0 0 auto;
@@ -2079,7 +2082,7 @@ select.field-input:focus {
   font-size: 0.85rem;
   cursor: pointer;
 }
-.summary-topic-story-btn:hover { background: var(--c-highlight); color: #231942; }
+.summary-topic-story-btn:hover { background: var(--c-highlight); color: #241F38; }
 .summary-topic-story-wrap { margin-bottom: 10px; }
 .summary-topic-story-wrap.is-collapsed { display: none; }
 .summary-topic-story-view { margin: 4px 0 10px; }
@@ -2206,8 +2209,8 @@ select.field-input:focus {
 }
 .chat-editable {
   min-height: 90px;
-  background: #fdfbff;
-  color: #231942;
+  background: var(--c-field);
+  color: var(--text-light);
   border-radius: var(--radius-sm);
   padding: 12px 14px;
   direction: rtl;
@@ -2232,7 +2235,7 @@ select.field-input:focus {
 }
 .protected-unlock-row { display: flex; gap: 6px; align-items: center; }
 .protected-unlock-input { flex: 1 1 auto; }
-.protected-unlock-error { color: #e0708a; font-size: 0.85rem; }
+.protected-unlock-error { color: #CE7860; font-size: 0.85rem; }
 
 /* ===== חגיגת שמירה ===== */
 .confetti-layer {
@@ -2265,7 +2268,7 @@ select.field-input:focus {
   height: 100%;
   pointer-events: none;
   z-index: 200;
-  background: linear-gradient(90deg, transparent, rgba(246, 241, 251, 0.8), rgba(224, 177, 203, 0.4), transparent);
+  background: linear-gradient(90deg, transparent, rgba(245, 242, 250, 0.8), rgba(228, 177, 104, 0.4), transparent);
   filter: blur(2px);
   animation: sweep-move 0.95s ease-in-out forwards;
 }
@@ -2303,7 +2306,7 @@ select.field-input:focus {
 
 .settings-error {
   font-size: 0.9rem;
-  color: var(--c-highlight);
+  color: #CE7860;
   min-height: 1.1em;
 }
 
@@ -2324,7 +2327,7 @@ select.field-input:focus {
   transition: transform 0.15s ease, border-color 0.15s ease;
 }
 .theme-swatch:hover { transform: scale(1.08); }
-.theme-swatch.is-active { border-color: var(--c-highlight); box-shadow: 0 0 0 3px rgba(224, 177, 203, 0.3); }
+.theme-swatch.is-active { border-color: var(--c-highlight); box-shadow: 0 0 0 3px rgba(228, 177, 104, 0.3); }
 
 .theme-swatch-label { font-size: 0.85rem; color: var(--text-submuted); }
 

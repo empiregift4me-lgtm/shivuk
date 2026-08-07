@@ -55,19 +55,19 @@ function extractYoutubeId(url) {
 // מבנה ניגודיות בדיוק כמו הפלטה המקורית, רק בגוון אחר
 const COLOR_THEMES = {
   classic: {
-    label: "סגול קלאסי",
+    label: "סגול דמדומים",
     vars: {
-      "--c-page": "#231942",
-      "--c-card": "#4a4270",
-      "--c-panel": "#3a3260",
-      "--c-field": "#574f82",
-      "--c-border": "#9f86c0",
-      "--c-accent": "#ddd0e6",
-      "--c-accent-hover": "#c9b6d6",
-      "--c-highlight": "#e0b1cb",
-      "--c-muted-btn": "#5e548e",
-      "--text-light": "#f6f1fb",
-      "--text-submuted": "#cdb9e6"
+      "--c-page": "#241F38",
+      "--c-card": "#322C4C",
+      "--c-panel": "#3E3760",
+      "--c-field": "#3E3760",
+      "--c-border": "rgba(245, 242, 250, 0.14)",
+      "--c-accent": "#E4B168",
+      "--c-accent-hover": "#DE9E45",
+      "--c-highlight": "#E4B168",
+      "--c-muted-btn": "#3E3760",
+      "--text-light": "#F5F2FA",
+      "--text-submuted": "#AFA8C4"
     }
   },
   midnight: {
