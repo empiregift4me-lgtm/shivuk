@@ -492,6 +492,7 @@ body {
   cursor: pointer;
 }
 .sidebar-item:hover { background: var(--c-field); color: var(--c-highlight); }
+.sidebar-item.is-hidden { display: none; }
 
 .storage-meter {
   margin-top: auto;
@@ -2351,6 +2352,9 @@ select.field-input:focus {
   padding: 8px 10px;
 }
 .qbank-text { color: var(--text-light); font-size: 0.95rem; }
+.qbank-row--disabled { opacity: 0.55; }
+.qbank-row--disabled .qbank-text { text-decoration: line-through; }
+.qbank-row-actions { display: flex; gap: 2px; flex: 0 0 auto; }
 
 /* ===== רספונסיביות ===== */
 @media (max-width: 560px) {

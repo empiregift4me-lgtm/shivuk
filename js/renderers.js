@@ -195,11 +195,17 @@ const RENDERERS = {
 
   "quotes-random"(instance, data, readOnly) {
     const cfg = instance.config;
-    const bank = cfg.bankId ? getQuoteBank(cfg.bankId) : cfg.bank;
+    const bank = cfg.bankId ? getEnabledQuoteBank(cfg.bankId) : cfg.bank;
+    const wrap = el("div", { class: "exercise-body quotes-grid" + (cfg.variant ? ` quotes-grid--${cfg.variant}` : "") });
+    if (cfg.bankId && !bank.length) {
+      wrap.appendChild(el("p", { class: "exercise-note", text: "כל המשפטים בבנק הזה כבויים כרגע - אפשר להפעיל אותם מחדש ב\"הגדרות\"." }));
+      return { el: wrap, getData: () => ({ selected: [] }) };
+    }
     let selected = data && data.selected;
-    if (!selected || !selected.length) selected = pickRandom(bank, cfg.count);
-    const variantSuffix = cfg.variant ? ` quotes-grid--${cfg.variant}` : "";
-    const wrap = el("div", { class: "exercise-body quotes-grid" + variantSuffix });
+    if (!selected || !selected.length) {
+      selected = cfg.bankId ? pickIndicesFromBank(cfg.bankId, cfg.count) : pickRandom(bank, cfg.count);
+    }
+    selected = selected.filter((i) => i < bank.length);
     selected.forEach((i) => {
       wrap.appendChild(el("div", { class: "quote-card" + (cfg.variant ? ` quote-card--${cfg.variant}` : ""), text: bank[i] }));
     });
@@ -274,11 +280,18 @@ const RENDERERS = {
 
   "sentence-challenge"(instance, data, readOnly) {
     const cfg = instance.config;
-    const bank = cfg.bankId ? getQuoteBank(cfg.bankId) : cfg.bank;
-    let sentenceIdx = data && typeof data.sentenceIdx === "number" ? data.sentenceIdx : pickRandom(bank, 1)[0];
+    const bank = cfg.bankId ? getEnabledQuoteBank(cfg.bankId) : cfg.bank;
+    const wrap = el("div", { class: "exercise-body" });
+    if (cfg.bankId && !bank.length) {
+      wrap.appendChild(el("p", { class: "exercise-note", text: "כל המשפטים בבנק הזה כבויים כרגע - אפשר להפעיל אותם מחדש ב\"הגדרות\"." }));
+      return { el: wrap, getData: () => ({ sentenceIdx: null, completions: [] }) };
+    }
+    function pickOne() {
+      return cfg.bankId ? pickIndicesFromBank(cfg.bankId, 1)[0] : pickRandom(bank, 1)[0];
+    }
+    let sentenceIdx = data && typeof data.sentenceIdx === "number" && data.sentenceIdx < bank.length ? data.sentenceIdx : pickOne();
     let completions = (data && data.completions) || [];
 
-    const wrap = el("div", { class: "exercise-body" });
     const rowsWrap = el("div", { class: "sentence-rows" });
     const inputs = [];
 
@@ -305,7 +318,7 @@ const RENDERERS = {
         type: "button",
         text: "משפט חדש",
         onclick: () => {
-          sentenceIdx = pickRandom(bank, 1)[0];
+          sentenceIdx = pickOne();
           completions = [];
           build();
         }

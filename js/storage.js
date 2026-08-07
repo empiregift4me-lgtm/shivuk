@@ -23,7 +23,10 @@ const STORE_KEYS = {
   trustLedger: "trustLedger",
   trustDraft: "trust_draft_v1",
   quietModeUntil: "quiet_mode_until_v1",
-  customQuoteBanks: "custom_quote_banks_v1"
+  customQuoteBanks: "custom_quote_banks_v1",
+  disabledQuoteSentences: "disabled_quote_sentences_v1",
+  bankPickModes: "bank_pick_modes_v1",
+  bankCursors: "bank_cursors_v1"
 };
 
 const PERIODS = ["morning", "evening"];

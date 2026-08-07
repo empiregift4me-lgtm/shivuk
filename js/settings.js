@@ -326,6 +326,12 @@ function renderSettingsView(container) {
   });
   bankSection.appendChild(bankSelect);
 
+  // כפתור בודד שמחליף בין מצב "לפי סדר קבוע" (בלי לחזור על משפט פעמיים באותו סבב) לבין מצב
+  // "רנדומלי" (הגרלה בלתי-תלויה בכל פעם, יכולה לחזור על אותו משפט באותו סבב) - הטקסט על הכפתור
+  // תמיד משקף את המצב הפעיל כרגע
+  const pickModeBtn = el("button", { type: "button", class: "btn btn-ghost btn-small" });
+  bankSection.appendChild(pickModeBtn);
+
   const bankCountLabel = el("p", { class: "settings-hint" });
   bankSection.appendChild(bankCountLabel);
   const bankList = el("div", { class: "qbank-list" });
@@ -338,30 +344,61 @@ function renderSettingsView(container) {
   const bankResetBtn = el("button", { type: "button", class: "btn btn-ghost btn-small", text: "↺ איפוס לרשימה המקורית" });
   bankSection.appendChild(bankResetBtn);
 
+  function renderPickModeBtn() {
+    const bankId = bankSelect.value;
+    const mode = getBankPickMode(bankId);
+    pickModeBtn.textContent = mode === "sequential" ? "🔢 סדר הצגה: לפי הסדר (בלי לחזור באותו סבב)" : "🔀 סדר הצגה: רנדומלי (כולל אפשרות לחזור)";
+  }
+
+  pickModeBtn.addEventListener("click", () => {
+    const bankId = bankSelect.value;
+    const nextMode = getBankPickMode(bankId) === "sequential" ? "random" : "sequential";
+    setBankPickMode(bankId, nextMode);
+    renderPickModeBtn();
+  });
+
   function renderBankList() {
     const bankId = bankSelect.value;
     const bank = getQuoteBank(bankId);
-    bankCountLabel.textContent = `${bank.length} משפטים בבנק`;
+    const disabledCount = bank.filter((s) => isSentenceDisabled(bankId, s)).length;
+    bankCountLabel.textContent = `${bank.length} משפטים בבנק` + (disabledCount ? ` (${disabledCount} מהם כבויים)` : "");
     bankResetBtn.disabled = !isQuoteBankCustomized(bankId);
+    renderPickModeBtn();
     bankList.innerHTML = "";
     bank.forEach((sentence, idx) => {
-      const row = el("div", { class: "qbank-row" });
+      const disabled = isSentenceDisabled(bankId, sentence);
+      const row = el("div", { class: "qbank-row" + (disabled ? " qbank-row--disabled" : "") });
       row.appendChild(el("span", { class: "qbank-text", text: sentence }));
-      row.appendChild(
+      const actions = el("div", { class: "qbank-row-actions" });
+      actions.appendChild(
+        el("button", {
+          type: "button",
+          class: "row-remove",
+          text: disabled ? "🙈" : "👁",
+          title: disabled ? "הפעלת המשפט מחדש" : "כיבוי תצוגת המשפט הזה (בלי למחוק)",
+          onclick: () => {
+            setSentenceDisabled(bankId, sentence, !disabled);
+            renderBankList();
+          }
+        })
+      );
+      actions.appendChild(
         el("button", {
           type: "button",
           class: "row-remove",
           text: "×",
           title: "מחיקת המשפט",
           onclick: () => {
-            if (!confirm("למחוק את המשפט הזה מהבנק?")) return;
+            if (!confirm("האם את בטוחה שברצונך למחוק את המשפט הזה?")) return;
             const updated = bank.slice();
             updated.splice(idx, 1);
             setQuoteBank(bankId, updated);
+            setSentenceDisabled(bankId, sentence, false);
             renderBankList();
           }
         })
       );
+      row.appendChild(actions);
       bankList.appendChild(row);
     });
   }
