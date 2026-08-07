@@ -970,54 +970,27 @@ select.field-input:focus {
 .trailing-field-row .field-input { width: 100%; }
 
 /* ===== הסכם האמינות ===== */
-/* שורה משותפת לרצועת ההבטחות + טופס רישום ההבטחה - הטופס תופס עמודה קבועה קטנה כשהוא סגור
-   (רק כפתור טריגר) כך שהרצועה ממלאת את שאר הרוחב "בגודלה הטבעי", ומתחלקת איתו 50/50 רק כשהוא פתוח */
-.trust-section-row {
-  display: flex;
-  align-items: flex-start;
-  gap: var(--space-sm);
-  margin-bottom: var(--space);
-}
-.trust-section-row .trust-strip {
-  flex: 1 1 0;
-  min-width: 0;
-  margin-bottom: 0;
-}
-.trust-strip {
+/* רצועת ההבטחה - רכיב אחד קבוע-גובה (שורה אחת). במצב סגור צר ומכיל רק את המאזן וכפתור פתיחה;
+   במצב פתוח אותו אלמנט בדיוק מתרחב לרוחב (max-width) וחושף בתוכו את טופס הרישום - לא נפתחת
+   תיבה שנייה מתחתיו. בגלישה לרוחב מסך צר מותר לתוכן לגלוש לשתי שורות בתוך אותה מסגרת יחידה */
+.trust-flagbar {
   background: var(--c-card);
   border: 1px solid var(--c-border);
   border-radius: var(--radius);
-  padding: var(--space);
+  padding: 10px var(--space);
   margin-bottom: var(--space);
+  max-width: 320px;
+  transition: max-width 0.25s ease;
 }
-.trust-widget {
-  flex: 0 0 auto;
-}
-.trust-widget-trigger {
-  font-family: inherit;
-  border: none;
-  background: var(--c-highlight);
-  color: var(--text-light);
-  border-radius: 50%;
-  width: 44px;
-  height: 44px;
-  font-size: 1.2rem;
-  cursor: pointer;
-  box-shadow: var(--shadow-card);
-  transition: transform 0.15s ease;
-}
-.trust-widget-trigger:hover { transform: scale(1.06); }
-.trust-widget.is-open {
-  flex: 1 1 0;
-  min-width: 0;
-  background: var(--c-card);
-  border: 1px solid var(--c-border);
-  border-radius: var(--radius);
-  padding: var(--space);
-}
-.trust-widget-header { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--space-sm); }
-.trust-widget-header .exercise-note { margin: 0; }
-.trust-widget-close {
+.trust-flagbar.is-open { max-width: 100%; }
+.trust-flagbar-row { display: flex; align-items: center; justify-content: space-between; gap: var(--space-sm); flex-wrap: wrap; }
+.trust-flagbar-balance { font-weight: 600; color: var(--text-light); white-space: nowrap; }
+.trust-flagbar-actions { display: flex; align-items: center; gap: var(--space-sm); flex: 0 0 auto; }
+.trust-flagbar-add { flex: 0 0 auto; white-space: nowrap; }
+.trust-flagbar-calibrate { flex: 0 0 auto; }
+.trust-flagbar-row .field-input { flex: 1 1 180px; width: auto; }
+.trust-flagbar-pills { display: flex; gap: 6px; flex: 0 0 auto; flex-wrap: wrap; }
+.trust-flagbar-close {
   flex: 0 0 auto;
   border: none;
   background: transparent;
@@ -1027,13 +1000,16 @@ select.field-input:focus {
   padding: 0 0 0 4px;
   line-height: 1.2;
 }
-.trust-widget-close:hover { color: var(--text-light); }
-@media (max-width: 480px) {
-  .trust-section-row { flex-wrap: wrap; }
-  .trust-widget.is-open { flex: 1 1 100%; }
+.trust-flagbar-close:hover { color: var(--text-light); }
+
+/* רשימת ההבטחות הפתוחות - כרטיס נפרד תחת רצועת ההבטחה, בגובה משתנה לפי מספר ההבטחות */
+.trust-open-list {
+  background: var(--c-card);
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius);
+  padding: var(--space);
+  margin-bottom: var(--space);
 }
-.trust-balance { display: flex; align-items: center; justify-content: space-between; gap: var(--space-sm); font-weight: 600; color: var(--text-light); flex-wrap: wrap; }
-.trust-divider { height: 1px; background: var(--c-border); margin: var(--space-sm) 0; }
 .trust-empty { color: var(--text-submuted); margin: 0; }
 .trust-empty-hint { color: var(--text-submuted); font-size: 0.9rem; margin: 4px 0 0; }
 .trust-row { padding: var(--space-sm) 0; }
@@ -1042,8 +1018,7 @@ select.field-input:focus {
 .trust-meta { display: flex; flex-wrap: wrap; gap: 4px 10px; font-size: 0.85rem; color: var(--text-submuted); margin: 0 0 8px; }
 .trust-late { font-size: 0.85rem; color: var(--text-submuted); margin: 0 0 8px; }
 .trust-acts { display: flex; gap: 8px; flex-wrap: wrap; }
-.trust-scope-label { margin: var(--space-sm) 0 4px; }
-.trust-open-warning { color: var(--text-submuted); font-size: 0.85rem; }
+.trust-open-warning { color: var(--text-submuted); font-size: 0.85rem; margin: var(--space-sm) 0 0; }
 .trust-open-warning.is-hidden { display: none; }
 .trust-confirm-note { color: var(--text-submuted); font-size: 0.85rem; margin-inline-start: 8px; }
 .trust-register-flag-btn {

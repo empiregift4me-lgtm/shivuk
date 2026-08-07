@@ -150,7 +150,7 @@ function buildTrustRow(promise) {
       text: "קיימתי",
       onclick: () => {
         closeTrustPromise(promise.id, "kept");
-        refreshTrustStrip();
+        refreshTrustAfterAction();
       }
     }),
     el("button", {
@@ -159,7 +159,7 @@ function buildTrustRow(promise) {
       text: "לא קיימתי",
       onclick: () => {
         closeTrustPromise(promise.id, "missed");
-        refreshTrustStrip();
+        refreshTrustAfterAction();
       }
     }),
     el("button", {
@@ -168,7 +168,7 @@ function buildTrustRow(promise) {
       text: "לא רלוונטי",
       onclick: () => {
         removeTrustPromise(promise.id);
-        refreshTrustStrip();
+        refreshTrustAfterAction();
       }
     })
   ]);
@@ -177,20 +177,15 @@ function buildTrustRow(promise) {
   return row;
 }
 
-function buildTrustStripElement() {
-  const container = el("div", { class: "trust-strip" });
-
-  const balanceRow = el("div", { class: "trust-balance" }, [
-    el("span", { text: `🏁 קיימתי לעצמי: ${keptCount()} הבטחות` }),
-    el("button", { type: "button", class: "btn btn-ghost btn-small", text: "🔧 כיול", onclick: showCalibrationModal })
-  ]);
-  container.appendChild(balanceRow);
-  container.appendChild(el("div", { class: "trust-divider" }));
+// רשימת ההבטחות הפתוחות - קטע קריאה/הכרעה נפרד מרצועת ההבטחה (ראו למטה), כי אין לו גובה קבוע
+// (יכולה להיות הבטחה אחת פתוחה, כמה, או אף אחת) ולכן הוא לא יכול לחיות בתוך רכיב בגובה-שורה-קבוע
+function buildTrustOpenListElement() {
+  const container = el("div", { class: "trust-open-list" });
 
   const open = openPromises().sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
   if (open.length === 0) {
     container.appendChild(el("p", { class: "trust-empty", text: "אין הבטחה פתוחה." }));
-    container.appendChild(el("p", { class: "trust-empty-hint", text: "לרישום - לחצי על 🏁 שלצד הרצועה" }));
+    container.appendChild(el("p", { class: "trust-empty-hint", text: 'לרישום - לחצי על "+ הבטחה חדשה" למעלה' }));
   } else {
     open.forEach((promise) => container.appendChild(buildTrustRow(promise)));
   }
@@ -198,26 +193,30 @@ function buildTrustStripElement() {
   return container;
 }
 
-// אלמנט הרצועה הפעיל כרגע ב-DOM - נשמר כדי שפעולות ההכרעה יוכלו להחליף רק אותו במקום,
-// בלי לרנדר מחדש את כל לשונית "יומן" (ולאבד מצב עריכה בטופס פתוח)
-let trustStripEl = null;
+// אלמנט הרשימה הפעיל כרגע ב-DOM - נשמר כדי שפעולות ההכרעה יוכלו להחליף רק אותו במקום
+let trustOpenListEl = null;
 
-function renderTrustStrip() {
-  trustStripEl = buildTrustStripElement();
-  return trustStripEl;
+function renderTrustOpenList() {
+  trustOpenListEl = buildTrustOpenListElement();
+  return trustOpenListEl;
 }
 
-function refreshTrustStrip() {
-  if (!trustStripEl || !trustStripEl.parentNode) return;
-  const fresh = buildTrustStripElement();
-  trustStripEl.replaceWith(fresh);
-  trustStripEl = fresh;
+function refreshTrustOpenList() {
+  if (!trustOpenListEl || !trustOpenListEl.parentNode) return;
+  const fresh = buildTrustOpenListElement();
+  trustOpenListEl.replaceWith(fresh);
+  trustOpenListEl = fresh;
 }
 
-// טופס רישום ההבטחה - עצמאי לגמרי מהיומן (לא תלוי תאריך/תקופה), כדי שיוכל להופיע קבוע
-// לצד רצועת ההבטחות במקום כתרגיל נבחר בתוך רשימת התרגילים היומית. במצב סגור זה רק כפתור
-// טריגר קטן; לחיצה עליו פותחת את הטופס המלא וגורמת לרצועה לצמצם ולחלוק את השורה איתו.
-// אחרי רישום מוצלח הטופס נסגר שוב מעצמו והרצועה חוזרת לתפוס את כל רוחב השורה
+function refreshTrustAfterAction() {
+  refreshTrustOpenList();
+  refreshTrustFlagBar();
+}
+
+// רצועת ההבטחה - רכיב אחד קבוע-גובה (שורה אחת) שמשמש גם כתצוגת המאזן ("קיימתי X הבטחות")
+// וגם כטופס רישום הבטחה חדשה. במצב סגור מציג רק את המאזן וכפתור פתיחה; לחיצה על הכפתור
+// מרחיבה את אותו רכיב בדיוק לרוחב (לא פותחת תיבה נפרדת מתחתיו) וחושפת בתוכו את שדה הטקסט
+// ושלושת פילי הזמן. עצמאית לגמרי מהיומן (לא תלויה בתאריך/תקופה נצפים)
 let trustComposeOpen = false;
 
 function loadTrustDraft() {
@@ -232,47 +231,46 @@ function saveTrustDraft(draft) {
   safeSetItem(STORE_KEYS.trustDraft, JSON.stringify(draft));
 }
 
-function buildTrustWidgetElement() {
-  const box = el("div", { class: "trust-widget" + (trustComposeOpen ? " is-open" : "") });
+function buildTrustFlagBarElement() {
+  const bar = el("div", { class: "trust-flagbar" + (trustComposeOpen ? " is-open" : "") });
+  const row = el("div", { class: "trust-flagbar-row" });
+  bar.appendChild(row);
 
   if (!trustComposeOpen) {
-    box.appendChild(
+    row.appendChild(el("span", { class: "trust-flagbar-balance", text: `🏁 קיימתי לעצמי: ${keptCount()} הבטחות` }));
+    const actions = el("div", { class: "trust-flagbar-actions" }, [
       el("button", {
         type: "button",
-        class: "trust-widget-trigger",
-        title: "רישום הבטחה חדשה",
-        text: "🏁",
+        class: "btn btn-secondary btn-small trust-flagbar-add",
+        text: "+ הבטחה חדשה",
         onclick: () => {
           trustComposeOpen = true;
-          refreshTrustWidget();
+          refreshTrustFlagBar();
         }
+      }),
+      el("button", {
+        type: "button",
+        class: "btn btn-ghost btn-small trust-flagbar-calibrate",
+        text: "🔧",
+        title: "בדיקת כיול",
+        onclick: showCalibrationModal
       })
-    );
-    return box;
+    ]);
+    row.appendChild(actions);
+    return bar;
   }
 
-  const headerRow = el("div", { class: "trust-widget-header" }, [
-    el("p", { class: "exercise-note", text: "הבטחה אחת - קטנה עד שאי אפשר לא לקיים אותה." }),
-    el("button", {
-      type: "button",
-      class: "trust-widget-close",
-      title: "סגירה",
-      text: "✕",
-      onclick: () => {
-        trustComposeOpen = false;
-        refreshTrustWidget();
-      }
-    })
-  ]);
-  box.appendChild(headerRow);
-
   const draft = loadTrustDraft();
-  const textInput = el("input", { type: "text", class: "field-input", placeholder: "" });
+  const textInput = el("input", {
+    type: "text",
+    class: "field-input",
+    placeholder: "",
+    title: "הבטחה אחת - קטנה עד שאי אפשר לא לקיים אותה"
+  });
   textInput.value = draft.text || "";
-  box.appendChild(textInput);
+  row.appendChild(textInput);
 
-  box.appendChild(el("p", { class: "exercise-note trust-scope-label", text: "עד מתי:" }));
-  const pillsRow = el("div", { class: "period-pills trust-scope-row" });
+  const pillsRow = el("div", { class: "trust-flagbar-pills" });
   let scope = draft.scope || "half";
   const scopeOptions = [
     { id: "half", label: "חצי שעה" },
@@ -281,7 +279,6 @@ function buildTrustWidgetElement() {
   ];
 
   const registerBtn = el("button", { type: "button", class: "trust-register-flag-btn", title: "רישום ההבטחה", text: "🏁" });
-  const warningNote = el("p", { class: "exercise-note trust-open-warning is-hidden", text: "יש כבר 3 הבטחות פתוחות. שווה להכריע בהן קודם." });
 
   function persistDraft() {
     saveTrustDraft({ text: textInput.value, scope });
@@ -303,16 +300,25 @@ function buildTrustWidgetElement() {
         })
       );
     });
-    pillsRow.appendChild(registerBtn);
   }
   renderScopePills();
-  box.appendChild(pillsRow);
+  row.appendChild(pillsRow);
+  row.appendChild(registerBtn);
 
-  function checkOpenWarning() {
-    warningNote.classList.toggle("is-hidden", openPromises().length < TRUST_OPEN_WARNING_THRESHOLD);
-  }
-  checkOpenWarning();
-  box.appendChild(warningNote);
+  const closeBtn = el("button", {
+    type: "button",
+    class: "trust-flagbar-close",
+    title: "סגירה",
+    text: "✕",
+    onclick: () => {
+      trustComposeOpen = false;
+      refreshTrustFlagBar();
+    }
+  });
+  row.appendChild(closeBtn);
+
+  const warningNote = el("p", { class: "exercise-note trust-open-warning" + (openPromises().length < TRUST_OPEN_WARNING_THRESHOLD ? " is-hidden" : ""), text: "יש כבר 3 הבטחות פתוחות. שווה להכריע בהן קודם." });
+  bar.appendChild(warningNote);
 
   registerBtn.disabled = !textInput.value.trim();
   textInput.addEventListener("input", () => {
@@ -325,25 +331,25 @@ function buildTrustWidgetElement() {
     addTrustPromise(textInput.value, scope);
     saveTrustDraft({});
     trustComposeOpen = false;
-    refreshTrustWidget();
-    refreshTrustStrip();
+    refreshTrustFlagBar();
+    refreshTrustOpenList();
   });
 
-  return box;
+  return bar;
 }
 
-let trustWidgetEl = null;
+let trustFlagBarEl = null;
 
-function renderTrustWidget() {
-  trustWidgetEl = buildTrustWidgetElement();
-  return trustWidgetEl;
+function renderTrustFlagBar() {
+  trustFlagBarEl = buildTrustFlagBarElement();
+  return trustFlagBarEl;
 }
 
-function refreshTrustWidget() {
-  if (!trustWidgetEl || !trustWidgetEl.parentNode) return;
-  const fresh = buildTrustWidgetElement();
-  trustWidgetEl.replaceWith(fresh);
-  trustWidgetEl = fresh;
+function refreshTrustFlagBar() {
+  if (!trustFlagBarEl || !trustFlagBarEl.parentNode) return;
+  const fresh = buildTrustFlagBarElement();
+  trustFlagBarEl.replaceWith(fresh);
+  trustFlagBarEl = fresh;
 }
 
 // קטע קריאה-בלבד בלשונית "ארכיונים" - מציג הבטחות שהוכרעו (kept/missed), משויך ליום ההכרעה
