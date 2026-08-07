@@ -301,7 +301,7 @@ const RENDERERS = {
       for (let i = 0; i < cfg.repeats; i++) {
         const row = el("div", { class: "sentence-row" });
         row.appendChild(el("span", { class: "sentence-prefix", text: bank[sentenceIdx] }));
-        const input = el("input", { type: "text", class: "field-input", placeholder: "השלמה..." });
+        const input = el("input", { type: "text", class: "field-input", placeholder: "" });
         input.value = completions[i] || "";
         input.disabled = !!readOnly;
         row.appendChild(input);
@@ -337,7 +337,7 @@ const RENDERERS = {
     const wrap = el("div", { class: "exercise-body" });
     const row = el("div", { class: "identity-row" });
     row.appendChild(el("span", { class: "sentence-prefix", text: cfg.prefix }));
-    const ta = makeAutoTextarea((data && data.text) || "", "המשך המשפט...", 2, readOnly);
+    const ta = makeAutoTextarea((data && data.text) || "", "", 2, readOnly);
     row.appendChild(ta);
     wrap.appendChild(row);
     return { el: wrap, getData: () => ({ text: ta.value }) };
@@ -349,6 +349,7 @@ const RENDERERS = {
     const wrap = el("div", { class: "exercise-body" });
     const list = el("div", { class: "evidence-list" });
     wrap.appendChild(list);
+    const actionsRow = el("div", { class: "evidence-actions-row" });
 
     function addBlock(html) {
       const block = el("div", { class: "evidence-block" });
@@ -377,9 +378,12 @@ const RENDERERS = {
       }
       block.appendChild(editable);
       if (!readOnly) {
-        block.appendChild(
-          el("button", { class: "btn btn-ghost btn-small", type: "button", text: "הסרת ראיה", onclick: () => block.remove() })
-        );
+        const removeBtn = el("button", { class: "btn btn-ghost btn-small", type: "button", text: "הסרת ראיה" });
+        removeBtn.addEventListener("click", () => {
+          block.remove();
+          removeBtn.remove();
+        });
+        actionsRow.appendChild(removeBtn);
       }
       list.appendChild(block);
     }
@@ -387,9 +391,10 @@ const RENDERERS = {
     if (blocks.length === 0 && !readOnly) addBlock("");
 
     if (!readOnly) {
-      wrap.appendChild(
+      actionsRow.appendChild(
         el("button", { class: "btn btn-secondary btn-small", type: "button", text: "+ הוסף ראיה", onclick: () => addBlock("") })
       );
+      wrap.appendChild(actionsRow);
     }
 
     return {
@@ -405,7 +410,7 @@ const RENDERERS = {
     const tas = [];
     cfg.questions.forEach((q, i) => {
       wrap.appendChild(el("p", { class: "exercise-question", text: q }));
-      const ta = makeAutoTextarea(answers[i] || "", "כתיבה חופשית...", 3, readOnly);
+      const ta = makeAutoTextarea(answers[i] || "", "", 3, readOnly);
       wrap.appendChild(ta);
       tas.push(ta);
     });

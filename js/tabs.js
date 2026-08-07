@@ -25,8 +25,6 @@ function renderJournalTab(container) {
 
   const header = el("div", { class: "day-header" });
   header.appendChild(el("div", { class: "day-date", text: isToday ? `היום, ${formatDateHe(date)}` : formatDateHe(date) }));
-  const streakNote = el("div", { class: "streak-note" });
-  header.appendChild(streakNote);
   wrap.appendChild(header);
 
   // ---- שורה מאוחדת: ניווט בין ימים + מחווני בוקר/ערב + כפתור שמירה בולט (🏁) בקצה השמאלי ----
@@ -48,13 +46,6 @@ function renderJournalTab(container) {
   prevDayBtn.addEventListener("click", () => goToDate(addDaysISO(date, 1)));
   nextDayBtn.addEventListener("click", () => goToDate(addDaysISO(date, -1)));
   todayBtn.addEventListener("click", () => goToDate(todayISO()));
-
-  function renderStreak() {
-    const streakN = computeJournalStreak();
-    streakNote.textContent = isToday
-      ? (streakN > 0 ? `✍️ ${formatStreakLabel(streakN)} ברצף שאת כותבת` : "היום זה מתחיל 🌱")
-      : "";
-  }
 
   const pillsRow = el("div", { class: "period-pills" });
   controlsRow.appendChild(pillsRow);
@@ -113,7 +104,6 @@ function renderJournalTab(container) {
       activePeriod,
       () => {
         setActivePeriod(currentActivePeriod(date));
-        renderStreak();
         renderPills();
         renderEditor();
       },
@@ -123,7 +113,6 @@ function renderJournalTab(container) {
   }
 
   setActivePeriod(currentActivePeriod(date));
-  renderStreak();
   renderPills();
   renderEditor();
 

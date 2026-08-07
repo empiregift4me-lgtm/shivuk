@@ -94,18 +94,12 @@ function renderMantrasView(container) {
       }
     });
 
-    topRow.appendChild(favBtn);
-    topRow.appendChild(deleteBtn);
-    card.appendChild(topRow);
-
-    card.appendChild(el("p", { class: "mantra-sentence", text: mantra.sentence }));
-
     // שורת הקלדה חופשית - לא נשמרת בשום מקום, תמיד חוזרת ריקה. Enter סופר "הפנמה" ומנקה את השורה.
-    // מוסתרת כברירת מחדל כדי לא לתפוס מקום - נפתחת בלחיצה על העיפרון ליד שורת המונה
+    // מוסתרת כברירת מחדל כדי לא לתפוס מקום - נפתחת בלחיצה על העיפרון בשורת האייקונים למעלה
     const retypeInput = el("input", {
       type: "text",
       class: "mantra-retype-input is-hidden",
-      placeholder: "הקלידי כאן את המשפט מחדש...",
+      placeholder: "",
       autocomplete: "off"
     });
     const countLabel = el("span", {
@@ -135,7 +129,14 @@ function renderMantrasView(container) {
       }
       retypeInput.value = "";
     });
-    const countRow = el("div", { class: "mantra-count-row" }, [countLabel, editToggleBtn]);
+
+    const iconsRow = el("div", { class: "mantra-icons-row" }, [favBtn, editToggleBtn, deleteBtn]);
+    topRow.appendChild(iconsRow);
+    card.appendChild(topRow);
+
+    card.appendChild(el("p", { class: "mantra-sentence", text: mantra.sentence }));
+
+    const countRow = el("div", { class: "mantra-count-row" }, [countLabel]);
     card.appendChild(retypeInput);
     card.appendChild(countRow);
 

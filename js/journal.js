@@ -91,7 +91,8 @@ function buildDraftEditor(date, period, onSaved, saveButtonHost) {
             el("button", {
               class: "block-remove",
               type: "button",
-              text: "הסרה",
+              text: "−",
+              title: "הסרת התרגיל מהיום",
               onclick: () => {
                 removeExerciseFromDay(date, period, id);
                 render();

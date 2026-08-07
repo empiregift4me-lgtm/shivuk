@@ -267,7 +267,7 @@ function buildTrustWidgetElement() {
   box.appendChild(headerRow);
 
   const draft = loadTrustDraft();
-  const textInput = el("input", { type: "text", class: "field-input", placeholder: "אפתח את הקובץ ואסתכל 60 שניות" });
+  const textInput = el("input", { type: "text", class: "field-input", placeholder: "" });
   textInput.value = draft.text || "";
   box.appendChild(textInput);
 

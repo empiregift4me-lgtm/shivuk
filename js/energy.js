@@ -6,25 +6,25 @@ const ENERGY_TYPES = [
     key: "food",
     emoji: "🥙",
     label: "זמן אוכל",
-    placeholder: "מה היה סוג האוכל? כמה אכלת? איך הרגשת אחרי זה? מה עשית אחרי זה?"
+    placeholder: ""
   },
   {
     key: "snack",
     emoji: "☕",
     label: "נשנושים",
-    placeholder: "מה נשנשת?"
+    placeholder: ""
   },
   {
     key: "nightSleep",
     emoji: "🛌",
     label: "שנת לילה",
-    placeholder: "איך היתה שנת הלילה? כמה את ערנית עכשיו? כמה חשק ומוטיבציה יש לך להתחיל את היום ולעבוד על משימות?"
+    placeholder: ""
   },
   {
     key: "napSleep",
     emoji: "⛅",
     label: "שנת צהריים",
-    placeholder: "איך היתה שנת הצהריים? האם התמלאת? או שהתעייפת יותר? האם היא הצריכה אותך לאכול מיד אחרי?"
+    placeholder: ""
   }
 ];
 
