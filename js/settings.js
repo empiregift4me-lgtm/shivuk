@@ -54,7 +54,10 @@ function extractYoutubeId(url) {
 // כל ערכה מגדירה מחדש את אותם משתני CSS בדיוק (--c-page, --c-card וכו') כדי לשמור על אותו
 // מבנה ניגודיות בדיוק כמו הפלטה המקורית, רק בגוון אחר
 // לכל ערכה: 3 רמות עומק בלבד (bg < surface < surface-2), כל רמה בהירה מהקודמת ב-6-8% בלבד
-// (אותו גוון, לא גוון חדש) - panel ו-field משתפים תמיד את אותה רמת "surface-2" העליונה
+// (אותו גוון, לא גוון חדש) - panel ו-field משתפים תמיד את אותה רמת "surface-2" העליונה.
+// --c-accent/--c-highlight הם אקצנט הפעולה הכללי, בגוון-על עשיר מאותה משפחת הצבע של הערכה
+// (לא זהב) - --c-accent-positive הוא הזהב, זהה בכל הערכות בכוונה (סימן חיוביות אוניברסלי,
+// לא קוסמטי לפי ערכה) ושמור בלעדית לרצף/הבטחה שקוימה/מועדף/הישג
 const COLOR_THEMES = {
   classic: {
     label: "סגול דמדומים",
@@ -64,9 +67,10 @@ const COLOR_THEMES = {
       "--c-panel": "#3E3760",
       "--c-field": "#3E3760",
       "--c-border": "rgba(255, 255, 255, 0.08)",
-      "--c-accent": "#E4B168",
-      "--c-accent-hover": "#DE9E45",
-      "--c-highlight": "#E4B168",
+      "--c-accent": "#6C59C0",
+      "--c-accent-hover": "#4D39A2",
+      "--c-highlight": "#6C59C0",
+      "--c-accent-positive": "#B8894A",
       "--c-muted-btn": "#3E3760",
       "--text-light": "#F5F2FA",
       "--text-submuted": "#AFA8C4"
@@ -80,9 +84,10 @@ const COLOR_THEMES = {
       "--c-panel": "#2B417A",
       "--c-field": "#2B417A",
       "--c-border": "rgba(255, 255, 255, 0.08)",
-      "--c-accent": "#cfe0f5",
-      "--c-accent-hover": "#b3cde8",
-      "--c-highlight": "#cfe0f5",
+      "--c-accent": "#4362B1",
+      "--c-accent-hover": "#304888",
+      "--c-highlight": "#4362B1",
+      "--c-accent-positive": "#B8894A",
       "--c-muted-btn": "#2B417A",
       "--text-light": "#eef3fb",
       "--text-submuted": "#b9c9e3"
@@ -96,9 +101,10 @@ const COLOR_THEMES = {
       "--c-panel": "#396148",
       "--c-field": "#396148",
       "--c-border": "rgba(255, 255, 255, 0.08)",
-      "--c-accent": "#d9ead9",
-      "--c-accent-hover": "#c3ddc3",
-      "--c-highlight": "#d9ead9",
+      "--c-accent": "#2D7648",
+      "--c-accent-hover": "#1B4B2D",
+      "--c-highlight": "#2D7648",
+      "--c-accent-positive": "#B8894A",
       "--c-muted-btn": "#396148",
       "--text-light": "#f1f7ee",
       "--text-submuted": "#c3d9c3"
@@ -112,9 +118,10 @@ const COLOR_THEMES = {
       "--c-panel": "#624037",
       "--c-field": "#624037",
       "--c-border": "rgba(255, 255, 255, 0.08)",
-      "--c-accent": "#f0d9c8",
-      "--c-accent-hover": "#e3c3ab",
-      "--c-highlight": "#f0d9c8",
+      "--c-accent": "#9B4E3B",
+      "--c-accent-hover": "#713628",
+      "--c-highlight": "#9B4E3B",
+      "--c-accent-positive": "#B8894A",
       "--c-muted-btn": "#624037",
       "--text-light": "#fbf1ea",
       "--text-submuted": "#dcbba8"

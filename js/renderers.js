@@ -422,7 +422,8 @@ const RENDERERS = {
     table.appendChild(tbody);
 
     const storyRowHead = el("tr", {}, el("th", { colspan: "2", text: "הסיפור:" }));
-    const storyTa = makeAutoTextarea((data && data.story) || "", "חלונית להשלמה בכתיבה חופשית...", 3, readOnly);
+    const storyTa = makeAutoTextarea((data && data.story) || "", "", 3, readOnly);
+    storyTa.classList.add("table-cell-textarea");
     const storyRowBody = el("tr", {}, el("td", { colspan: "2" }, storyTa));
     tbody.appendChild(storyRowHead);
     tbody.appendChild(storyRowBody);
@@ -431,14 +432,17 @@ const RENDERERS = {
       el("th", { text: "העובדות:" }),
       el("th", { text: "הסיפור שסיפרתי לעצמי:" })
     ]);
-    const factsTa = makeAutoTextarea((data && data.facts) || "", "חלונית להשלמה בכתיבה חופשית...", 3, readOnly);
-    const selfStoryTa = makeAutoTextarea((data && data.selfStory) || "", "חלונית להשלמה בכתיבה חופשית...", 3, readOnly);
+    const factsTa = makeAutoTextarea((data && data.facts) || "", "", 3, readOnly);
+    factsTa.classList.add("table-cell-textarea");
+    const selfStoryTa = makeAutoTextarea((data && data.selfStory) || "", "", 3, readOnly);
+    selfStoryTa.classList.add("table-cell-textarea");
     const splitBody = el("tr", {}, [el("td", {}, factsTa), el("td", {}, selfStoryTa)]);
     tbody.appendChild(splitHead);
     tbody.appendChild(splitBody);
 
     const truthRowHead = el("tr", {}, el("th", { colspan: "2", text: "והאמת היא ש..." }));
-    const truthTa = makeAutoTextarea((data && data.truth) || "", "חלונית להשלמה בכתיבה חופשית...", 3, readOnly);
+    const truthTa = makeAutoTextarea((data && data.truth) || "", "", 3, readOnly);
+    truthTa.classList.add("table-cell-textarea");
     const truthRowBody = el("tr", {}, el("td", { colspan: "2" }, truthTa));
     tbody.appendChild(truthRowHead);
     tbody.appendChild(truthRowBody);

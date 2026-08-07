@@ -186,7 +186,7 @@ const EXERCISES = [
     period: "morning",
     name: "אסירות תודה",
     type: "dynamic-list",
-    config: { topLabel: "אני אסירת תודה על:", placeholder: "אני אסירת תודה על...", maxLines: 30 }
+    config: { topLabel: "אני אסירת תודה על:", placeholder: "", maxLines: 30 }
   },
   {
     id: "abundance-quotes",
@@ -207,7 +207,7 @@ const EXERCISES = [
     period: "morning",
     name: "3 מטרות",
     type: "fixed-lines",
-    config: { count: 3, note: "כתבי 3 מטרות להיום כאילו כבר קרו.", placeholder: "מטרה..." }
+    config: { count: 3, note: "כתבי 3 מטרות להיום כאילו כבר קרו.", placeholder: "" }
   },
   {
     id: "self-esteem-challenge",
@@ -221,7 +221,7 @@ const EXERCISES = [
     period: "morning",
     name: "ניהול פחדים",
     type: "freetext",
-    config: { rows: 7, note: "כתבי במשך 3 דקות רצופות את כל הפחדים והמחשבות השליליות שעולים לך בראש.", placeholder: "..." }
+    config: { rows: 7, note: "כתבי במשך 3 דקות רצופות את כל הפחדים והמחשבות השליליות שעולים לך בראש.", placeholder: "" }
   },
   {
     id: "self-compassion",
@@ -260,7 +260,7 @@ const EXERCISES = [
     config: {
       count: 3,
       note: "רשמי 3 פעולות שביצעת היום שהצריכו ממך להשתמש בחוזקה אישית (כגון: התמדה, אומץ, יצירתיות, הבנה טכנולוגית).",
-      placeholder: "פעולה..."
+      placeholder: ""
     }
   },
   {
@@ -268,14 +268,14 @@ const EXERCISES = [
     period: "evening",
     name: "3 התקדמויות",
     type: "fixed-lines",
-    config: { count: 3, placeholder: "התקדמות..." }
+    config: { count: 3, placeholder: "" }
   },
   {
     id: "professional-identity",
     period: "evening",
     name: "זהות מקצועית",
     type: "fixed-lines",
-    config: { count: 3, note: "נסחי 3 משפטים קצרים בלשון הווה המגדירים את הזהות המקצועית והאישית שאת בונה.", placeholder: "משפט..." }
+    config: { count: 3, note: "נסחי 3 משפטים קצרים בלשון הווה המגדירים את הזהות המקצועית והאישית שאת בונה.", placeholder: "" }
   },
   {
     id: "self-worth-actions",
@@ -284,7 +284,7 @@ const EXERCISES = [
     type: "dynamic-list",
     config: {
       rowIcon: "✨",
-      placeholder: "פעולת ערך...",
+      placeholder: "",
       splitReason: true,
       reasonPlaceholder: "...",
       maxLines: 50,
@@ -301,7 +301,7 @@ const EXERCISES = [
     period: "evening",
     name: "אוסף חיובי",
     type: "dynamic-list",
-    config: { rowIcon: "✨", placeholder: "דבר חיובי...", maxLines: 50, showCount: true }
+    config: { rowIcon: "✨", placeholder: "", maxLines: 50, showCount: true }
   },
   {
     id: "daily-reflection",
@@ -315,14 +315,14 @@ const EXERCISES = [
     period: "evening",
     name: "הפרדת עובדה מסיפור",
     type: "story-split",
-    config: { note: "מגיע עם 3 חלונות לכתיבה חופשית כמו שרואים פה בדוגמא." }
+    config: {}
   },
   {
     id: "what-i-learned",
     period: "evening",
     name: "מה שלמדתי היום",
     type: "freetext",
-    config: { rows: 6, placeholder: "מה שלמדתי היום..." }
+    config: { rows: 6, placeholder: "" }
   },
   {
     id: "positive-affirmations",
@@ -336,7 +336,7 @@ const EXERCISES = [
     period: "evening",
     name: "הרגשתי טוב",
     type: "dynamic-list",
-    config: { rowPrefixText: "הרגשתי טוב כש", placeholder: "...", maxLines: 50 }
+    config: { rowPrefixText: "הרגשתי טוב כש", placeholder: "", maxLines: 50 }
   }
 ];
 
