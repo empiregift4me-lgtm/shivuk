@@ -370,8 +370,6 @@ const RENDERERS = {
           reader.readAsDataURL(file);
         });
         const toolbar = el("div", { class: "evidence-toolbar" }, [
-          el("button", { type: "button", class: "tb-btn", text: "B", title: "הדגשה מודגשת", onclick: () => document.execCommand("bold") }),
-          el("button", { type: "button", class: "tb-btn highlight-btn", text: "צביעה", title: "סימון טקסט", onclick: () => document.execCommand("hiliteColor", false, "#633021") }),
           el("button", { type: "button", class: "tb-btn", text: "📷 הוספת תמונה", title: "העלאת צילום מסך או תמונה", onclick: () => fileInput.click() }),
           fileInput
         ]);

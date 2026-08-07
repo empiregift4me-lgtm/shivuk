@@ -53,6 +53,8 @@ function extractYoutubeId(url) {
 // --- ערכת צבעים ---
 // כל ערכה מגדירה מחדש את אותם משתני CSS בדיוק (--c-page, --c-card וכו') כדי לשמור על אותו
 // מבנה ניגודיות בדיוק כמו הפלטה המקורית, רק בגוון אחר
+// לכל ערכה: 3 רמות עומק בלבד (bg < surface < surface-2), כל רמה בהירה מהקודמת ב-6-8% בלבד
+// (אותו גוון, לא גוון חדש) - panel ו-field משתפים תמיד את אותה רמת "surface-2" העליונה
 const COLOR_THEMES = {
   classic: {
     label: "סגול דמדומים",
@@ -61,7 +63,7 @@ const COLOR_THEMES = {
       "--c-card": "#322C4C",
       "--c-panel": "#3E3760",
       "--c-field": "#3E3760",
-      "--c-border": "rgba(245, 242, 250, 0.14)",
+      "--c-border": "rgba(255, 255, 255, 0.08)",
       "--c-accent": "#E4B168",
       "--c-accent-hover": "#DE9E45",
       "--c-highlight": "#E4B168",
@@ -73,15 +75,15 @@ const COLOR_THEMES = {
   midnight: {
     label: "כחול לילה",
     vars: {
-      "--c-page": "#16213e",
-      "--c-card": "#2f4470",
-      "--c-panel": "#26355c",
-      "--c-field": "#3d5590",
-      "--c-border": "#7fa8d9",
+      "--c-page": "#16213E",
+      "--c-card": "#21315C",
+      "--c-panel": "#2B417A",
+      "--c-field": "#2B417A",
+      "--c-border": "rgba(255, 255, 255, 0.08)",
       "--c-accent": "#cfe0f5",
       "--c-accent-hover": "#b3cde8",
-      "--c-highlight": "#a8c8ec",
-      "--c-muted-btn": "#3a4f85",
+      "--c-highlight": "#cfe0f5",
+      "--c-muted-btn": "#2B417A",
       "--text-light": "#eef3fb",
       "--text-submuted": "#b9c9e3"
     }
@@ -89,15 +91,15 @@ const COLOR_THEMES = {
   forest: {
     label: "ירוק אדמה",
     vars: {
-      "--c-page": "#1b2e22",
-      "--c-card": "#35513f",
-      "--c-panel": "#2a4232",
-      "--c-field": "#436350",
-      "--c-border": "#8fb89a",
+      "--c-page": "#1B2E22",
+      "--c-card": "#2A4835",
+      "--c-panel": "#396148",
+      "--c-field": "#396148",
+      "--c-border": "rgba(255, 255, 255, 0.08)",
       "--c-accent": "#d9ead9",
       "--c-accent-hover": "#c3ddc3",
-      "--c-highlight": "#b7d9a8",
-      "--c-muted-btn": "#3f5a46",
+      "--c-highlight": "#d9ead9",
+      "--c-muted-btn": "#396148",
       "--text-light": "#f1f7ee",
       "--text-submuted": "#c3d9c3"
     }
@@ -105,15 +107,15 @@ const COLOR_THEMES = {
   terracotta: {
     label: "חום חמים",
     vars: {
-      "--c-page": "#2e1e1a",
-      "--c-card": "#5a3d34",
-      "--c-panel": "#472f28",
-      "--c-field": "#6b4a3f",
-      "--c-border": "#c99a82",
+      "--c-page": "#2E1E1A",
+      "--c-card": "#482F29",
+      "--c-panel": "#624037",
+      "--c-field": "#624037",
+      "--c-border": "rgba(255, 255, 255, 0.08)",
       "--c-accent": "#f0d9c8",
       "--c-accent-hover": "#e3c3ab",
-      "--c-highlight": "#e8b6a0",
-      "--c-muted-btn": "#6d4a3d",
+      "--c-highlight": "#f0d9c8",
+      "--c-muted-btn": "#624037",
       "--text-light": "#fbf1ea",
       "--text-submuted": "#dcbba8"
     }
@@ -478,6 +480,122 @@ function renderSettingsView(container) {
 
   renderBankList();
   wrap.appendChild(bankSection);
+
+  // --- ניהול נתונים - גיבוי/שחזור/מיזוג/יצוא/גודל גופן - הועברו הנה מראש מסך היומן כדי
+  // שהמסך היומיומי יישאר פנוי לפעולות שמשתמשת נוגעת בהן כל יום בלבד ---
+  const dataSection = el("div", { class: "settings-section" });
+  dataSection.appendChild(el("h3", { class: "settings-section-title", text: "ניהול נתונים" }));
+
+  const fontRow = el("div", { class: "settings-row" });
+  fontRow.appendChild(el("span", { class: "settings-hint", text: "גודל טקסט" }));
+  fontRow.appendChild(
+    el("button", {
+      id: "font-dec",
+      type: "button",
+      class: "util-btn",
+      title: "הקטנת טקסט",
+      text: "א−",
+      onclick: () => setFontScale(getFontScale() - FONT_SCALE_STEP)
+    })
+  );
+  fontRow.appendChild(
+    el("button", {
+      id: "font-inc",
+      type: "button",
+      class: "util-btn",
+      title: "הגדלת טקסט",
+      text: "א+",
+      onclick: () => setFontScale(getFontScale() + FONT_SCALE_STEP)
+    })
+  );
+  dataSection.appendChild(fontRow);
+
+  const fileRow = el("div", { class: "settings-row" });
+  fileRow.appendChild(
+    el("button", { id: "backup-btn", type: "button", class: "util-btn", title: "גיבוי כל הנתונים לקובץ", text: "⭱ גיבוי", onclick: () => exportBackup() })
+  );
+  const restoreFileInput = el("input", { id: "restore-file", type: "file", accept: "application/json", hidden: "" });
+  restoreFileInput.addEventListener("change", (e) => {
+    const file = e.target.files[0];
+    if (file && confirm("שחזור יחליף את כל הנתונים הקיימים באתר בנתונים מתוך הקובץ. להמשיך?")) {
+      importBackupFile(file);
+    }
+    e.target.value = "";
+  });
+  fileRow.appendChild(
+    el("button", {
+      id: "restore-btn",
+      type: "button",
+      class: "util-btn",
+      title: "שחזור נתונים מקובץ גיבוי - מחליף את כל הנתונים הקיימים",
+      text: "⭳ שחזור",
+      onclick: () => restoreFileInput.click()
+    })
+  );
+  fileRow.appendChild(restoreFileInput);
+
+  const mergeFileInput = el("input", { id: "merge-file", type: "file", accept: "application/json", hidden: "" });
+  mergeFileInput.addEventListener("change", (e) => {
+    const file = e.target.files[0];
+    if (file && confirm("מיזוג יוסיף לנתונים הקיימים כאן כל מה שחדש בקובץ, בלי למחוק כלום. להמשיך?")) {
+      importBackupFileMerge(file);
+    }
+    e.target.value = "";
+  });
+  fileRow.appendChild(
+    el("button", {
+      id: "merge-btn",
+      type: "button",
+      class: "util-btn",
+      title: "מיזוג נתונים מקובץ גיבוי - מוסיף מה שחסר בלי למחוק כלום",
+      text: "🔀 מיזוג",
+      onclick: () => mergeFileInput.click()
+    })
+  );
+  fileRow.appendChild(mergeFileInput);
+  fileRow.appendChild(
+    el("button", {
+      id: "export-all-btn",
+      type: "button",
+      class: "util-btn",
+      title: "ייצוא כל הסיכומים והיומן למסמך PDF אחד",
+      text: "🖨 ייצוא הכול",
+      onclick: () => exportAllToPDF()
+    })
+  );
+  dataSection.appendChild(fileRow);
+
+  const driveRow = el("div", { class: "settings-row" });
+  driveRow.appendChild(
+    el("button", { id: "drive-save-btn", type: "button", class: "util-btn", title: "שמירת קובץ גיבוי בגוגל דרייב שלך", text: "☁️ שמירה לדרייב", onclick: () => driveSaveBackup() })
+  );
+  driveRow.appendChild(
+    el("button", {
+      id: "drive-restore-btn",
+      type: "button",
+      class: "util-btn",
+      title: "שחזור נתונים מקובץ הגיבוי שבגוגל דרייב שלך - מחליף את כל הנתונים הקיימים",
+      text: "☁️ שחזור מדרייב",
+      onclick: () => driveRestoreBackup()
+    })
+  );
+  driveRow.appendChild(
+    el("button", {
+      id: "drive-merge-btn",
+      type: "button",
+      class: "util-btn",
+      title: "מיזוג נתונים מקובץ הגיבוי שבגוגל דרייב שלך - מוסיף מה שחסר בלי למחוק כלום",
+      text: "☁️🔀 מיזוג מדרייב",
+      onclick: () => {
+        if (confirm("מיזוג מהדרייב יוסיף לנתונים הקיימים כאן כל מה שחדש בקובץ, בלי למחוק כלום. להמשיך?")) {
+          driveMergeBackup();
+        }
+      }
+    })
+  );
+  dataSection.appendChild(driveRow);
+
+  wrap.appendChild(dataSection);
 
   container.appendChild(wrap);
 }

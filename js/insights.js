@@ -74,7 +74,7 @@ function showInsightsModal(title, entries, extraLine, showTrustLine) {
 
   if (showTrustLine) {
     const now = new Date();
-    modal.appendChild(el("p", { class: "modal-line", text: `🔗 החודש קיימתי לעצמי: ${keptCountInMonth(now.getFullYear(), now.getMonth())} הבטחות` }));
+    modal.appendChild(el("p", { class: "modal-line", text: `🏁 החודש קיימתי לעצמי: ${keptCountInMonth(now.getFullYear(), now.getMonth())} הבטחות` }));
   }
 
   modal.appendChild(

@@ -179,7 +179,7 @@ const EXERCISES = [
     period: "morning",
     name: "כתיבה חופשית",
     type: "freetext",
-    config: { rows: 9, placeholder: "כתבי כאן בחופשיות, כמות המילים אינה מוגבלת..." }
+    config: { rows: 9, placeholder: "" }
   },
   {
     id: "gratitude",

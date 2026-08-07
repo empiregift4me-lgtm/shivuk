@@ -181,7 +181,7 @@ function buildTrustStripElement() {
   const container = el("div", { class: "trust-strip" });
 
   const balanceRow = el("div", { class: "trust-balance" }, [
-    el("span", { text: `🔗 קיימתי לעצמי: ${keptCount()} הבטחות` }),
+    el("span", { text: `🏁 קיימתי לעצמי: ${keptCount()} הבטחות` }),
     el("button", { type: "button", class: "btn btn-ghost btn-small", text: "🔧 כיול", onclick: showCalibrationModal })
   ]);
   container.appendChild(balanceRow);
@@ -355,7 +355,7 @@ function buildTrustArchiveSection() {
   if (closed.length === 0) return null;
 
   const section = el("div", { class: "panel trust-archive-section" });
-  section.appendChild(el("h3", { class: "panel-title trust-archive-title", text: "📌 הסכם האמינות" }));
+  section.appendChild(el("h3", { class: "panel-title trust-archive-title", text: "הסכם האמינות" }));
 
   closed.forEach((p) => {
     const late = new Date(p.closedAt).getTime() > new Date(p.dueAt).getTime();

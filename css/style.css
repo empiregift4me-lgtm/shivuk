@@ -7,7 +7,7 @@
   --c-card: #322C4C;
   --c-panel: #3E3760;
   --c-field: #3E3760;
-  --c-border: rgba(245, 242, 250, 0.14);
+  --c-border: rgba(255, 255, 255, 0.08);
   --c-accent: #E4B168;
   --c-accent-hover: #DE9E45;
   --c-highlight: #E4B168;
@@ -19,8 +19,8 @@
   --space: 16px;
   --space-sm: 8px;
   --space-lg: 24px;
-  --radius: 14px;
-  --radius-sm: 8px;
+  --radius: 16px;
+  --radius-sm: 10px;
 
   --shadow-card: 0 2px 12px rgba(0, 0, 0, 0.3), 0 1px 2px rgba(0, 0, 0, 0.25);
   --shadow-hover: 0 6px 18px rgba(0, 0, 0, 0.35);
@@ -71,7 +71,7 @@
   text-align: center;
   background: var(--c-field);
   color: var(--text-light);
-  border: 1.5px solid var(--c-border);
+  border: 1px solid var(--c-border);
   border-radius: var(--radius-sm);
   padding: 10px;
   letter-spacing: 2px;
@@ -101,7 +101,7 @@
   width: 64px;
   background: var(--c-field);
   color: var(--text-light);
-  border: 1.5px solid var(--c-border);
+  border: 1px solid var(--c-border);
   border-radius: var(--radius-sm);
   padding: 6px;
 }
@@ -348,7 +348,7 @@ body {
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: var(--c-highlight);
+  background: rgba(245, 242, 250, 0.4);
   opacity: 0.6;
   filter: blur(1px);
   animation: affirmation-float 5s ease-in-out infinite;
@@ -395,7 +395,7 @@ body {
   margin: var(--space-lg) auto 0;
   padding: 10px 14px;
   background: var(--c-field);
-  border: 1.5px solid var(--c-border);
+  border: 1px solid var(--c-border);
   border-radius: var(--radius-sm);
   color: var(--text-light);
   font-family: "Rubik", sans-serif;
@@ -514,7 +514,7 @@ body {
 .storage-meter-fill {
   height: 100%;
   width: 0%;
-  background: var(--c-highlight);
+  background: var(--text-submuted);
   transition: width 0.3s ease;
 }
 .storage-meter-fill.is-warning { background: #e8b13a; }
@@ -554,7 +554,7 @@ body {
   height: min(68vh, 680px);
   border-radius: 24px;
   overflow: hidden;
-  border: 2px solid var(--c-border);
+  border: 1px solid var(--c-border);
   background: linear-gradient(to top, #3E3760 0%, #6F4E20 40%, #DE9E45 70%, #E4B168 100%);
   box-shadow: inset 0 0 14px rgba(0, 0, 0, 0.45), var(--shadow-hover);
 }
@@ -621,7 +621,7 @@ body {
 
 .app-subtitle {
   font-size: 0.9rem;
-  color: var(--c-highlight);
+  color: var(--text-light);
   margin: 0 0 8px;
   font-weight: 500;
 }
@@ -680,7 +680,7 @@ body {
   display: flex;
   gap: 6px;
   background: linear-gradient(135deg, var(--c-panel), var(--c-page));
-  border: 1px solid var(--c-highlight);
+  border: 1px solid var(--c-border);
   border-radius: 999px;
   padding: 6px;
   margin-bottom: var(--space-lg);
@@ -709,8 +709,8 @@ body {
 .tab-btn:hover { background: var(--c-panel); color: var(--text-light); }
 
 .tab-btn.is-active {
-  background: var(--c-accent);
-  color: #241F38;
+  background: var(--c-panel);
+  color: var(--text-light);
   font-weight: 700;
 }
 
@@ -741,7 +741,7 @@ body {
   border-radius: var(--radius-sm);
   padding: var(--space-lg);
   text-align: center;
-  color: var(--c-highlight);
+  color: var(--text-submuted);
   font-size: 1.05rem;
 }
 
@@ -785,19 +785,19 @@ body {
 .export-section-title {
   font-size: 1.4rem;
   color: var(--text-light);
-  border-bottom: 3px solid var(--c-highlight);
+  border-bottom: 3px solid var(--c-border);
   padding-bottom: 8px;
   margin: var(--space-lg) 0 var(--space);
 }
 .export-entry-title {
   font-size: 1.1rem;
-  color: var(--c-highlight);
+  color: var(--text-light);
   border-bottom: 1px solid var(--c-border);
   padding-bottom: 6px;
   margin: var(--space) 0 var(--space-sm);
 }
 .energy-print-row { margin-bottom: var(--space); }
-.energy-print-head { font-weight: 700; color: var(--c-highlight); margin-bottom: 4px; }
+.energy-print-head { font-weight: 700; color: var(--text-light); margin-bottom: 4px; }
 .energy-print-text { color: var(--text-light); white-space: pre-wrap; }
 
 /* ===== מחווני בוקר/ערב ===== */
@@ -809,7 +809,7 @@ body {
 
 .period-pill {
   font-family: inherit;
-  border: 1.5px solid var(--c-border);
+  border: 1px solid var(--c-border);
   background: transparent;
   color: var(--text-light);
   border-radius: 999px;
@@ -820,7 +820,7 @@ body {
   transition: background 0.15s ease, border-color 0.15s ease;
 }
 .period-pill:hover:not(:disabled) { background: var(--c-panel); }
-.period-pill.is-active { background: var(--c-accent); color: #241F38; border-color: var(--c-accent); }
+.period-pill.is-active { background: var(--c-panel); color: var(--text-light); border-color: var(--text-light); }
 .period-pill.is-done { color: var(--text-submuted); border-style: dashed; cursor: default; opacity: 0.75; }
 
 /* בלי תיבה עצמאית משלו - כל תרגיל כבר מגיע עם המבנה הפנימי שלו (טבלה, שדות וכו'), שמספק
@@ -838,7 +838,7 @@ body {
 .exercise-title {
   font-size: 1.2rem;
   margin: 0;
-  color: var(--c-highlight);
+  color: var(--text-light);
   font-weight: 600;
 }
 
@@ -905,7 +905,7 @@ select.field-input {
   font-size: 1rem;
   color: var(--text-light);
   background: var(--c-field);
-  border: 1.5px solid var(--c-border);
+  border: 1px solid var(--c-border);
   border-radius: var(--radius-sm);
   padding: 10px 12px;
   outline: none;
@@ -1152,7 +1152,7 @@ select.field-input:focus {
 .task-timer-hours,
 .task-timer-minutes { flex: 0 0 42px; text-align: center; }
 .task-timer-colon { color: var(--text-submuted); font-weight: 700; }
-.task-timer-display { font-variant-numeric: tabular-nums; font-weight: 700; color: var(--c-highlight); min-width: 0; text-align: center; }
+.task-timer-display { font-variant-numeric: tabular-nums; font-weight: 700; color: var(--text-light); min-width: 0; text-align: center; }
 .task-timer-btn { width: 34px; height: 34px; padding: 0; }
 .task-list { display: flex; flex-direction: column; }
 .task-row {
@@ -1175,15 +1175,19 @@ select.field-input:focus {
   font-size: 1.1rem;
   padding: 0 2px;
   user-select: none;
+  opacity: 0;
+  transition: opacity 0.15s ease;
 }
+.task-row:hover .task-drag-handle,
+.task-row:focus-within .task-drag-handle { opacity: 1; }
 .task-drag-handle:active { cursor: grabbing; }
 .task-checkbox { width: 18px; height: 18px; flex: 0 0 auto; cursor: pointer; }
 .task-range {
   flex: 0 0 auto;
   font-family: inherit;
-  border: 1.5px solid var(--c-border);
+  border: 1px solid var(--c-border);
   background: transparent;
-  color: var(--c-highlight);
+  color: var(--text-light);
   border-radius: 999px;
   padding: 6px 14px;
   font-size: 0.9rem;
@@ -1195,7 +1199,9 @@ select.field-input:focus {
 .task-duration-group { display: flex; align-items: center; gap: 6px; flex: 0 0 auto; }
 .task-hours-input,
 .task-minutes-input { flex: 0 0 46px; text-align: center; }
-.task-row-controls { display: flex; align-items: center; gap: 2px; flex: 0 0 auto; }
+.task-row-controls { display: flex; align-items: center; gap: 2px; flex: 0 0 auto; opacity: 0; transition: opacity 0.15s ease; }
+.task-row:hover .task-row-controls,
+.task-row:focus-within .task-row-controls { opacity: 1; }
 .task-move-btn,
 .task-delete-btn {
   border: none;
@@ -1216,7 +1222,7 @@ select.field-input:focus {
 .task-energy-markers { flex: 1 1 220px; display: flex; align-items: center; gap: 6px; }
 .task-energy-mark-btn {
   flex: 0 0 auto;
-  border: 1.5px solid var(--c-border);
+  border: 1px solid var(--c-border);
   background: var(--c-field);
   border-radius: var(--radius-sm);
   width: 34px;
@@ -1271,7 +1277,7 @@ select.field-input:focus {
   display: flex;
   align-items: center;
   gap: 4px;
-  border: 1.5px solid var(--c-border);
+  border: 1px solid var(--c-border);
   background: var(--c-field);
   border-radius: 999px;
   padding: 5px 10px;
@@ -1292,7 +1298,7 @@ select.field-input:focus {
 .energy-actions-group { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
 .energy-bulk-toggle-btn {
   font-family: inherit;
-  border: 1.5px solid var(--c-border);
+  border: 1px solid var(--c-border);
   background: var(--c-field);
   color: var(--text-light);
   border-radius: 999px;
@@ -1378,7 +1384,7 @@ select.field-input:focus {
   margin: 0 0 8px;
   padding: 8px 10px;
   background: var(--c-field);
-  border: 1.5px solid var(--c-border);
+  border: 1px solid var(--c-border);
   border-radius: var(--radius-sm);
   color: var(--text-light);
   font-family: inherit;
@@ -1470,7 +1476,7 @@ select.field-input:focus {
 .tb-btn:hover { background: var(--c-highlight); color: #241F38; }
 .evidence-editable {
   min-height: 90px;
-  border: 1.5px solid var(--c-border);
+  border: 1px solid var(--c-border);
   border-radius: var(--radius-sm);
   padding: 10px 12px;
   font-size: 1rem;
@@ -1616,7 +1622,7 @@ select.field-input:focus {
 .archive-topic-inline-wrap:focus-within .archive-topic-confirm-btn { opacity: 1; pointer-events: auto; }
 .archive-topic-confirm-btn:hover { filter: brightness(1.15); }
 .archive-count { color: var(--text-submuted); font-size: 0.9rem; margin-inline-start: auto; }
-.archive-chevron { color: var(--c-highlight); }
+.archive-chevron { color: var(--text-submuted); }
 .archive-delete {
   flex: 0 0 auto;
   border: none;
@@ -1642,7 +1648,7 @@ select.field-input:focus {
   padding: 0 6px;
   border: 1px solid var(--c-border);
   border-radius: var(--radius-sm);
-  color: var(--c-highlight);
+  color: var(--text-light);
   font-size: 0.9rem;
   font-weight: 700;
 }
@@ -1654,7 +1660,7 @@ select.field-input:focus {
   padding: var(--space);
   background: var(--c-panel);
 }
-.filter-result-date { font-weight: 700; color: var(--c-highlight); margin-bottom: var(--space-sm); }
+.filter-result-date { font-weight: 700; color: var(--text-light); margin-bottom: var(--space-sm); }
 
 /* ===== מעקב הרגלים ===== */
 .habit-add-row { display: flex; gap: var(--space-sm); margin-bottom: var(--space-lg); }
@@ -1711,7 +1717,7 @@ select.field-input:focus {
   overflow-y: auto;
   box-shadow: var(--shadow-hover);
 }
-.modal-title { font-size: 1.3rem; color: var(--c-highlight); margin: 0 0 var(--space); }
+.modal-title { font-size: 1.3rem; color: var(--text-light); margin: 0 0 var(--space); }
 .modal-line { font-size: 1rem; color: var(--text-light); margin: 0 0 8px; }
 .modal-line-strong { font-weight: 600; margin-top: var(--space-sm); }
 .modal-quote { font-size: 0.95rem; color: var(--text-submuted); font-style: italic; margin: 0 0 6px; padding-inline-start: 10px; border-inline-start: 2px solid var(--c-highlight); }
@@ -1794,7 +1800,7 @@ select.field-input:focus {
   cursor: pointer;
 }
 .sub-tab-btn:hover { background: var(--c-panel); color: var(--text-light); }
-.sub-tab-btn.is-active { background: var(--c-accent); color: #241F38; font-weight: 700; }
+.sub-tab-btn.is-active { background: var(--c-panel); color: var(--text-light); font-weight: 700; }
 
 /* ===== סרגל כלים לעריכה עשירה ===== */
 .rt-toolbar {
@@ -2126,21 +2132,21 @@ select.field-input:focus {
   background: transparent;
   border: none;
   border-radius: 0;
-  padding: 8px 10px;
+  padding: 12px 28px;
   color: var(--text-light);
   line-height: 1.6;
   outline: none;
   overflow: hidden;
 }
 .summary-item-notes:focus { box-shadow: none; }
-.summary-item-notes-view { min-height: auto; white-space: pre-wrap; padding: 4px 2px; }
+.summary-item-notes-view { min-height: auto; white-space: pre-wrap; padding: 12px 28px; }
 .summary-subnote-card .summary-item-notes-view,
 .summary-topic-story-view.summary-item-notes-view,
 .summary-freewrite-block > .summary-item-notes-view { background: transparent; }
 
 /* ===== סיכומים - תשלומים ===== */
 .debt-summary { background: var(--c-panel); border: 1px solid var(--c-border); border-radius: 12px; padding: var(--space); margin: var(--space) 0; text-align: center; }
-.debt-amount { font-size: 28px; font-weight: 700; color: var(--c-highlight); }
+.debt-amount { font-size: 28px; font-weight: 700; color: var(--text-light); }
 .debt-sub { color: var(--text-submuted); font-size: 13px; margin-top: 6px; }
 .payment-entry-row { display: flex; gap: 8px; align-items: center; margin: var(--space) 0; }
 .payment-amount-input { max-width: 200px; }
@@ -2223,7 +2229,7 @@ select.field-input:focus {
 /* ===== "הגנה" - הודעות מוסתרות בתיעוד רגשי ===== */
 .chat-bubble-protected { border: 1px dashed var(--c-border); background: var(--c-field); }
 .protected-box { display: flex; flex-direction: column; gap: 8px; }
-.protected-label { font-weight: 700; color: var(--c-highlight); }
+.protected-label { font-weight: 700; color: var(--text-light); }
 .protected-topic-input { font-size: 0.95rem; }
 .protected-unlock-btn {
   align-self: flex-start;
@@ -2310,7 +2316,7 @@ select.field-input:focus {
   min-height: 1.1em;
 }
 
-.settings-row { display: flex; align-items: center; gap: var(--space-sm); }
+.settings-row { display: flex; align-items: center; gap: var(--space-sm); flex-wrap: wrap; }
 .settings-row .field-input { flex: 1 1 auto; }
 .settings-row--stack { flex-direction: column; align-items: stretch; }
 
@@ -2321,7 +2327,7 @@ select.field-input:focus {
   width: 44px;
   height: 44px;
   border-radius: 50%;
-  border: 2px solid var(--c-border);
+  border: 1px solid var(--c-border);
   cursor: pointer;
   padding: 0;
   transition: transform 0.15s ease, border-color 0.15s ease;

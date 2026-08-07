@@ -117,7 +117,7 @@ function buildDraftEditor(date, period, onSaved, saveButtonHost) {
             class: "journal-save-flag-btn",
             type: "button",
             title: `שמירת ${PERIOD_LABELS[period]}`,
-            text: "🏁",
+            text: "📌",
             onclick: () => {
               const fresh = captureAll();
               fresh.saved = true;
