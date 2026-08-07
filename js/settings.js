@@ -319,18 +319,27 @@ function renderSettingsView(container) {
 
   // --- ניהול משפטים בתרגילים ---
   const bankSection = el("div", { class: "settings-section" });
-  bankSection.appendChild(el("h3", { class: "settings-section-title", text: "ניהול משפטים בתרגילים" }));
+
+  // כפתור אימוג'י בודד שמחליף בין מצב "לפי סדר קבוע" (בלי לחזור על משפט פעמיים באותו סבב) לבין
+  // מצב "רנדומלי" (הגרלה בלתי-תלויה בכל פעם, יכולה לחזור על אותו משפט באותו סבב)
+  const pickModeBtn = el("button", { type: "button", class: "util-btn" });
+  // כפתור אימוג'י בודד שמדליק/מכבה מצב עריכה - כשהוא פעיל, לחיצה על כל משפט ברשימה הופכת אותו
+  // לשדה עריכה; לחיצה חוזרת על העיפרון סוגרת את מצב העריכה (חוזרים לתצוגה רגילה, לא ניתנת לעריכה)
+  const editModeBtn = el("button", { type: "button", class: "util-btn", text: "✏️", title: "עריכת המשפטים בבנק" });
+  let bankEditMode = false;
+
+  const bankHeaderRow = el("div", { class: "energy-header-row" }, [
+    el("h3", { class: "settings-section-title", text: "ניהול משפטים בתרגילים" }),
+    pickModeBtn,
+    editModeBtn
+  ]);
+  bankSection.appendChild(bankHeaderRow);
+
   const bankSelect = el("select", { class: "field-input settings-bank-select" });
   Object.entries(QUOTE_BANKS).forEach(([id, meta]) => {
     bankSelect.appendChild(el("option", { value: id, text: meta.label }));
   });
   bankSection.appendChild(bankSelect);
-
-  // כפתור בודד שמחליף בין מצב "לפי סדר קבוע" (בלי לחזור על משפט פעמיים באותו סבב) לבין מצב
-  // "רנדומלי" (הגרלה בלתי-תלויה בכל פעם, יכולה לחזור על אותו משפט באותו סבב) - הטקסט על הכפתור
-  // תמיד משקף את המצב הפעיל כרגע
-  const pickModeBtn = el("button", { type: "button", class: "btn btn-ghost btn-small" });
-  bankSection.appendChild(pickModeBtn);
 
   const bankCountLabel = el("p", { class: "settings-hint" });
   bankSection.appendChild(bankCountLabel);
@@ -347,7 +356,11 @@ function renderSettingsView(container) {
   function renderPickModeBtn() {
     const bankId = bankSelect.value;
     const mode = getBankPickMode(bankId);
-    pickModeBtn.textContent = mode === "sequential" ? "🔢 סדר הצגה: לפי הסדר (בלי לחזור באותו סבב)" : "🔀 סדר הצגה: רנדומלי (כולל אפשרות לחזור)";
+    pickModeBtn.textContent = mode === "sequential" ? "🔢" : "🔀";
+    pickModeBtn.title =
+      mode === "sequential"
+        ? "סדר הצגה: לפי הסדר הקבוע (בלי לחזור על משפט פעמיים באותו סבב) - לחיצה תחליף לרנדומלי"
+        : "סדר הצגה: רנדומלי (יכול לחזור על אותו משפט) - לחיצה תחליף לפי סדר קבוע";
   }
 
   pickModeBtn.addEventListener("click", () => {
@@ -356,6 +369,28 @@ function renderSettingsView(container) {
     setBankPickMode(bankId, nextMode);
     renderPickModeBtn();
   });
+
+  editModeBtn.addEventListener("click", () => {
+    bankEditMode = !bankEditMode;
+    editModeBtn.classList.toggle("is-active", bankEditMode);
+    renderBankList();
+  });
+
+  function commitSentenceEdit(bankId, bank, idx, oldText, newText) {
+    const trimmed = newText.trim();
+    if (!trimmed || trimmed === oldText) {
+      renderBankList();
+      return;
+    }
+    const updated = bank.slice();
+    updated[idx] = trimmed;
+    setQuoteBank(bankId, updated);
+    if (isSentenceDisabled(bankId, oldText)) {
+      setSentenceDisabled(bankId, oldText, false);
+      setSentenceDisabled(bankId, trimmed, true);
+    }
+    renderBankList();
+  }
 
   function renderBankList() {
     const bankId = bankSelect.value;
@@ -368,7 +403,22 @@ function renderSettingsView(container) {
     bank.forEach((sentence, idx) => {
       const disabled = isSentenceDisabled(bankId, sentence);
       const row = el("div", { class: "qbank-row" + (disabled ? " qbank-row--disabled" : "") });
-      row.appendChild(el("span", { class: "qbank-text", text: sentence }));
+
+      if (bankEditMode) {
+        const editInput = el("input", { type: "text", class: "field-input qbank-edit-input" });
+        editInput.value = sentence;
+        editInput.addEventListener("blur", () => commitSentenceEdit(bankId, bank, idx, sentence, editInput.value));
+        editInput.addEventListener("keydown", (e) => {
+          if (e.key === "Enter") {
+            e.preventDefault();
+            editInput.blur();
+          }
+        });
+        row.appendChild(editInput);
+      } else {
+        row.appendChild(el("span", { class: "qbank-text", text: sentence }));
+      }
+
       const actions = el("div", { class: "qbank-row-actions" });
       actions.appendChild(
         el("button", {

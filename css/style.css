@@ -669,6 +669,7 @@ body {
   transition: background 0.15s ease, color 0.15s ease;
 }
 .util-btn:hover { background: var(--c-card); color: var(--text-light); }
+.util-btn.is-active { background: var(--c-highlight); color: #231942; border-color: var(--c-highlight); }
 
 /* ===== ניווט לשוניות ===== */
 /* רקע ורדרד-כהה ייחודי (שונה גם מהעמוד וגם מכרטיסי התוכן), כדי שהרצועה תיראה כאלמנט נפרד וברור */
@@ -2355,6 +2356,7 @@ select.field-input:focus {
 .qbank-row--disabled { opacity: 0.55; }
 .qbank-row--disabled .qbank-text { text-decoration: line-through; }
 .qbank-row-actions { display: flex; gap: 2px; flex: 0 0 auto; }
+.qbank-edit-input { flex: 1 1 auto; padding: 6px 10px; font-size: 0.95rem; }
 
 /* ===== רספונסיביות ===== */
 @media (max-width: 560px) {
