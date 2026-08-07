@@ -555,7 +555,7 @@ body {
   border-radius: 24px;
   overflow: hidden;
   border: 2px solid var(--c-border);
-  background: linear-gradient(to top, #4fd1e0 0%, #f4e04d 25%, #f5a83c 50%, #e0679f 75%, #e34a5f 100%);
+  background: linear-gradient(to top, #3E3760 0%, #6F4E20 40%, #DE9E45 70%, #E4B168 100%);
   box-shadow: inset 0 0 14px rgba(0, 0, 0, 0.45), var(--shadow-hover);
 }
 .gauge-mask {
@@ -967,7 +967,7 @@ select.field-input:focus {
    (רק כפתור טריגר) כך שהרצועה ממלאת את שאר הרוחב "בגודלה הטבעי", ומתחלקת איתו 50/50 רק כשהוא פתוח */
 .trust-section-row {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: var(--space-sm);
   margin-bottom: var(--space);
 }

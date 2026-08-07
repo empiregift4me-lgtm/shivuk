@@ -203,13 +203,6 @@ const EXERCISES = [
     config: { rightHeader: "מטרה מבוססת תוצאה", leftHeader: "מטרה מבוססת ביצוע", maxRows: 15, numbered: false }
   },
   {
-    id: "winning-goals-note",
-    period: "morning",
-    name: "פתק המטרות המנצח",
-    type: "table-2col",
-    config: { rightHeader: "תוצאה", leftHeader: "מטרות לביצוע", maxRows: 15, numbered: true }
-  },
-  {
     id: "three-goals",
     period: "morning",
     name: "3 מטרות",
