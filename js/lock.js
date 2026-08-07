@@ -1,6 +1,5 @@
 // נעילת מסך בסיסמה - נועלת עם טעינת הדף, ונועלת מחדש כל 15 דקות
 
-const LOCK_PASSWORD = "31059111";
 const LOCK_INTERVAL_MS = 15 * 60 * 1000;
 
 // "לבד בבית" - השהיה של הנעילה ושל ההחשכה למספר שעות לבחירה, נשמרת ב-localStorage כדי שגם
@@ -104,7 +103,7 @@ function initLock() {
   form.addEventListener("submit", (e) => {
     e.preventDefault();
     const val = document.getElementById("lock-password").value;
-    if (val === LOCK_PASSWORD || bypassArmed) {
+    if (val === getLockPassword() || bypassArmed) {
       bypassArmed = false;
       afterUnlock();
     } else {

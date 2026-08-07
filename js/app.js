@@ -3,6 +3,8 @@ document.addEventListener("DOMContentLoaded", () => {
   maybeAutoResolveSelfWorthPause();
   initLock();
   applyFontScale();
+  applySiteDisplayName();
+  applyColorTheme();
   initShell();
   initTabs();
   initTimer();

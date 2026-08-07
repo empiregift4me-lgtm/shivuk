@@ -193,7 +193,7 @@ const EXERCISES = [
     period: "morning",
     name: "משפטי כח",
     type: "quotes-random",
-    config: { bank: QUOTE_BANK_ABUNDANCE, count: 3 }
+    config: { bankId: "abundance", count: 3 }
   },
   {
     id: "goal-flip",
@@ -221,7 +221,7 @@ const EXERCISES = [
     period: "morning",
     name: "אתגר משפטי הערכה עצמית",
     type: "sentence-challenge",
-    config: { bank: SENTENCE_BANK_SELF_ESTEEM, repeats: 5 }
+    config: { bankId: "self-esteem", repeats: 5 }
   },
   {
     id: "fear-management-morning",
@@ -336,7 +336,7 @@ const EXERCISES = [
     period: "evening",
     name: "הצהרות חיוביות",
     type: "quotes-random",
-    config: { bank: QUOTE_BANK_POSITIVE_AFFIRMATIONS, count: 5, variant: "positive" }
+    config: { bankId: "positive-affirmations", count: 5, variant: "positive" }
   },
   {
     id: "felt-good-when",

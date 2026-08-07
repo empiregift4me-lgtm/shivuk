@@ -22,7 +22,8 @@ const STORE_KEYS = {
   selfWorthPause: "self_worth_pause_v1",
   trustLedger: "trustLedger",
   trustDraft: "trust_draft_v1",
-  quietModeUntil: "quiet_mode_until_v1"
+  quietModeUntil: "quiet_mode_until_v1",
+  customQuoteBanks: "custom_quote_banks_v1"
 };
 
 const PERIODS = ["morning", "evening"];

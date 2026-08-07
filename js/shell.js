@@ -1,12 +1,17 @@
 // מעטפת האתר - ניווט בין דשבורד/יומן/סיכומים/החלטות דרך תפריט צד
 
-const SECTIONS = ["dashboard", "journal", "summaries", "decisions", "emotional", "tasks", "energy", "mantras"];
+const SECTIONS = ["dashboard", "journal", "summaries", "decisions", "emotional", "tasks", "energy", "mantras", "settings"];
 const LAZY_SECTION_INIT = {
   summaries: initSummariesView
 };
 let sectionsInitialized = {};
 
 function showSection(name) {
+  // אם הלשונית שביקשו כובתה בהגדרות (למשל מקישור ישן/מועדף שמור) - חוזרים ללוח הבקרה במקום
+  // להציג מסך של לשונית שאמורה להיות מוסתרת
+  if (typeof TOGGLEABLE_MODULES !== "undefined" && TOGGLEABLE_MODULES.some((m) => m.id === name) && !getEnabledModules()[name]) {
+    name = "dashboard";
+  }
   SECTIONS.forEach((s) => {
     document.getElementById(`${s}-view`).classList.toggle("is-hidden", s !== name);
   });
@@ -30,6 +35,8 @@ function showSection(name) {
   } else if (name === "mantras") {
     // מתעדכן בכל כניסה, כדי לשקף מנטרות חדשות שנשמרו מהחלונית שאחרי הסיסמה
     renderMantrasView(document.getElementById("mantras-view"));
+  } else if (name === "settings") {
+    renderSettingsView(document.getElementById("settings-view"));
   } else if (LAZY_SECTION_INIT[name] && !sectionsInitialized[name]) {
     LAZY_SECTION_INIT[name](document.getElementById(`${name}-view`));
     sectionsInitialized[name] = true;
@@ -81,6 +88,7 @@ function initShell() {
     blackoutOverlay.classList.toggle("is-hidden");
     blackoutToggle.classList.toggle("is-active", !blackoutOverlay.classList.contains("is-hidden"));
   });
+  applyModuleVisibility();
   document.querySelectorAll(".sidebar-item").forEach((btn) => {
     btn.addEventListener("click", () => showSection(btn.dataset.section));
   });
