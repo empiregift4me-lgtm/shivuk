@@ -106,7 +106,7 @@ function initChatView(container, listKey, draftKey, options) {
           const unlockRow = el("div", { class: "protected-unlock-row" });
           const pwInput = el("input", { type: "password", class: "field-input protected-unlock-input", placeholder: "הזן סיסמא" });
           const confirmUnlock = () => {
-            if (pwInput.value === LOCK_PASSWORD) {
+            if (pwInput.value === getLockPassword()) {
               revealedIds.add(msg.id);
               editing = false;
               unlocking = false;
