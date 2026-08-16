@@ -236,19 +236,33 @@ function computeSelfWorthProgress() {
   };
 }
 
+// המד מוסתר זמנית לבקשת המשתמשת - לא נמחק כי היא ביקשה שיהיה אפשר להחזיר אותו במלואו
+// בהמשך ("החזר מד"). להחזרה: להפוך את הקבוע הבא ל-true בלבד
+const SHOW_SELF_WORTH_GAUGE = false;
+
 function renderDashboard(container) {
   container.innerHTML = "";
-  const progress = computeSelfWorthProgress();
 
   const wrap = el("div", { class: "dashboard-wrap" });
+
+  const mantrasBtn = el("button", {
+    type: "button",
+    class: "btn btn-secondary btn-small",
+    text: "🧘 תיעוד מנטרות",
+    onclick: () => showSection("mantras")
+  });
+
+  if (!SHOW_SELF_WORTH_GAUGE) {
+    wrap.appendChild(el("div", { class: "dashboard-title-row" }, [mantrasBtn]));
+    container.appendChild(wrap);
+    return;
+  }
+
+  const progress = computeSelfWorthProgress();
+
   const titleRow = el("div", { class: "dashboard-title-row" }, [
     el("h2", { class: "panel-title", text: "לוח הבקרה שלך" }),
-    el("button", {
-      type: "button",
-      class: "btn btn-secondary btn-small",
-      text: "🧘 תיעוד מנטרות",
-      onclick: () => showSection("mantras")
-    })
+    mantrasBtn
   ]);
   wrap.appendChild(titleRow);
 
