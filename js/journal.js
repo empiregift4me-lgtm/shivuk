@@ -242,6 +242,20 @@ function buildArchiveCard(date, period) {
     if (!isLocked) {
       cardBody.querySelectorAll(".exercise-block").forEach((blockWrap, i) => {
         const id = entry.exerciseIds[i];
+        blockWrap
+          .querySelector(".exercise-block-header")
+          .appendChild(
+            el("button", {
+              class: "block-remove",
+              type: "button",
+              text: "−",
+              title: "הסרת התרגיל מהיום",
+              onclick: () => {
+                removeExerciseFromDay(date, period, id);
+                render();
+              }
+            })
+          );
         const persist = debounce(() => {
           const fresh = getEntry(date, period);
           const match = activeBlocks.find((b) => b.id === id);
