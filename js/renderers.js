@@ -12,6 +12,24 @@ function el(tag, attrs = {}, children = []) {
   return node;
 }
 
+// אייקון עזרה קטן [❕] - לחיצה או ריחוף חושפים תיבת הסבר צמודה. משמש בתרגילים שצריך להסביר
+// בהם משהו בלי לתפוס מקום קבוע על המסך (ראו config.headerHelp ו-trailingFields[].help)
+function buildHelpIcon(text) {
+  const wrap = el("span", { class: "help-icon-wrap" });
+  const btn = el("button", { type: "button", class: "help-icon", text: "❕", "aria-label": "הסבר" });
+  const tip = el("div", { class: "help-icon-tip", text });
+  btn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    wrap.classList.toggle("is-open");
+  });
+  document.addEventListener("click", (e) => {
+    if (!wrap.contains(e.target)) wrap.classList.remove("is-open");
+  });
+  wrap.appendChild(btn);
+  wrap.appendChild(tip);
+  return wrap;
+}
+
 function pickRandom(bank, count) {
   const idx = bank.map((_, i) => i);
   for (let i = idx.length - 1; i > 0; i--) {
@@ -94,7 +112,7 @@ const RENDERERS = {
 
       let reasonInput = null;
       if (cfg.splitReason) {
-        row.appendChild(el("span", { class: "reason-label", text: "כי" }));
+        row.appendChild(el("span", { class: "reason-label", text: "לכן" }));
         reasonInput = el("input", { type: "text", class: "field-input", placeholder: cfg.reasonPlaceholder || "" });
         reasonInput.value = (isLegacyString ? "" : val && val.reason) || "";
         reasonInput.disabled = !!readOnly;
@@ -162,10 +180,16 @@ const RENDERERS = {
         input.disabled = !!readOnly;
         // תווית + שדה על אותה שורה (כמו המשך טבעי של שורה, לא כותרת שאלה מודגשת) - עוטפים גם אם
         // התווית ארוכה ולא נכנסת, כדי שיישאר קריא במסכים צרים
-        trailingWrap.appendChild(el("div", { class: "trailing-field-row" }, [el("span", { class: "trailing-field-label", text: field.label }), input]));
+        const labelLine = el("div", { class: "trailing-field-label-row" }, [el("span", { class: "trailing-field-label", text: field.label })]);
+        if (field.help) labelLine.appendChild(buildHelpIcon(field.help));
+        trailingWrap.appendChild(el("div", { class: "trailing-field-row" }, [labelLine, input]));
         trailingInputs.push({ key: field.key, input });
       });
       wrap.appendChild(trailingWrap);
+    }
+
+    if (cfg.endQuestion) {
+      wrap.appendChild(el("div", { class: "exercise-end-question", text: cfg.endQuestion }));
     }
 
     return {

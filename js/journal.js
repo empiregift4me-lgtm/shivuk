@@ -37,7 +37,9 @@ function renderExerciseBlocks(entry, cardBody, isLocked, activeBlocks) {
     if (!instance) return;
     const blockWrap = el("div", { class: "exercise-block" });
     const blockHeader = el("div", { class: "exercise-block-header" });
-    blockHeader.appendChild(el("h3", { class: "exercise-title", text: instance.name }));
+    const titleRow = el("div", { class: "exercise-title-row" }, [el("h3", { class: "exercise-title", text: instance.name })]);
+    if (instance.config && instance.config.headerHelp) titleRow.appendChild(buildHelpIcon(instance.config.headerHelp));
+    blockHeader.appendChild(titleRow);
     blockWrap.appendChild(blockHeader);
 
     let initialData = entry.data[id];

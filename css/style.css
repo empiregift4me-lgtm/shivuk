@@ -846,6 +846,56 @@ body {
   font-weight: 600;
 }
 
+.exercise-title-row { display: flex; align-items: center; gap: 6px; min-width: 0; }
+
+/* אייקון עזרה קטן [❕] - נפתח בלחיצה (נשאר פתוח עד לחיצה מחוץ לו, נוח למובייל) או בריחוף עכבר */
+.help-icon-wrap { position: relative; display: inline-flex; align-items: center; flex: 0 0 auto; }
+.help-icon {
+  border: none;
+  background: transparent;
+  color: var(--text-submuted);
+  font-size: 0.95rem;
+  line-height: 1;
+  cursor: pointer;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  padding: 0;
+}
+.help-icon:hover { background: var(--c-field); color: var(--text-light); }
+.help-icon-tip {
+  display: none;
+  position: absolute;
+  z-index: 20;
+  top: calc(100% + 6px);
+  right: 0;
+  width: max-content;
+  max-width: 280px;
+  background: var(--c-panel);
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+  font-size: 0.85rem;
+  line-height: 1.5;
+  color: var(--text-light);
+  white-space: pre-line;
+  box-shadow: var(--shadow-card);
+}
+.help-icon-wrap:hover .help-icon-tip,
+.help-icon-wrap.is-open .help-icon-tip { display: block; }
+
+.exercise-end-question {
+  margin-top: var(--space);
+  padding: var(--space);
+  text-align: center;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--text-light);
+  background: var(--c-panel);
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius-sm);
+}
+
 .exercise-note {
   font-size: 0.95rem;
   color: var(--text-submuted);
@@ -966,6 +1016,7 @@ select.field-input:focus {
 .dynamic-list-trailing { margin-top: var(--space); display: flex; flex-direction: column; gap: var(--space-sm); }
 /* תווית ומיד מתחתיה שדה ההקלדה, בלי רווח - מראה סטנדרטי וטבעי, לא כותרת שאלה מודגשת */
 .trailing-field-row { display: flex; flex-direction: column; gap: 2px; }
+.trailing-field-label-row { display: flex; align-items: center; gap: 4px; }
 .trailing-field-label { color: var(--text-light); font-size: 0.95rem; }
 .trailing-field-row .field-input { width: 100%; }
 
