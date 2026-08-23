@@ -13,6 +13,7 @@ function initSummariesView(container) {
 
   const SUB_TABS = [
     { id: "write", label: "כתיבה חופשית", render: renderSummaryWriteTab },
+    { id: "general", label: "כללי", render: renderSummaryGeneralTab },
     { id: "archive", label: "ארכיונים", render: renderSummaryArchiveTab },
     { id: "payments", label: "תשלומים", render: renderPaymentsTab }
   ];
@@ -60,6 +61,48 @@ function newSummaryTopic() {
 
 function normalizeSummaryTopics(topics) {
   return Array.isArray(topics) ? topics : [];
+}
+
+// העברת נושא/עניין בין טיוטת "כתיבה חופשית" ל"כללי" ובחזרה - עניין בודד מצטרף לנושא באותו שם
+// ביעד (או פותח נושא חדש), באותו היגיון בדיוק כמו moveUncheckedToDraft
+function moveTopicToGeneral(topic) {
+  const general = loadSummaryGeneral();
+  const generalTopics = normalizeSummaryTopics(general.topics);
+  generalTopics.push(topic);
+  saveSummaryGeneral({ topics: generalTopics });
+}
+
+function moveTopicToWriteDraft(topic) {
+  const draft = loadSummaryDraft();
+  const draftTopics = normalizeSummaryTopics(draft.topics);
+  draftTopics.push(topic);
+  saveSummaryDraft({ ...draft, topics: draftTopics });
+}
+
+function moveItemToGeneral(sourceTopicTitle, item) {
+  const general = loadSummaryGeneral();
+  const generalTopics = normalizeSummaryTopics(general.topics);
+  const title = (sourceTopicTitle || "").trim();
+  let targetTopic = title ? generalTopics.find((t) => (t.title || "").trim() === title) : null;
+  if (!targetTopic) {
+    targetTopic = { id: "topic_" + Date.now() + "_" + Math.random().toString(36).slice(2, 7), title: sourceTopicTitle || "", storyHtml: "", items: [] };
+    generalTopics.push(targetTopic);
+  }
+  targetTopic.items.push(item);
+  saveSummaryGeneral({ topics: generalTopics });
+}
+
+function moveItemToWriteDraft(sourceTopicTitle, item) {
+  const draft = loadSummaryDraft();
+  const draftTopics = normalizeSummaryTopics(draft.topics);
+  const title = (sourceTopicTitle || "").trim();
+  let targetTopic = title ? draftTopics.find((t) => (t.title || "").trim() === title) : null;
+  if (!targetTopic) {
+    targetTopic = { id: "topic_" + Date.now() + "_" + Math.random().toString(36).slice(2, 7), title: sourceTopicTitle || "", storyHtml: "", items: [] };
+    draftTopics.push(targetTopic);
+  }
+  targetTopic.items.push(item);
+  saveSummaryDraft({ ...draft, topics: draftTopics });
 }
 
 function summaryNotesHasContent(html) {
@@ -231,6 +274,23 @@ function buildTopicsEditor(root, topics, persist, opts) {
         storyBtn.textContent = storyOpen ? "▾" : "▸";
       });
       head.appendChild(storyBtn);
+
+      if (opts.moveTarget) {
+        const moveTopicBtn = el("button", {
+          type: "button",
+          class: "task-delete-btn summary-move-btn",
+          text: opts.moveTarget === "general" ? "↪" : "↩",
+          title: opts.moveTarget === "general" ? "העברת הנושא כולו ל\"כללי\"" : "החזרת הנושא כולו ל\"כתיבה חופשית\""
+        });
+        moveTopicBtn.addEventListener("click", () => {
+          topics.splice(topicIdx, 1);
+          if (opts.moveTarget === "general") moveTopicToGeneral(topic);
+          else moveTopicToWriteDraft(topic);
+          persist();
+          fullRender();
+        });
+        head.appendChild(moveTopicBtn);
+      }
 
       const deleteTopicBtn = el("button", {
         type: "button",
@@ -824,8 +884,30 @@ function buildTopicsEditor(root, topics, persist, opts) {
     row.appendChild(collapseBtn);
 
     if (!readOnly) {
+      if (opts.moveTarget) {
+        const moveItemBtn = el("button", {
+          type: "button",
+          class: "task-delete-btn summary-move-btn",
+          text: opts.moveTarget === "general" ? "↪" : "↩",
+          title: opts.moveTarget === "general" ? "העברת העניין ל\"כללי\"" : "החזרת העניין ל\"כתיבה חופשית\""
+        });
+        moveItemBtn.addEventListener("click", () => {
+          const movedItem = topic.items[itemIdx];
+          topic.items.splice(itemIdx, 1);
+          if (topic.items.length === 0) {
+            const topicIdxNow = topics.indexOf(topic);
+            if (topicIdxNow !== -1) topics.splice(topicIdxNow, 1);
+          }
+          if (opts.moveTarget === "general") moveItemToGeneral(topic.title, movedItem);
+          else moveItemToWriteDraft(topic.title, movedItem);
+          persist();
+          fullRender();
+        });
+        row.appendChild(moveItemBtn);
+      }
       const deleteItemBtn = el("button", { type: "button", class: "task-delete-btn", text: "🗑", title: "מחיקת העניין" });
       deleteItemBtn.addEventListener("click", () => {
+        if (!confirm("למחוק את העניין הזה?")) return;
         topic.items.splice(itemIdx, 1);
         if (topic.items.length === 0) topic.items.push(newSummaryItem());
         persist();
@@ -960,7 +1042,12 @@ function renderSummaryWriteTab(content) {
   const editorRoot = el("div", { class: "summary-topics-wrap" });
   wrap.appendChild(editorRoot);
   wrap.appendChild(topRow);
-  const editorHandle = buildTopicsEditor(editorRoot, topics, persistDraft, { readOnly: false, hideAddButton: true, collapsedByDefault: true });
+  const editorHandle = buildTopicsEditor(editorRoot, topics, persistDraft, {
+    readOnly: false,
+    hideAddButton: true,
+    collapsedByDefault: true,
+    moveTarget: "general"
+  });
   addTopicBtn.addEventListener("click", () => editorHandle.addTopic());
   freewriteAtFocusBtn.addEventListener("click", () => editorHandle.addFreewriteNearFocus());
   collapseAllBtn.addEventListener("click", () => {
@@ -1026,6 +1113,34 @@ function formatRelativeSaved(ts) {
   if (diffMin < 60) return `נשמר לפני ${diffMin} ${diffMin === 1 ? "דקה" : "דקות"}`;
   const diffHour = Math.round(diffMin / 60);
   return `נשמר לפני ${diffHour} ${diffHour === 1 ? "שעה" : "שעות"}`;
+}
+
+// לשונית "כללי" - מאגר החזקה עצמאי לנושאים/עניינים שהוזזו הצידה מטיוטת הכתיבה החופשית לפני
+// תעדוף לקראת פגישה. עורך מלא (לא רק תצוגה), עם חץ ↩ שמחזיר כל נושא/עניין בחזרה לטיוטה
+function renderSummaryGeneralTab(content) {
+  content.innerHTML = "";
+  if (summaryAutosaveIntervalId) clearInterval(summaryAutosaveIntervalId);
+  const wrap = el("div", { class: "panel" });
+  wrap.appendChild(el("h2", { class: "panel-title", text: "כללי" }));
+  wrap.appendChild(
+    el("p", {
+      class: "panel-subtitle",
+      text: 'נושאים ועניינים שהעברת הצידה מ"כתיבה חופשית" - אפשר להחזיר כל אחד מהם בחזרה בכל רגע.'
+    })
+  );
+
+  const general = loadSummaryGeneral();
+  const topics = normalizeSummaryTopics(general.topics);
+
+  function persistGeneral() {
+    saveSummaryGeneral({ topics });
+  }
+
+  const editorRoot = el("div", { class: "summary-topics-wrap" });
+  wrap.appendChild(editorRoot);
+  content.appendChild(wrap);
+
+  buildTopicsEditor(editorRoot, topics, persistGeneral, { readOnly: false, collapsedByDefault: true, moveTarget: "write" });
 }
 
 let summaryAutosaveIntervalId = null;

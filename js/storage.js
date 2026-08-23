@@ -7,6 +7,7 @@ const STORE_KEYS = {
   prefs: "journal_prefs_v1",
   summaries: "summaries_v1",
   summaryDraft: "summary_draft_v1",
+  summaryGeneral: "summary_general_v1",
   decisions: "decisions_v1",
   decisionDraft: "decision_draft_v1",
   emotional: "emotional_docs_v1",
@@ -191,6 +192,20 @@ function loadSummaryDraft() {
 
 function saveSummaryDraft(draft) {
   safeSetItem(STORE_KEYS.summaryDraft, JSON.stringify(draft));
+}
+
+// מאגר "כללי" - נושאים/עניינים שהוזזו הצידה מטיוטת הכתיבה החופשית לפני תעדוף לקראת פגישה.
+// עצמאי לגמרי מהטיוטה (לא מתאפס בכל פגישה), עד שמזיזים ידנית משהו ממנו בחזרה
+function loadSummaryGeneral() {
+  try {
+    return JSON.parse(localStorage.getItem(STORE_KEYS.summaryGeneral)) || { topics: [] };
+  } catch (e) {
+    return { topics: [] };
+  }
+}
+
+function saveSummaryGeneral(data) {
+  safeSetItem(STORE_KEYS.summaryGeneral, JSON.stringify(data));
 }
 
 function loadEnergyLog() {
