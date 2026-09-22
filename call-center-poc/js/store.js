@@ -1,8 +1,9 @@
 /* ===================================================================
    Store - "מצב המנהל" החי. עותק נטען מ-localStorage (או משוכפל מ-
    DEFAULT_DATA בפעם הראשונה), כדי שעריכות בתצוגת מנהל (סדר מסכים,
-   הפעלה/כיבוי חוקים, עריכת טקסטים) ישפיעו מיד על תצוגת הנציגה,
-   וישרדו רענון דף. כפתור "איפוס דמו" מחזיר הכול למצב ההתחלתי.
+   בניית בלוקים, הפעלה/כיבוי חוקים, זמינות מרכיבים) ישפיעו מיד על
+   תצוגת הנציגה, וישרדו רענון דף. כפתור "איפוס דמו" מחזיר הכול למצב
+   ההתחלתי.
 =================================================================== */
 
 const Store = (function () {
@@ -29,6 +30,8 @@ const Store = (function () {
     save();
   }
 
+  function newId(prefix) { return prefix + '-' + Math.random().toString(36).slice(2, 9); }
+
   function getRestaurant(id) { return data.restaurants.find(r => r.id === id) || null; }
 
   function findBranchById(branchId) {
@@ -37,6 +40,12 @@ const Store = (function () {
       if (b) return { restaurant: r, branch: b };
     }
     return null;
+  }
+
+  function getScreen(branchId, screenId) {
+    const found = findBranchById(branchId);
+    if (!found) return null;
+    return found.branch.flow.find(s => s.id === screenId) || null;
   }
 
   function getActiveFlow(branch) {
@@ -69,17 +78,13 @@ const Store = (function () {
     if (r) { r.message = message; save(); }
   }
 
-  function updateScreenLabel(branchId, screenId, label) {
-    const found = findBranchById(branchId);
-    if (!found) return;
-    const s = found.branch.flow.find(sc => sc.id === screenId);
-    if (s) { s.label = label; save(); }
+  function updateScreenTitle(branchId, screenId, title) {
+    const s = getScreen(branchId, screenId);
+    if (s) { s.title = title; save(); }
   }
 
   function setScreenEnabled(branchId, screenId, enabled) {
-    const found = findBranchById(branchId);
-    if (!found) return;
-    const s = found.branch.flow.find(sc => sc.id === screenId);
+    const s = getScreen(branchId, screenId);
     if (s) { s.enabled = enabled; save(); }
   }
 
@@ -96,6 +101,96 @@ const Store = (function () {
     save();
   }
 
+  /* ---------------- בלוקים בתוך מסך (blocks לשאלות, leadingBlocks לתפריט/תשלום/סיכום) ---------------- */
+
+  function blockList(screen, listKey) {
+    if (!screen[listKey]) screen[listKey] = [];
+    return screen[listKey];
+  }
+
+  function addBlock(branchId, screenId, listKey, block, atIndex) {
+    const s = getScreen(branchId, screenId);
+    if (!s) return null;
+    const list = blockList(s, listKey);
+    const full = Object.assign({ id: newId('blk') }, block);
+    if (atIndex === undefined || atIndex < 0 || atIndex > list.length) list.push(full);
+    else list.splice(atIndex, 0, full);
+    save();
+    return full.id;
+  }
+
+  function removeBlock(branchId, screenId, listKey, blockId) {
+    const s = getScreen(branchId, screenId);
+    if (!s) return;
+    const list = blockList(s, listKey);
+    const idx = list.findIndex(b => b.id === blockId);
+    if (idx > -1) { list.splice(idx, 1); save(); }
+  }
+
+  function updateBlock(branchId, screenId, listKey, blockId, patch) {
+    const s = getScreen(branchId, screenId);
+    if (!s) return;
+    const list = blockList(s, listKey);
+    const b = list.find(x => x.id === blockId);
+    if (b) { Object.assign(b, patch); save(); }
+  }
+
+  function moveBlock(branchId, screenId, listKey, blockId, direction) {
+    const s = getScreen(branchId, screenId);
+    if (!s) return;
+    const list = blockList(s, listKey);
+    const idx = list.findIndex(b => b.id === blockId);
+    const newIdx = idx + direction;
+    if (idx < 0 || newIdx < 0 || newIdx >= list.length) return;
+    const tmp = list[idx];
+    list[idx] = list[newIdx];
+    list[newIdx] = tmp;
+    save();
+  }
+
+  function reorderBlockTo(branchId, screenId, listKey, blockId, newIndex) {
+    const s = getScreen(branchId, screenId);
+    if (!s) return;
+    const list = blockList(s, listKey);
+    const idx = list.findIndex(b => b.id === blockId);
+    if (idx < 0) return;
+    const [item] = list.splice(idx, 1);
+    const clampedIndex = Math.max(0, Math.min(newIndex, list.length));
+    list.splice(clampedIndex, 0, item);
+    save();
+  }
+
+  /* ---------------- מרכיבים (ברמת מסעדה) ---------------- */
+
+  function getIngredients(restaurantId) {
+    const r = getRestaurant(restaurantId);
+    return (r && r.ingredients) || [];
+  }
+
+  function getIngredient(restaurantId, ingredientId) {
+    return getIngredients(restaurantId).find(i => i.id === ingredientId) || null;
+  }
+
+  function addIngredient(restaurantId, name) {
+    const r = getRestaurant(restaurantId);
+    if (!r) return;
+    if (!r.ingredients) r.ingredients = [];
+    r.ingredients.push({ id: newId('ing'), name: name, available: true });
+    save();
+  }
+
+  function removeIngredient(restaurantId, ingredientId) {
+    const r = getRestaurant(restaurantId);
+    if (!r || !r.ingredients) return;
+    r.ingredients = r.ingredients.filter(i => i.id !== ingredientId);
+    save();
+  }
+
+  function setIngredientAvailable(restaurantId, ingredientId, available) {
+    const ing = getIngredient(restaurantId, ingredientId);
+    if (ing) { ing.available = available; save(); }
+  }
+
   function knownCustomerByPhone(phone) {
     return data.knownCustomers.find(c => c.phone === phone) || null;
   }
@@ -103,10 +198,12 @@ const Store = (function () {
   return {
     get data() { return data; },
     save, reset,
-    getRestaurant, findBranchById, getActiveFlow,
+    getRestaurant, findBranchById, getScreen, getActiveFlow,
     getMenuItem, getMenuItemsByCategory,
     getRule, getRulesForScope, setRuleEnabled, updateRuleMessage,
-    updateScreenLabel, setScreenEnabled, moveScreen,
+    updateScreenTitle, setScreenEnabled, moveScreen,
+    addBlock, removeBlock, updateBlock, moveBlock, reorderBlockTo,
+    getIngredients, getIngredient, addIngredient, removeIngredient, setIngredientAvailable,
     knownCustomerByPhone
   };
 })();

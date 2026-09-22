@@ -1,23 +1,16 @@
 /* ===================================================================
-   AgentView - תצוגת הנציגה (מוקד). זרימת מסך-אחר-מסך לפי flow
-   הענף הנבחר, עם הפעלת Engine אחרי כל תשובה/הוספה לעגלה.
-   קורא את מבנה הזרימה מ-Store בכל רינדור, כך שעריכה בתצוגת המנהל
-   (סדר מסכים, הפעלה/כיבוי, טקסטים) משפיעה מיד גם כאן.
+   AgentView - תצוגת הנציגה (מוקד). מסך שאלות מציג רצף blocks
+   (תסריט מוטמע / פופאפ חד-פעמי / שאילתה) בדיוק כפי שהורכב בתצוגת
+   המנהל. קורא את מבנה הזרימה מ-Store בכל רינדור, כך שעריכה בתצוגת
+   המנהל משפיעה מיד גם כאן.
 =================================================================== */
 
 const AgentView = (function () {
   let session = null;
   let currentScreenIndex = 0;
-  let menuFilterState = { search: '', tag: null, priceBracket: 'all', justAutoSet: false };
+  let menuFilterState = { search: '', tag: null, maxPrice: '', justAutoSet: false };
+  let expandedCustomItemId = null;
   let mountedRoot = null;
-
-  const PRICE_BRACKETS = [
-    { id: 'all', label: 'כל המחירים', min: 0, max: Infinity },
-    { id: 'b1', label: 'עד 20 ₪', min: 0, max: 20 },
-    { id: 'b2', label: '20-40 ₪', min: 20, max: 40 },
-    { id: 'b3', label: '40-100 ₪', min: 40, max: 100 },
-    { id: 'b4', label: '100 ₪ ומעלה', min: 100, max: Infinity }
-  ];
 
   function escapeAttr(str) {
     return String(str == null ? '' : str).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
@@ -89,11 +82,29 @@ const AgentView = (function () {
       payment: { method: null, split: false, splitMethod: null, splitAmount: null },
       notesLog: [],
       _minOrderDismissed: false,
-      _shownScripts: {}
+      _shownScripts: {},
+      customItemSelection: {}
     };
     currentScreenIndex = 0;
-    menuFilterState = { search: '', tag: null, priceBracket: 'all', justAutoSet: false };
+    menuFilterState = { search: '', tag: null, maxPrice: '', justAutoSet: false };
+    expandedCustomItemId = null;
     renderInternal();
+  }
+
+  /* ---------------- שירותי בלוקים (תסריט/פופאפ חד-פעמי) ---------------- */
+
+  function firePopupBlocksOnce(screen, blocks) {
+    (blocks || []).filter(b => b.kind === 'popup').forEach(b => {
+      const flagKey = screen.id + ':' + b.id;
+      if (!session._shownScripts[flagKey]) {
+        session._shownScripts[flagKey] = true;
+        Popups.reminder({ title: 'תזכורת לנציגה', message: b.text, buttons: [{ label: 'הבנתי, ממשיך', onClick: function () {} }] });
+      }
+    });
+  }
+
+  function scriptBlockHTML(b) {
+    return `<div class="script-block"><span class="script-block-icon">🗣️</span><p>${b.text}</p></div>`;
   }
 
   /* ---------------- shared header / nav ---------------- */
@@ -126,15 +137,45 @@ const AgentView = (function () {
     const flow = Store.getActiveFlow(branch);
     const screen = flow[currentScreenIndex];
     if (!canProceed(screen)) return;
-    if (currentScreenIndex < flow.length - 1) { currentScreenIndex++; renderInternal(); }
+
+    if (screen.type === 'menu') {
+      const nextScreen = flow[currentScreenIndex + 1];
+      if (nextScreen && nextScreen.type === 'payment' && !session._minOrderDismissed) {
+        const check = Engine.checkMinOrder(session, cartTotal());
+        if (check) {
+          const msg = check.rule.message.replace('{{gap}}', check.gap).replace('{{min}}', check.min);
+          Popups.suggestion({
+            title: check.rule.name,
+            message: msg,
+            buttons: [
+              { label: check.rule.buttons[0].label, onClick: () => { applyPriceFilterToGap(check.gap); logNote(msg + ' ← הנציגה אישרה, הסינון עודכן אוטומטית.'); renderInternal(); } },
+              { label: check.rule.buttons[1].label, onClick: () => { session._minOrderDismissed = true; advance(); } }
+            ]
+          });
+          return;
+        }
+      }
+    }
+    advance();
+
+    function advance() {
+      if (currentScreenIndex < flow.length - 1) { currentScreenIndex++; renderInternal(); }
+    }
   }
 
   function canProceed(screen) {
     if (screen.type === 'question') {
-      if (!screen.required) return true;
-      if (screen.inputType === 'dynamic-fulfillment') return !!session.answers.addressOrPickup;
-      const val = session.answers[screen.key];
-      return !!(val && String(val).trim());
+      const blocks = (screen.blocks || []).filter(b => b.kind === 'question');
+      return blocks.every(b => {
+        if (b.required === false) return true;
+        if (b.responseType === 'multiselect') {
+          const arr = session.answers[b.key];
+          return Array.isArray(arr) && arr.length > 0;
+        }
+        if (b.responseType === 'dynamic-fulfillment') return !!session.answers.addressOrPickup;
+        const val = session.answers[b.key];
+        return !!(val && String(val).trim());
+      });
     }
     if (screen.type === 'payment') return !!session.payment.method;
     return true;
@@ -142,58 +183,91 @@ const AgentView = (function () {
 
   /* ---------------- question screens ---------------- */
 
-  function resolveQuestionLabel(screen, branch) {
-    if (screen.dynamic === 'fulfillment-followup') {
+  function resolveQuestionLabel(b, branch) {
+    if (b.dynamic === 'fulfillment-followup') {
       if (session.answers.fulfillment === 'משלוח') return "לאן לשלוח לך?";
       if (session.answers.fulfillment === 'איסוף') return `אז אתה מגיע לקחת מסניף ${branch.shortName}?`;
       return "פרטי משלוח / איסוף";
     }
-    return screen.label;
+    return b.label;
   }
 
   function autofillSlotHTML(phone) {
     const known = Store.knownCustomerByPhone(phone || '');
-    return known ? `<div class="autofill-strip"><span>✓ זוהה לקוח מוכר: ${known.fullName} - השם יוצע אוטומטית במסך הבא</span></div>` : '';
+    return known ? `<div class="autofill-strip"><span>✓ זוהה לקוח מוכר: ${known.fullName} - השם יוצע אוטומטית בהמשך</span></div>` : '';
+  }
+
+  function choiceButtonsHTML(b, currentVal) {
+    return `<div class="wizard-choice-row">${b.options.map(o => `<button type="button" class="choice-btn ${currentVal === o ? 'is-selected' : ''}" data-value="${escapeAttr(o)}" data-key="${b.key}">${o}</button>`).join('')}</div>`;
+  }
+
+  function questionBlockHTML(b, branch) {
+    const label = resolveQuestionLabel(b, branch);
+    const currentVal = session.answers[b.key];
+    let controlHTML = '';
+
+    if (b.responseType === 'short-text') {
+      controlHTML = `<input class="wizard-input" id="q-input-${b.id}" type="${b.inputMode === 'tel' ? 'tel' : 'text'}" value="${escapeAttr(currentVal)}" placeholder="${b.inputMode === 'tel' ? '05X-XXXXXXX' : 'הקלד/י כאן...'}" autocomplete="off">`;
+      if (b.key === 'phone') controlHTML += `<div id="autofill-slot-${b.id}">${autofillSlotHTML(currentVal)}</div>`;
+      if (b.key === 'fullName' && b.autofill) {
+        const known = Store.knownCustomerByPhone(session.answers.phone || '');
+        if (known && !currentVal) {
+          controlHTML += `<div class="autofill-strip" data-autofill-name-slot data-block="${b.id}"><span>🔎 לקוח מוכר: ${known.fullName}</span><button type="button" class="autofill-strip-btn" data-autofill-name-btn="${b.id}">מילוי אוטומטי</button></div>`;
+        } else {
+          controlHTML += `<div data-autofill-name-slot data-block="${b.id}"></div>`;
+        }
+      }
+    } else if (b.responseType === 'buttons') {
+      controlHTML = choiceButtonsHTML(b, currentVal);
+    } else if (b.responseType === 'timing-slots') {
+      controlHTML = choiceButtonsHTML(b, currentVal);
+      if (currentVal === 'ליותר מאוחר') {
+        const slots = ['17:30', '18:00', '18:30', '19:00'];
+        controlHTML += `<div class="slot-row">${slots.map(s => `<button type="button" class="slot-btn ${session.answers.timeSlot === s ? 'is-selected' : ''} ${s === branch.busySlot ? 'is-busy' : ''}" data-slot="${s}">🕓 ${s}</button>`).join('')}</div>`;
+      }
+    } else if (b.responseType === 'dropdown') {
+      controlHTML = `<select class="wizard-input" id="q-input-${b.id}" data-key="${b.key}">
+        <option value="" ${!currentVal ? 'selected' : ''}>בחר/י...</option>
+        ${b.options.map(o => `<option value="${escapeAttr(o)}" ${currentVal === o ? 'selected' : ''}>${o}</option>`).join('')}
+      </select>`;
+    } else if (b.responseType === 'multiselect') {
+      const arr = Array.isArray(currentVal) ? currentVal : [];
+      controlHTML = `<div class="multiselect-row">${b.options.map(o => `
+        <label class="multiselect-chip ${arr.indexOf(o) > -1 ? 'is-selected' : ''}">
+          <input type="checkbox" data-key="${b.key}" data-multi-option="${escapeAttr(o)}" ${arr.indexOf(o) > -1 ? 'checked' : ''}> ${o}
+        </label>`).join('')}</div>`;
+    } else if (b.responseType === 'dynamic-fulfillment') {
+      if (session.answers.fulfillment === 'משלוח') {
+        controlHTML = `<input class="wizard-input" id="q-input-${b.id}" type="text" value="${escapeAttr(currentVal)}" placeholder="לדוגמה: רחוב הרצל 10, כניסה ב׳, קומה 2" autocomplete="off">`;
+      } else if (session.answers.fulfillment === 'איסוף') {
+        controlHTML = `<button type="button" class="choice-btn ${currentVal ? 'is-selected' : ''}" data-value="${escapeAttr(branch.shortName)}" data-key="${b.key}" style="width:100%;">כן, מגיע/ה לקחת מסניף ${branch.shortName}</button>`;
+      } else {
+        controlHTML = `<p style="color:var(--text-muted);font-size:13.5px;">יש לענות קודם על שאלת המשלוח/איסוף.</p>`;
+      }
+    }
+
+    return `<div class="question-block">
+      <div class="wizard-question-label">${label}${b.required === false ? ' <span class="optional-tag">(לא חובה)</span>' : ''}</div>
+      ${controlHTML}
+    </div>`;
   }
 
   function renderQuestionScreen(container, branch, screen) {
-    const label = resolveQuestionLabel(screen, branch);
-    const currentVal = session.answers[screen.key];
-    let bodyHTML = '';
+    const blocks = screen.blocks || [];
+    firePopupBlocksOnce(screen, blocks);
+    const questionBlocks = blocks.filter(b => b.kind === 'question');
 
-    if (screen.inputType === 'tel' || screen.inputType === 'text') {
-      bodyHTML = `<input class="wizard-input" id="q-input" type="${screen.inputType === 'tel' ? 'tel' : 'text'}" value="${escapeAttr(currentVal)}" placeholder="${screen.inputType === 'tel' ? '05X-XXXXXXX' : 'הקלד/י כאן...'}" autocomplete="off">`;
-      if (screen.key === 'phone') bodyHTML += `<div id="autofill-slot">${autofillSlotHTML(currentVal)}</div>`;
-      if (screen.key === 'fullName' && screen.autofill) {
-        const known = Store.knownCustomerByPhone(session.answers.phone || '');
-        if (known && !currentVal) {
-          bodyHTML += `<div class="autofill-strip"><span>🔎 לקוח מוכר: ${known.fullName}</span><button type="button" class="autofill-strip-btn" id="autofill-name-btn">מילוי אוטומטי</button></div>`;
-        }
-      }
-    } else if (screen.inputType === 'choice') {
-      bodyHTML = `<div class="wizard-choice-row">${screen.options.map(o => `<button type="button" class="choice-btn ${currentVal === o ? 'is-selected' : ''}" data-value="${o}">${o}</button>`).join('')}</div>`;
-    } else if (screen.inputType === 'timing' || screen.inputType === 'timing-gate') {
-      bodyHTML = `<div class="wizard-choice-row">${screen.options.map(o => `<button type="button" class="choice-btn ${currentVal === o ? 'is-selected' : ''}" data-value="${o}">${o}</button>`).join('')}</div>`;
-      if (screen.inputType === 'timing' && currentVal === 'ליותר מאוחר') {
-        const slots = ['17:30', '18:00', '18:30', '19:00'];
-        bodyHTML += `<div class="slot-row">${slots.map(s => `<button type="button" class="slot-btn ${session.answers.timeSlot === s ? 'is-selected' : ''} ${s === branch.busySlot ? 'is-busy' : ''}" data-slot="${s}">🕓 ${s}</button>`).join('')}</div>`;
-      }
-    } else if (screen.inputType === 'dynamic-fulfillment') {
-      if (session.answers.fulfillment === 'משלוח') {
-        bodyHTML = `<input class="wizard-input" id="q-input" type="text" value="${escapeAttr(currentVal)}" placeholder="לדוגמה: רחוב הרצל 10, כניסה ב׳, קומה 2" autocomplete="off">`;
-      } else if (session.answers.fulfillment === 'איסוף') {
-        bodyHTML = `<button type="button" class="choice-btn ${currentVal ? 'is-selected' : ''}" data-value="${escapeAttr(branch.shortName)}" style="width:100%;">כן, מגיע/ה לקחת מסניף ${branch.shortName}</button>`;
-      } else {
-        bodyHTML = `<p style="color:var(--text-muted);font-size:13.5px;">יש לענות קודם על שאלת המשלוח/איסוף.</p>`;
-      }
-    }
+    const bodyHTML = blocks.map(b => {
+      if (b.kind === 'script') return scriptBlockHTML(b);
+      if (b.kind === 'question') return questionBlockHTML(b, branch);
+      return '';
+    }).join('');
 
     container.innerHTML = `
       <div class="wizard">
         ${progressHTML(branch)}
         <div class="wizard-card">
           <span class="wizard-branch-tag">${branch.name}</span>
-          <div class="wizard-question-label">${label}</div>
           ${bodyHTML}
           <div class="wizard-nav">
             <button class="btn btn-secondary" id="btn-prev" type="button" ${currentScreenIndex === 0 ? 'disabled' : ''}>→ הקודם</button>
@@ -203,49 +277,94 @@ const AgentView = (function () {
       </div>
     `;
 
-    const qInput = container.querySelector('#q-input');
-    if (qInput) {
-      qInput.addEventListener('input', (e) => {
-        session.answers[screen.key] = e.target.value;
-        const nextBtn = container.querySelector('#btn-next');
-        if (nextBtn) nextBtn.disabled = !canProceed(screen);
-        if (screen.key === 'phone') {
-          const slot = container.querySelector('#autofill-slot');
-          if (slot) slot.innerHTML = autofillSlotHTML(e.target.value);
-        }
-      });
-      qInput.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter' && canProceed(screen)) goNext(branch);
-      });
+    attachQuestionBlockListeners(container, branch, screen, questionBlocks);
+    attachNavListeners(container, branch);
+  }
+
+  function refreshNextButton(container, screen) {
+    const nextBtn = container.querySelector('#btn-next');
+    if (nextBtn) nextBtn.disabled = !canProceed(screen);
+  }
+
+  function refreshNameAutofillStrips(container, questionBlocks) {
+    questionBlocks.filter(b => b.key === 'fullName' && b.autofill).forEach(b => {
+      const slot = container.querySelector('[data-autofill-name-slot][data-block="' + b.id + '"]');
+      if (!slot) return;
+      const known = Store.knownCustomerByPhone(session.answers.phone || '');
+      if (known && !session.answers.fullName) {
+        slot.classList.add('autofill-strip');
+        slot.innerHTML = `<span>🔎 לקוח מוכר: ${known.fullName}</span><button type="button" class="autofill-strip-btn" data-autofill-name-btn="${b.id}">מילוי אוטומטי</button>`;
+        const btn = slot.querySelector('[data-autofill-name-btn]');
+        if (btn) btn.addEventListener('click', () => { session.answers.fullName = known.fullName; renderInternal(); });
+      } else {
+        slot.classList.remove('autofill-strip');
+        slot.innerHTML = '';
+      }
+    });
+  }
+
+  function attachQuestionBlockListeners(container, branch, screen, questionBlocks) {
+    function handleKeyAnswered(key) {
+      if (['timing', 'fulfillment', 'timeSlot'].indexOf(key) > -1) {
+        const check = Engine.checkAfterAnswer(session);
+        if (check) { showRuleFromCheck(check); return; }
+      }
+      renderInternal();
     }
 
-    const autofillNameBtn = container.querySelector('#autofill-name-btn');
-    if (autofillNameBtn) autofillNameBtn.addEventListener('click', () => {
-      const known = Store.knownCustomerByPhone(session.answers.phone || '');
-      if (known) { session.answers.fullName = known.fullName; renderInternal(); }
+    questionBlocks.forEach(b => {
+      const isTextInput = b.responseType === 'short-text' || (b.responseType === 'dynamic-fulfillment' && session.answers.fulfillment === 'משלוח');
+      if (isTextInput) {
+        const input = container.querySelector('#q-input-' + b.id);
+        if (input) {
+          input.addEventListener('input', (e) => {
+            session.answers[b.key] = e.target.value;
+            refreshNextButton(container, screen);
+            if (b.key === 'phone') {
+              const slot = container.querySelector('#autofill-slot-' + b.id);
+              if (slot) slot.innerHTML = autofillSlotHTML(e.target.value);
+              refreshNameAutofillStrips(container, questionBlocks);
+            }
+          });
+          input.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && canProceed(screen)) goNext(branch);
+          });
+        }
+      }
+
+      if (b.responseType === 'dropdown') {
+        const sel = container.querySelector('#q-input-' + b.id);
+        if (sel) sel.addEventListener('change', (e) => { session.answers[b.key] = e.target.value; handleKeyAnswered(b.key); });
+      }
+
+      if (b.responseType === 'multiselect') {
+        container.querySelectorAll('input[data-key="' + b.key + '"][data-multi-option]').forEach(chk => {
+          chk.addEventListener('change', () => {
+            const arr = Array.isArray(session.answers[b.key]) ? session.answers[b.key].slice() : [];
+            const opt = chk.dataset.multiOption;
+            const idx = arr.indexOf(opt);
+            if (chk.checked && idx === -1) arr.push(opt);
+            if (!chk.checked && idx > -1) arr.splice(idx, 1);
+            session.answers[b.key] = arr;
+            renderInternal();
+          });
+        });
+      }
     });
 
-    container.querySelectorAll('.choice-btn[data-value]').forEach(btn => {
-      btn.addEventListener('click', () => {
-        session.answers[screen.key] = btn.dataset.value;
-        if (['timing', 'fulfillment', 'timeSlot'].indexOf(screen.key) > -1) {
-          const check = Engine.checkAfterAnswer(session);
-          if (check) { showRuleFromCheck(check); return; }
-        }
-        renderInternal();
-      });
+    container.querySelectorAll('[data-autofill-name-btn]').forEach(btn => btn.addEventListener('click', () => {
+      const known = Store.knownCustomerByPhone(session.answers.phone || '');
+      const block = questionBlocks.find(qb => qb.id === btn.dataset.autofillNameBtn);
+      if (known && block) { session.answers[block.key] = known.fullName; renderInternal(); }
+    }));
+
+    container.querySelectorAll('.choice-btn[data-value][data-key]').forEach(btn => {
+      btn.addEventListener('click', () => { session.answers[btn.dataset.key] = btn.dataset.value; handleKeyAnswered(btn.dataset.key); });
     });
 
     container.querySelectorAll('.slot-btn[data-slot]').forEach(btn => {
-      btn.addEventListener('click', () => {
-        session.answers.timeSlot = btn.dataset.slot;
-        const check = Engine.checkAfterAnswer(session);
-        if (check) { showRuleFromCheck(check); return; }
-        renderInternal();
-      });
+      btn.addEventListener('click', () => { session.answers.timeSlot = btn.dataset.slot; handleKeyAnswered('timeSlot'); });
     });
-
-    attachNavListeners(container, branch);
   }
 
   function showRuleFromCheck(check) {
@@ -280,29 +399,65 @@ const AgentView = (function () {
 
   function computeFilteredItems(screen) {
     const items = Store.getMenuItemsByCategory(screen.categoryFilter);
-    const bracket = PRICE_BRACKETS.find(b => b.id === menuFilterState.priceBracket) || PRICE_BRACKETS[0];
+    const maxPrice = menuFilterState.maxPrice !== '' ? parseFloat(menuFilterState.maxPrice) : null;
     return items.filter(it => {
       if (menuFilterState.search && menuFilterState.search.trim()) {
         const q = menuFilterState.search.trim();
         if (!(it.name.indexOf(q) > -1 || it.tags.some(t => t.indexOf(q) > -1))) return false;
       }
       if (menuFilterState.tag && it.tags.indexOf(menuFilterState.tag) === -1) return false;
-      if (it.price < bracket.min || it.price >= bracket.max) return false;
+      if (maxPrice !== null && !isNaN(maxPrice) && it.price > maxPrice) return false;
       return true;
     });
+  }
+
+  function customizePanelHTML(it) {
+    const ingredients = (it.ingredientIds || []).map(id => Store.getIngredient(session.restaurantId, id)).filter(Boolean);
+    const selected = session.customItemSelection[it.id] || [];
+    return `
+      <div class="customize-panel">
+        <div class="field-label">בחר/י מילוי</div>
+        <div class="ingredient-chip-row">
+          ${ingredients.map(ing => `
+            <label class="ingredient-chip ${!ing.available ? 'is-unavailable' : ''} ${selected.indexOf(ing.id) > -1 ? 'is-selected' : ''}">
+              <input type="checkbox" data-ingredient="${ing.id}" data-item="${it.id}" ${selected.indexOf(ing.id) > -1 ? 'checked' : ''} ${!ing.available ? 'disabled' : ''}>
+              ${ing.name}${!ing.available ? ' ✕' : ''}
+            </label>`).join('')}
+        </div>
+        <button type="button" class="btn btn-primary btn-small" data-action="confirm-custom" data-item="${it.id}">הוספה לעגלה</button>
+      </div>`;
   }
 
   function itemCardHTML(it) {
     const line = session.cart.find(l => l.itemId === it.id);
     const qty = line ? line.qty : 0;
     const emoji = it.categoryId === 'drinks' ? '🥤' : it.categoryId === 'sides' ? '🥗' : it.categoryId === 'party' ? '🎉' : '🍣';
+
+    if (it.customizable) {
+      const isExpanded = expandedCustomItemId === it.id;
+      return `
+        <div class="item-card">
+          <div class="item-image-placeholder">${emoji}<span class="item-image-placeholder-label">תמונה תתווסף</span></div>
+          <div class="item-body">
+            <div class="item-name">${it.name}</div>
+            ${it.tags.length ? `<div class="item-tags">${it.tags.map(t => `<span class="item-tag">${t}</span>`).join('')}</div>` : ''}
+            ${line && line.note ? `<span class="item-note-tag">${line.note}</span>` : ''}
+            <div class="item-foot">
+              <span class="item-price">${it.price} ₪</span>
+              <button type="button" class="add-btn" data-action="customize" data-item="${it.id}">בחירת מילוי ${isExpanded ? '−' : '+'}</button>
+            </div>
+          </div>
+          ${isExpanded ? customizePanelHTML(it) : ''}
+        </div>`;
+    }
+
     return `
       <div class="item-card">
         <div class="item-image-placeholder">${emoji}<span class="item-image-placeholder-label">תמונה תתווסף</span></div>
         <div class="item-body">
           <div class="item-name">${it.name}</div>
           ${it.tags.length ? `<div class="item-tags">${it.tags.map(t => `<span class="item-tag">${t}</span>`).join('')}</div>` : ''}
-          ${line && line.note ? `<span class="item-note-tag">דגים ${line.note}</span>` : ''}
+          ${line && line.note ? `<span class="item-note-tag">${line.note}</span>` : ''}
           <div class="item-foot">
             <span class="item-price">${it.price} ₪</span>
             ${qty > 0
@@ -325,10 +480,8 @@ const AgentView = (function () {
   }
 
   function renderMenuScreen(container, branch, screen) {
-    if (screen.entryScript && !session._shownScripts[screen.id]) {
-      session._shownScripts[screen.id] = true;
-      Popups.reminder({ title: 'תסריט לנציגה', message: screen.entryScript, buttons: [{ label: 'הבנתי, ממשיך', onClick: function () {} }] });
-    }
+    firePopupBlocksOnce(screen, screen.leadingBlocks);
+    const leadingScriptsHTML = (screen.leadingBlocks || []).filter(b => b.kind === 'script').map(scriptBlockHTML).join('');
 
     const items = Store.getMenuItemsByCategory(screen.categoryFilter);
     const allTags = Array.from(new Set(items.reduce((acc, it) => acc.concat(it.tags), [])));
@@ -338,12 +491,11 @@ const AgentView = (function () {
     container.innerHTML = `
       ${progressHTML(branch)}
       <span class="wizard-branch-tag">${branch.name}</span>
+      ${leadingScriptsHTML}
       <h2 class="menu-screen-title">${screen.title}</h2>
       <div class="menu-toolbar">
         <input class="search-input" id="menu-search" type="text" placeholder="חיפוש מהיר לפי שם או תגית..." value="${escapeAttr(menuFilterState.search)}">
-        <select class="price-filter-select ${menuFilterState.justAutoSet ? 'is-flash' : ''}" id="price-filter">
-          ${PRICE_BRACKETS.map(b => `<option value="${b.id}" ${b.id === menuFilterState.priceBracket ? 'selected' : ''}>${b.label}</option>`).join('')}
-        </select>
+        <input class="price-filter-input ${menuFilterState.justAutoSet ? 'is-flash' : ''}" id="price-filter" type="number" min="0" step="1" placeholder="סינון: עד כמה ₪?" value="${escapeAttr(menuFilterState.maxPrice)}">
       </div>
       ${allTags.length ? `<div class="tag-chip-row" id="tag-chip-row">${tagChipsHTML(allTags)}</div>` : ''}
       <div class="menu-grid" id="menu-grid"></div>
@@ -366,8 +518,8 @@ const AgentView = (function () {
       menuFilterState.search = e.target.value;
       refreshMenuGrid(container, screen);
     });
-    container.querySelector('#price-filter').addEventListener('change', (e) => {
-      menuFilterState.priceBracket = e.target.value;
+    container.querySelector('#price-filter').addEventListener('input', (e) => {
+      menuFilterState.maxPrice = e.target.value;
       refreshMenuGrid(container, screen);
     });
     const chipRow = container.querySelector('#tag-chip-row');
@@ -379,7 +531,9 @@ const AgentView = (function () {
       chipRow.innerHTML = tagChipsHTML(allTags);
       refreshMenuGrid(container, screen);
     });
-    container.querySelector('#menu-grid').addEventListener('click', (e) => {
+
+    const grid = container.querySelector('#menu-grid');
+    grid.addEventListener('click', (e) => {
       const btn = e.target.closest('[data-action]');
       if (!btn) return;
       const item = Store.getMenuItem(btn.dataset.item);
@@ -387,6 +541,31 @@ const AgentView = (function () {
       if (btn.dataset.action === 'add') handleAddToCart(item, branch);
       else if (btn.dataset.action === 'inc') { changeQty(item.id, 1); afterCartChange(branch); }
       else if (btn.dataset.action === 'dec') { changeQty(item.id, -1); afterCartChange(branch); }
+      else if (btn.dataset.action === 'customize') {
+        expandedCustomItemId = expandedCustomItemId === item.id ? null : item.id;
+        if (!session.customItemSelection[item.id]) session.customItemSelection[item.id] = [];
+        refreshMenuGrid(container, screen);
+      } else if (btn.dataset.action === 'confirm-custom') {
+        const names = (session.customItemSelection[item.id] || []).map(id => {
+          const ing = Store.getIngredient(session.restaurantId, id);
+          return ing ? ing.name : id;
+        });
+        addItemToCart(item.id, names.length ? names.join(', ') : null);
+        expandedCustomItemId = null;
+        afterCartChange(branch);
+      }
+    });
+    grid.addEventListener('change', (e) => {
+      const chk = e.target.closest('input[data-ingredient]');
+      if (!chk) return;
+      const itemId = chk.dataset.item;
+      if (!session.customItemSelection[itemId]) session.customItemSelection[itemId] = [];
+      const arr = session.customItemSelection[itemId];
+      const idx = arr.indexOf(chk.dataset.ingredient);
+      if (chk.checked && idx === -1) arr.push(chk.dataset.ingredient);
+      if (!chk.checked && idx > -1) arr.splice(idx, 1);
+      const chip = chk.closest('.ingredient-chip');
+      if (chip) chip.classList.toggle('is-selected', chk.checked);
     });
 
     attachNavListeners(container, branch);
@@ -410,10 +589,10 @@ const AgentView = (function () {
           buttons: result.rule.buttons.map(b => ({
             label: b.label,
             onClick: () => {
-              const note = b.action.split(':')[1];
-              addItemToCart(item.id, note);
-              logNote(`${item.name}: נבחרו דגים ${note}.`);
-              if (note === 'נאים') {
+              const rawNote = b.action.split(':')[1];
+              addItemToCart(item.id, 'דגים ' + rawNote);
+              logNote(`${item.name}: נבחרו דגים ${rawNote}.`);
+              if (rawNote === 'נאים') {
                 const tunaRule = Engine.tunaReminderRule(session);
                 if (tunaRule) {
                   Popups.reminder({
@@ -436,8 +615,8 @@ const AgentView = (function () {
   }
 
   function addItemToCart(itemId, note) {
-    const existing = session.cart.find(l => l.itemId === itemId);
-    if (existing) { existing.qty += 1; if (note) existing.note = note; }
+    const existing = session.cart.find(l => l.itemId === itemId && l.note === note);
+    if (existing) { existing.qty += 1; }
     else session.cart.push({ itemId, qty: 1, note: note || null });
   }
 
@@ -445,7 +624,7 @@ const AgentView = (function () {
     const line = session.cart.find(l => l.itemId === itemId);
     if (!line) return;
     line.qty += delta;
-    if (line.qty <= 0) session.cart = session.cart.filter(l => l.itemId !== itemId);
+    if (line.qty <= 0) session.cart = session.cart.filter(l => l !== line);
   }
 
   function cartTotal() {
@@ -456,32 +635,19 @@ const AgentView = (function () {
   }
 
   function applyPriceFilterToGap(gap) {
-    const specific = PRICE_BRACKETS.slice(1); // מדלגים על "כל המחירים" - הטווח שלו תמיד "מכיל" כל פער
-    const bracket = specific.find(b => gap >= b.min && gap < b.max) || specific[specific.length - 1];
-    menuFilterState.priceBracket = bracket.id;
+    menuFilterState.maxPrice = String(gap);
     menuFilterState.justAutoSet = true;
   }
 
   function afterCartChange(branch) {
-    const total = cartTotal();
-    const check = Engine.checkMinOrder(session, total);
-    renderInternal(); // מרעננים תמיד קודם, כדי שסרגל העגלה מתחת לפופאפ יהיה מעודכן
-    if (check) {
-      const msg = check.rule.message.replace('{{gap}}', check.gap).replace('{{min}}', check.min);
-      Popups.suggestion({
-        title: check.rule.name,
-        message: msg,
-        buttons: [
-          { label: check.rule.buttons[0].label, onClick: () => { applyPriceFilterToGap(check.gap); logNote(msg + ' ← הנציגה אישרה, הסינון עודכן אוטומטית.'); renderInternal(); } },
-          { label: check.rule.buttons[1].label, onClick: () => { session._minOrderDismissed = true; renderInternal(); } }
-        ]
-      });
-    }
+    renderInternal();
   }
 
   /* ---------------- payment ---------------- */
 
   function renderPaymentScreen(container, branch, screen) {
+    firePopupBlocksOnce(screen, screen.leadingBlocks);
+    const leadingScriptsHTML = (screen.leadingBlocks || []).filter(b => b.kind === 'script').map(scriptBlockHTML).join('');
     const total = cartTotal();
     const methods = [
       { id: 'cash', label: 'מזומן', icon: '💵' },
@@ -494,6 +660,7 @@ const AgentView = (function () {
     container.innerHTML = `
       ${progressHTML(branch)}
       <span class="wizard-branch-tag">${branch.name}</span>
+      ${leadingScriptsHTML}
       <h2 class="menu-screen-title">${screen.title} · סה״כ ${total} ₪</h2>
       <div class="payment-methods" id="payment-methods">
         ${methods.map(m => `<div class="payment-method-card ${p.method === m.id ? 'is-selected' : ''}" data-method="${m.id}"><span class="payment-method-icon">${m.icon}</span>${m.label}</div>`).join('')}
@@ -539,10 +706,13 @@ const AgentView = (function () {
   /* ---------------- summary ---------------- */
 
   function renderSummaryScreen(container, branch, screen) {
+    firePopupBlocksOnce(screen, screen.leadingBlocks);
+    const leadingScriptsHTML = (screen.leadingBlocks || []).filter(b => b.kind === 'script').map(scriptBlockHTML).join('');
     const text = Summary.buildText({ branch: branch, answers: session.answers, cart: session.cart, payment: session.payment, notesLog: session.notesLog });
     container.innerHTML = `
       ${progressHTML(branch)}
       <span class="wizard-branch-tag">${branch.name}</span>
+      ${leadingScriptsHTML}
       <h2 class="menu-screen-title">${screen.title}</h2>
       <textarea class="summary-textarea" id="summary-text" readonly></textarea>
       <div class="summary-actions">

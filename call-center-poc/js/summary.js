@@ -30,6 +30,7 @@ const Summary = (function () {
     }
 
     if (answers.memberCard) lines.push(`תשלום בכרטיס חבר: ${answers.memberCard}`);
+    if (Array.isArray(answers.allergies) && answers.allergies.length) lines.push(`אלרגיות: ${answers.allergies.join(', ')}`);
 
     lines.push('');
     lines.push('--- פריטים ---');
@@ -42,7 +43,7 @@ const Summary = (function () {
       if (!item) return;
       const sub = item.price * line.qty;
       total += sub;
-      const note = line.note ? ` [דגים ${line.note}]` : '';
+      const note = line.note ? ` [${line.note}]` : '';
       lines.push(`${line.qty} x ${item.name}${note} - ${sub} ₪`);
     });
 
