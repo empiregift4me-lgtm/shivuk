@@ -14,6 +14,7 @@ const AgentView = (function () {
   let expandedCustomItemId = null;
   let menuActiveTab = null;
   let mountedRoot = null;
+  let questionKeyHandler = null;
 
   function escapeAttr(str) {
     return String(str == null ? '' : str).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
@@ -26,6 +27,7 @@ const AgentView = (function () {
 
   function renderInternal() {
     if (!mountedRoot) return;
+    detachQuestionKeyHandler();
     if (!session) { renderPicker(mountedRoot); return; }
     const found = Store.findBranchById(session.branchId);
     if (!found) { session = null; renderPicker(mountedRoot); return; }
@@ -39,6 +41,16 @@ const AgentView = (function () {
     else if (screen.type === 'menu') renderMenuScreen(mountedRoot, branch, screen);
     else if (screen.type === 'payment') renderPaymentScreen(mountedRoot, branch, screen);
     else if (screen.type === 'summary') renderSummaryScreen(mountedRoot, branch, screen);
+  }
+
+  function detachQuestionKeyHandler() {
+    if (questionKeyHandler) document.removeEventListener('keydown', questionKeyHandler);
+    questionKeyHandler = null;
+  }
+
+  function unmount() {
+    detachQuestionKeyHandler();
+    mountedRoot = null;
   }
 
   /* ---------------- picker ---------------- */
@@ -168,6 +180,7 @@ const AgentView = (function () {
 
   function isBlockValid(b, branch) {
     if (b.kind !== 'question') return true;
+    if (!blockConditionMet(b)) return true;
     if (b.required === false) return true;
     if (b.responseType === 'multiselect') {
       const arr = session.answers[b.key];
@@ -194,11 +207,20 @@ const AgentView = (function () {
 
   /* ---------------- question screens: חשיפה הדרגתית של בלוקים ---------------- */
 
+  function blockConditionMet(b) {
+    if (!b.condition || !b.condition.key) return true;
+    return session.answers[b.condition.key] === b.condition.equals;
+  }
+
   function getRevealCount(screen) {
     const blocks = screen.blocks || [];
     if (!blocks.length) return 0;
     if (session._revealCount[screen.id] === undefined) session._revealCount[screen.id] = 1;
-    return Math.min(session._revealCount[screen.id], blocks.length);
+    let count = Math.min(session._revealCount[screen.id], blocks.length);
+    // דילוג שקוף על בלוקים שתנאי ההצגה שלהם לא מתקיים - לא צורכים "חשיפה" בפני עצמם
+    while (count < blocks.length && !blockConditionMet(blocks[count - 1])) count++;
+    session._revealCount[screen.id] = count;
+    return count;
   }
 
   function advanceReveal(screen) {
@@ -245,7 +267,8 @@ const AgentView = (function () {
           controlHTML += `<div data-autofill-name-slot data-block="${b.id}"></div>`;
         }
       }
-      controlHTML += `<div class="inline-advance-row"><button type="button" class="mini-advance-btn" data-advance-block="${b.id}">המשך →</button>${skipLinkHTML(b)}</div>`;
+      const skip = skipLinkHTML(b);
+      if (skip) controlHTML += `<div class="inline-advance-row">${skip}</div>`;
     } else if (b.responseType === 'buttons') {
       controlHTML = choiceButtonsHTML(b, currentVal) + skipLinkHTML(b);
     } else if (b.responseType === 'timing-slots') {
@@ -274,7 +297,7 @@ const AgentView = (function () {
           ${zones.map(z => `<option value="${z.id}" ${session.answers.deliveryZoneId === z.id ? 'selected' : ''}>${z.name} · דמי משלוח ${z.deliveryFee} ₪${z.minOrder ? ' · מינימום ' + z.minOrder + ' ₪' : ''}</option>`).join('')}
         </select>` : '';
         controlHTML = zoneSelectHTML + `<input class="wizard-input" id="q-input-${b.id}" type="text" value="${escapeAttr(currentVal)}" placeholder="לדוגמה: רחוב הרצל 10, כניסה ב׳, קומה 2" autocomplete="off">`
-          + `<div class="inline-advance-row"><button type="button" class="mini-advance-btn" data-advance-block="${b.id}">המשך →</button></div>`;
+          + `<p class="field-hint">Enter לאחר הכתובת ממשיך לשלב הבא</p>`;
       } else if (session.answers.fulfillment === 'איסוף') {
         controlHTML = `<button type="button" class="choice-btn ${currentVal ? 'is-selected' : ''}" data-value="${escapeAttr(branch.shortName)}" data-key="${b.key}" style="width:100%;">כן, מגיע/ה לקחת מסניף ${branch.shortName}</button>`;
       } else {
@@ -292,7 +315,7 @@ const AgentView = (function () {
     const allBlocks = screen.blocks || [];
     firePopupBlocksOnce(screen, allBlocks);
     const revealCount = getRevealCount(screen);
-    const visibleBlocks = allBlocks.slice(0, revealCount);
+    const visibleBlocks = allBlocks.slice(0, revealCount).filter(blockConditionMet);
     const questionBlocks = visibleBlocks.filter(b => b.kind === 'question');
     const fullyRevealed = revealCount >= allBlocks.length;
 
@@ -312,7 +335,7 @@ const AgentView = (function () {
       </div>
     `;
 
-    attachQuestionBlockListeners(container, branch, screen, questionBlocks, allBlocks);
+    attachQuestionBlockListeners(container, branch, screen, questionBlocks, allBlocks, visibleBlocks);
     attachInfoStripListeners(container, branch);
     attachNextListener(container, branch);
   }
@@ -345,7 +368,7 @@ const AgentView = (function () {
 
   function logNote(text) { if (session) session.notesLog.push(text); }
 
-  function attachQuestionBlockListeners(container, branch, screen, questionBlocks, allBlocks) {
+  function attachQuestionBlockListeners(container, branch, screen, questionBlocks, allBlocks, visibleBlocks) {
     function handleKeyAnswered(key) {
       advanceReveal(screen);
       if (['timing', 'fulfillment', 'timeSlot'].indexOf(key) > -1) {
@@ -353,6 +376,26 @@ const AgentView = (function () {
         if (check) showRuleFromCheck(check);
       }
     }
+
+    // אנטר = "המשך" גלובלי למסך: מתקדם תסריט/מולטיסלקט (שאין להם שדה טקסט
+    // ממוקד משלהם); שדות טקסט/בחירה מטפלים באנטר בעצמם דרך ה-listener הייעודי שלהם.
+    detachQuestionKeyHandler();
+    questionKeyHandler = (e) => {
+      if (e.key !== 'Enter') return;
+      const tag = e.target.tagName;
+      const isTextLike = (tag === 'INPUT' && ['text', 'tel', 'number'].indexOf(e.target.type) > -1) || tag === 'SELECT' || tag === 'TEXTAREA';
+      if (isTextLike) return;
+      const lastVisible = visibleBlocks[visibleBlocks.length - 1];
+      if (!lastVisible) return;
+      if (lastVisible.kind === 'script') {
+        e.preventDefault();
+        advanceReveal(screen);
+      } else if (lastVisible.kind === 'question' && lastVisible.responseType === 'multiselect') {
+        e.preventDefault();
+        if (isBlockValid(lastVisible, branch)) handleKeyAnswered(lastVisible.key);
+      }
+    };
+    document.addEventListener('keydown', questionKeyHandler);
 
     container.querySelectorAll('.script-continue-btn').forEach(btn => {
       btn.addEventListener('click', () => advanceReveal(screen));
@@ -885,5 +928,5 @@ const AgentView = (function () {
     attachInfoStripListeners(container, branch);
   }
 
-  return { mount };
+  return { mount, unmount };
 })();

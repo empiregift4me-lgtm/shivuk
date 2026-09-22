@@ -199,11 +199,11 @@ const AdminView = (function () {
             </label>
           </div>
         </div>
-        ${isExpanded ? `<div class="flow-card-body">${flowCardBodyHTML(s)}</div>` : ''}
+        ${isExpanded ? `<div class="flow-card-body">${flowCardBodyHTML(s, branch)}</div>` : ''}
       </div>`;
   }
 
-  function flowCardBodyHTML(s) {
+  function flowCardBodyHTML(s, branch) {
     const titleRow = `
       <div class="question-edit-row">
         <span class="field-label">כותרת המסך (לתצוגת מנהל בלבד)</span>
@@ -211,15 +211,15 @@ const AdminView = (function () {
       </div>`;
 
     if (s.type === 'question') {
-      return titleRow + blockBuilderHTML(s, 'blocks', true);
+      return titleRow + blockBuilderHTML(s, 'blocks', true, branch);
     }
     if (s.type === 'menu') {
-      return titleRow + `<div class="question-edit-row" id="category-manager"></div>` + blockBuilderHTML(s, 'leadingBlocks', false);
+      return titleRow + `<div class="question-edit-row" id="category-manager"></div>` + blockBuilderHTML(s, 'leadingBlocks', false, branch);
     }
     if (s.type === 'payment') {
-      return titleRow + `<p style="font-size:12.5px;color:var(--text-muted);margin-bottom:10px;">מסך תשלום סטנדרטי - כולל אפשרות פיצול בין שני אמצעי תשלום.</p>` + blockBuilderHTML(s, 'leadingBlocks', false);
+      return titleRow + `<p style="font-size:12.5px;color:var(--text-muted);margin-bottom:10px;">מסך תשלום סטנדרטי - כולל אפשרות פיצול בין שני אמצעי תשלום.</p>` + blockBuilderHTML(s, 'leadingBlocks', false, branch);
     }
-    return titleRow + `<p style="font-size:12.5px;color:var(--text-muted);margin-bottom:10px;">מסך סיכום - מפיק טקסט חופשי מובנה עם כפתור העתקה, כולל כל התזכורות שהוצגו לנציגה.</p>` + blockBuilderHTML(s, 'leadingBlocks', false);
+    return titleRow + `<p style="font-size:12.5px;color:var(--text-muted);margin-bottom:10px;">מסך סיכום - מפיק טקסט חופשי מובנה עם כפתור העתקה, כולל כל התזכורות שהוצגו לנציגה.</p>` + blockBuilderHTML(s, 'leadingBlocks', false, branch);
   }
 
   /* ---------------- ניהול לשוניות קטגוריה (ברמת מסעדה, מוצג בתוך מסך התפריט) ---------------- */
@@ -275,7 +275,7 @@ const AdminView = (function () {
 
   /* ---------------- בנאי הגרירה-ושחרור ---------------- */
 
-  function blockBuilderHTML(screen, listKey, includeQuestions) {
+  function blockBuilderHTML(screen, listKey, includeQuestions, branch) {
     const blocks = screen[listKey] || [];
     const lib = blockLibrary();
     return `
@@ -286,8 +286,51 @@ const AdminView = (function () {
           ${paletteSectionHTML('פופאפים מובנים', 'popup', lib.popups || [])}
         </div>
         <div class="block-canvas" id="canvas-${screen.id}-${listKey}" data-screen="${screen.id}" data-listkey="${listKey}">
-          ${blocks.length ? blocks.map((b, i) => canvasBlockHTML(b, i, blocks.length)).join('') : '<div class="canvas-empty-note">גררי לכאן שאילתה, תסריט או פופאפ מהפלטה - או לחצי על פריט בפלטה כדי להוסיף.</div>'}
+          ${blocks.length ? blocks.map((b, i) => canvasBlockHTML(b, i, blocks.length, branch)).join('') : '<div class="canvas-empty-note">גררי לכאן שאילתה, תסריט או פופאפ מהפלטה - או לחצי על פריט בפלטה כדי להוסיף.</div>'}
         </div>
+      </div>`;
+  }
+
+  /* ---------------- תצוגה מותנית: "הצג רק אם שאלה קודמת נענתה ב-X" ---------------- */
+
+  function allQuestionKeysInBranch(branch) {
+    const seen = {};
+    const list = [];
+    (branch.flow || []).forEach(screen => {
+      ['blocks', 'leadingBlocks'].forEach(listKey => {
+        (screen[listKey] || []).forEach(b => {
+          if (b.kind !== 'question') return;
+          if (b.responseType === 'dynamic-fulfillment' || b.responseType === 'multiselect') return;
+          if (seen[b.key]) return;
+          seen[b.key] = true;
+          list.push({ key: b.key, label: b.label || b.key, options: b.options || null, blockId: b.id });
+        });
+      });
+    });
+    return list;
+  }
+
+  function conditionEditorHTML(b, branch) {
+    if (!branch) return '';
+    const candidates = allQuestionKeysInBranch(branch).filter(c => c.blockId !== b.id);
+    if (!candidates.length && !b.condition) return '';
+    const current = b.condition || null;
+    const selectedSource = current ? candidates.find(c => c.key === current.key) : null;
+    const valueControlHTML = !current ? '' : (
+      selectedSource && selectedSource.options && selectedSource.options.length
+        ? `<select class="block-condition-value" data-block="${b.id}">
+            ${selectedSource.options.map(o => `<option value="${escapeAttr(o)}" ${current.equals === o ? 'selected' : ''}>${o}</option>`).join('')}
+          </select>`
+        : `<input type="text" class="block-condition-value" data-block="${b.id}" placeholder="ערך התשובה..." value="${escapeAttr(current.equals || '')}">`
+    );
+    return `
+      <div class="block-condition-row" data-noexpand>
+        <span class="field-label">הצג רק אם</span>
+        <select class="block-condition-key" data-block="${b.id}">
+          <option value="">תמיד מוצג</option>
+          ${candidates.map(c => `<option value="${escapeAttr(c.key)}" ${current && current.key === c.key ? 'selected' : ''}>${escapeAttr(c.label)}</option>`).join('')}
+        </select>
+        ${valueControlHTML}
       </div>`;
   }
 
@@ -318,19 +361,21 @@ const AdminView = (function () {
     return `<div class="wizard-input is-mini is-fake-select">${b.inputMode === 'tel' ? '05X-XXXXXXX' : 'תשובה קצרה...'}</div>`;
   }
 
-  function canvasBlockHTML(b, index, total) {
+  function canvasBlockHTML(b, index, total, branch) {
     const moveButtons = `
       <button type="button" class="icon-btn" data-move-block="up" data-block="${b.id}" ${index === 0 ? 'disabled' : ''} title="הזזה למעלה">▲</button>
       <button type="button" class="icon-btn" data-move-block="down" data-block="${b.id}" ${index === total - 1 ? 'disabled' : ''} title="הזזה למטה">▼</button>
       <button type="button" class="icon-btn" data-remove-block="${b.id}" title="הסרה">🗑</button>`;
+    const conditionBadge = b.condition ? ' <span class="condition-badge" title="מוצג בתנאי">🔀 מותנה</span>' : '';
 
     if (b.kind === 'script' || b.kind === 'popup') {
       return `<div class="canvas-block canvas-block-${b.kind}" draggable="true" data-block="${b.id}">
         <div class="canvas-block-head">
-          <span class="canvas-block-type">${BLOCK_KIND_ICON[b.kind]} ${b.kind === 'script' ? 'תסריט (טקסט מוטמע במסך + כפתור "הבא")' : 'פופאפ (חד-פעמי בכניסה למסך)'}</span>
+          <span class="canvas-block-type">${BLOCK_KIND_ICON[b.kind]} ${b.kind === 'script' ? 'תסריט (טקסט מוטמע במסך + כפתור "הבא")' : 'פופאפ (חד-פעמי בכניסה למסך)'}${conditionBadge}</span>
           <div class="canvas-block-actions" data-noexpand>${moveButtons}</div>
         </div>
         <textarea class="block-text-edit" data-block="${b.id}" data-field="text">${b.text}</textarea>
+        ${conditionEditorHTML(b, branch)}
       </div>`;
     }
 
@@ -338,7 +383,7 @@ const AdminView = (function () {
     const hasOptions = ['buttons', 'dropdown', 'multiselect'].indexOf(b.responseType) > -1;
     return `<div class="canvas-block canvas-block-question" draggable="true" data-block="${b.id}">
       <div class="canvas-block-head">
-        <span class="canvas-block-type">❓ שאילתה${b.required === false ? ' (לא חובה)' : ''}</span>
+        <span class="canvas-block-type">❓ שאילתה${b.required === false ? ' (לא חובה)' : ''}${conditionBadge}</span>
         <div class="canvas-block-actions" data-noexpand>${moveButtons}</div>
       </div>
       ${isDynamic
@@ -358,6 +403,7 @@ const AdminView = (function () {
       ${hasOptions ? `<textarea class="block-options-edit" data-block="${b.id}" placeholder="אפשרות אחת בכל שורה">${(b.options || []).join('\n')}</textarea>` : ''}
       ` : ''}
       <div class="canvas-block-preview">${miniPreviewHTML(b)}</div>
+      ${conditionEditorHTML(b, branch)}
     </div>`;
   }
 
@@ -458,6 +504,25 @@ const AdminView = (function () {
         el.addEventListener('change', () => {
           const options = el.value.split('\n').map(s => s.trim()).filter(Boolean);
           Store.updateBlock(branchId, screen.id, listKey, el.dataset.block, { options });
+          refresh();
+        });
+      });
+      canvas.querySelectorAll('.block-condition-key').forEach(el => {
+        el.addEventListener('click', (e) => e.stopPropagation());
+        el.addEventListener('change', () => {
+          const key = el.value;
+          Store.updateBlock(branchId, screen.id, listKey, el.dataset.block, { condition: key ? { key, equals: '' } : null });
+          showToast(key ? 'הותנה בשאלה קודמת' : 'התנאי הוסר - הרכיב יוצג תמיד', 'success');
+          refresh();
+        });
+      });
+      canvas.querySelectorAll('.block-condition-value').forEach(el => {
+        el.addEventListener('click', (e) => e.stopPropagation());
+        el.addEventListener('change', () => {
+          const block = (screen[listKey] || []).find(bl => bl.id === el.dataset.block);
+          if (!block || !block.condition) return;
+          Store.updateBlock(branchId, screen.id, listKey, el.dataset.block, { condition: { key: block.condition.key, equals: el.value } });
+          showToast('התנאי נשמר', 'success');
           refresh();
         });
       });

@@ -21,7 +21,7 @@ const Summary = (function () {
     lines.push(`שם מלא: ${answers.fullName || '-'}`);
 
     const isFuture = answers.timing === 'עתידי' || answers.timing === 'ליותר מאוחר';
-    lines.push(`מועד: ${isFuture ? ('עתידית' + (answers.timeSlot ? ' לשעה ' + answers.timeSlot : '')) : 'עכשיו'}`);
+    lines.push(`*מועד: ${isFuture ? ('עתידית' + (answers.timeSlot ? ' לשעה ' + answers.timeSlot : '')) : 'עכשיו'}*`);
 
     if (answers.fulfillment === 'משלוח') {
       lines.push(`אופן קבלה: משלוח לכתובת - ${answers.address || answers.addressOrPickup || '-'}`);
@@ -64,12 +64,6 @@ const Summary = (function () {
       paymentLine += ` + ${paymentLabel(payment.splitMethod)}${payment.splitAmount ? ' (' + payment.splitAmount + ' ₪)' : ''}`;
     }
     lines.push(paymentLine);
-
-    if (ctx.notesLog && ctx.notesLog.length) {
-      lines.push('');
-      lines.push('--- הערות/תזכורות שהוצגו לנציגה במהלך השיחה ---');
-      ctx.notesLog.forEach(n => lines.push('• ' + n));
-    }
 
     lines.push('==========================');
     return lines.join('\n');

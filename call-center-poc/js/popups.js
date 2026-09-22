@@ -7,6 +7,7 @@
 
 const Popups = (function () {
   const root = document.getElementById('popup-root');
+  let activeKeyHandler = null;
 
   const KIND_META = {
     blocking: { icon: '⛔', kicker: 'חסימה - חובה לבחור' },
@@ -17,6 +18,7 @@ const Popups = (function () {
 
   function close() {
     root.innerHTML = '';
+    if (activeKeyHandler) { document.removeEventListener('keydown', activeKeyHandler); activeKeyHandler = null; }
   }
 
   function show(opts) {
@@ -62,12 +64,17 @@ const Popups = (function () {
     root.innerHTML = '';
     root.appendChild(overlay);
 
-    if (canDismiss) {
-      const escHandler = (e) => {
-        if (e.key === 'Escape') { close(); document.removeEventListener('keydown', escHandler); }
-      };
-      document.addEventListener('keydown', escHandler);
-    }
+    if (activeKeyHandler) document.removeEventListener('keydown', activeKeyHandler);
+    activeKeyHandler = (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        const primaryBtn = btnWrap.querySelector('.popup-btn.is-primary') || btnWrap.querySelector('.popup-btn');
+        if (primaryBtn) primaryBtn.click();
+      } else if (e.key === 'Escape' && canDismiss) {
+        close();
+      }
+    };
+    document.addEventListener('keydown', activeKeyHandler);
   }
 
   function blocking(opts) { show(Object.assign({}, opts, { kind: 'blocking', dismissible: false })); }
