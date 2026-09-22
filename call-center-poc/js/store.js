@@ -4,6 +4,11 @@
    בניית בלוקים, הפעלה/כיבוי חוקים, זמינות מרכיבים) ישפיעו מיד על
    תצוגת הנציגה, וישרדו רענון דף. כפתור "איפוס דמו" מחזיר הכול למצב
    ההתחלתי.
+
+   גרסת סכימה: אם ב-localStorage נמצא עותק שנשמר מגרסה קודמת של
+   מבנה הנתונים (לדוגמה סבב-בדיקה קודם, לפני שנוספו blocks/blockLibrary
+   או מרכיבים ברמת סניף) - הוא מתעלם ממנו וטוען מחדש את ברירת המחדל,
+   כדי שדפדפן עם נתונים ישנים לא "יקרוס בשקט" על שדות שעדיין לא קיימים.
 =================================================================== */
 
 const Store = (function () {
@@ -14,9 +19,14 @@ const Store = (function () {
   function load() {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
-      if (raw) return JSON.parse(raw);
-    } catch (e) { /* localStorage לא זמין - נמשיך עם ברירת המחדל */ }
-    return deepClone(DEFAULT_DATA);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (parsed && parsed._schemaVersion === SCHEMA_VERSION) return parsed;
+      }
+    } catch (e) { /* localStorage לא זמין/פגום - נמשיך עם ברירת המחדל */ }
+    const fresh = deepClone(DEFAULT_DATA);
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(fresh)); } catch (e) { /* מתעלמים */ }
+    return fresh;
   }
 
   let data = load();
@@ -113,7 +123,7 @@ const Store = (function () {
     if (!s) return null;
     const list = blockList(s, listKey);
     const full = Object.assign({ id: newId('blk') }, block);
-    if (atIndex === undefined || atIndex < 0 || atIndex > list.length) list.push(full);
+    if (atIndex === undefined || atIndex === null || atIndex < 0 || atIndex > list.length) list.push(full);
     else list.splice(atIndex, 0, full);
     save();
     return full.id;
@@ -160,22 +170,22 @@ const Store = (function () {
     save();
   }
 
-  /* ---------------- מרכיבים (ברמת מסעדה) ---------------- */
+  /* ---------------- מרכיבים: קטלוג ברמת מסעדה, זמינות ברמת סניף ---------------- */
 
-  function getIngredients(restaurantId) {
+  function getIngredientCatalog(restaurantId) {
     const r = getRestaurant(restaurantId);
     return (r && r.ingredients) || [];
   }
 
   function getIngredient(restaurantId, ingredientId) {
-    return getIngredients(restaurantId).find(i => i.id === ingredientId) || null;
+    return getIngredientCatalog(restaurantId).find(i => i.id === ingredientId) || null;
   }
 
   function addIngredient(restaurantId, name) {
     const r = getRestaurant(restaurantId);
     if (!r) return;
     if (!r.ingredients) r.ingredients = [];
-    r.ingredients.push({ id: newId('ing'), name: name, available: true });
+    r.ingredients.push({ id: newId('ing'), name: name });
     save();
   }
 
@@ -183,12 +193,113 @@ const Store = (function () {
     const r = getRestaurant(restaurantId);
     if (!r || !r.ingredients) return;
     r.ingredients = r.ingredients.filter(i => i.id !== ingredientId);
+    (r.branches || []).forEach(b => {
+      if (b.unavailableIngredientIds) b.unavailableIngredientIds = b.unavailableIngredientIds.filter(id => id !== ingredientId);
+    });
     save();
   }
 
-  function setIngredientAvailable(restaurantId, ingredientId, available) {
-    const ing = getIngredient(restaurantId, ingredientId);
-    if (ing) { ing.available = available; save(); }
+  function isIngredientAvailableAtBranch(branchId, ingredientId) {
+    const found = findBranchById(branchId);
+    if (!found) return true;
+    const list = found.branch.unavailableIngredientIds || [];
+    return list.indexOf(ingredientId) === -1;
+  }
+
+  function setIngredientAvailableAtBranch(branchId, ingredientId, available) {
+    const found = findBranchById(branchId);
+    if (!found) return;
+    if (!found.branch.unavailableIngredientIds) found.branch.unavailableIngredientIds = [];
+    const list = found.branch.unavailableIngredientIds;
+    const idx = list.indexOf(ingredientId);
+    if (available && idx > -1) list.splice(idx, 1);
+    if (!available && idx === -1) list.push(ingredientId);
+    save();
+  }
+
+  /* ---------------- אזורי משלוח (ברמת סניף) ---------------- */
+
+  function getDeliveryZones(branchId) {
+    const found = findBranchById(branchId);
+    return (found && found.branch.deliveryZones) || [];
+  }
+
+  function getDeliveryZone(branchId, zoneId) {
+    return getDeliveryZones(branchId).find(z => z.id === zoneId) || null;
+  }
+
+  function addDeliveryZone(branchId, zone) {
+    const found = findBranchById(branchId);
+    if (!found) return null;
+    if (!found.branch.deliveryZones) found.branch.deliveryZones = [];
+    const full = Object.assign({ id: newId('zone'), name: 'אזור חדש', minOrder: 0, deliveryFee: 0, waitMin: 45, waitMax: 60 }, zone);
+    found.branch.deliveryZones.push(full);
+    save();
+    return full.id;
+  }
+
+  function updateDeliveryZone(branchId, zoneId, patch) {
+    const zone = getDeliveryZone(branchId, zoneId);
+    if (zone) { Object.assign(zone, patch); save(); }
+  }
+
+  function removeDeliveryZone(branchId, zoneId) {
+    const found = findBranchById(branchId);
+    if (!found || !found.branch.deliveryZones) return;
+    found.branch.deliveryZones = found.branch.deliveryZones.filter(z => z.id !== zoneId);
+    save();
+  }
+
+  /* ---------------- פרטי סניף (כתובת/שעות/כשרות) ---------------- */
+
+  function updateBranchInfo(branchId, patch) {
+    const found = findBranchById(branchId);
+    if (!found) return;
+    Object.assign(found.branch, patch);
+    save();
+  }
+
+  /* ---------------- קטגוריות תפריט (לשוניות) ברמת מסעדה ---------------- */
+
+  function getRestaurantCategories(restaurantId) {
+    const r = getRestaurant(restaurantId);
+    if (!r) return [];
+    const ids = r.menuCategoryIds || [];
+    return ids.map(id => data.menuCategories.find(c => c.id === id)).filter(Boolean);
+  }
+
+  function addCategoryToRestaurant(restaurantId, categoryId) {
+    const r = getRestaurant(restaurantId);
+    if (!r) return;
+    if (!r.menuCategoryIds) r.menuCategoryIds = [];
+    if (r.menuCategoryIds.indexOf(categoryId) === -1) r.menuCategoryIds.push(categoryId);
+    save();
+  }
+
+  function createAndAddCategory(restaurantId, name) {
+    const id = newId('cat');
+    data.menuCategories.push({ id, name });
+    addCategoryToRestaurant(restaurantId, id);
+    return id;
+  }
+
+  function removeCategoryFromRestaurant(restaurantId, categoryId) {
+    const r = getRestaurant(restaurantId);
+    if (!r || !r.menuCategoryIds) return;
+    r.menuCategoryIds = r.menuCategoryIds.filter(id => id !== categoryId);
+    save();
+  }
+
+  function moveCategoryInRestaurant(restaurantId, categoryId, direction) {
+    const r = getRestaurant(restaurantId);
+    if (!r || !r.menuCategoryIds) return;
+    const idx = r.menuCategoryIds.indexOf(categoryId);
+    const newIdx = idx + direction;
+    if (idx < 0 || newIdx < 0 || newIdx >= r.menuCategoryIds.length) return;
+    const tmp = r.menuCategoryIds[idx];
+    r.menuCategoryIds[idx] = r.menuCategoryIds[newIdx];
+    r.menuCategoryIds[newIdx] = tmp;
+    save();
   }
 
   function knownCustomerByPhone(phone) {
@@ -203,7 +314,11 @@ const Store = (function () {
     getRule, getRulesForScope, setRuleEnabled, updateRuleMessage,
     updateScreenTitle, setScreenEnabled, moveScreen,
     addBlock, removeBlock, updateBlock, moveBlock, reorderBlockTo,
-    getIngredients, getIngredient, addIngredient, removeIngredient, setIngredientAvailable,
+    getIngredientCatalog, getIngredient, addIngredient, removeIngredient,
+    isIngredientAvailableAtBranch, setIngredientAvailableAtBranch,
+    getDeliveryZones, getDeliveryZone, addDeliveryZone, updateDeliveryZone, removeDeliveryZone,
+    updateBranchInfo,
+    getRestaurantCategories, addCategoryToRestaurant, createAndAddCategory, removeCategoryFromRestaurant, moveCategoryInRestaurant,
     knownCustomerByPhone
   };
 })();

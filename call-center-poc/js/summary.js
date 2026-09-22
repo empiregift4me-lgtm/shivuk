@@ -25,6 +25,7 @@ const Summary = (function () {
 
     if (answers.fulfillment === 'משלוח') {
       lines.push(`אופן קבלה: משלוח לכתובת - ${answers.address || answers.addressOrPickup || '-'}`);
+      if (ctx.zone) lines.push(`אזור משלוח: ${ctx.zone.name} (זמן המתנה משוער: ${ctx.zone.waitMin === ctx.zone.waitMax ? ctx.zone.waitMin : ctx.zone.waitMin + '-' + ctx.zone.waitMax} דק')`);
     } else if (answers.fulfillment === 'איסוף') {
       lines.push(`אופן קבלה: איסוף עצמי מסניף ${branch.shortName}`);
     }
@@ -47,8 +48,15 @@ const Summary = (function () {
       lines.push(`${line.qty} x ${item.name}${note} - ${sub} ₪`);
     });
 
-    lines.push('');
-    lines.push(`סה"כ לתשלום: ${total} ₪`);
+    if (ctx.deliveryFee) {
+      lines.push('');
+      lines.push(`סכום פריטים: ${total} ₪`);
+      lines.push(`דמי משלוח: ${ctx.deliveryFee} ₪`);
+      lines.push(`סה"כ לתשלום: ${ctx.grandTotal != null ? ctx.grandTotal : total + ctx.deliveryFee} ₪`);
+    } else {
+      lines.push('');
+      lines.push(`סה"כ לתשלום: ${total} ₪`);
+    }
     lines.push('');
 
     let paymentLine = `אמצעי תשלום: ${paymentLabel(payment.method)}`;

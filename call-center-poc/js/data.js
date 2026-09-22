@@ -5,6 +5,12 @@
    (localStorage), כך שהאובייקט הזה עצמו נשאר קבוע ומשמש גם לכפתור
    "איפוס דמו".
 
+   SCHEMA_VERSION: כל שינוי במבנה הנתונים (למשל הוספת שדה חובה חדש)
+   חייב להעלות את המספר הזה. store.js משווה אותו לגרסה השמורה ב-
+   localStorage, וכשיש אי-התאמה מתעלם מהעותק הישן וטוען מחדש את
+   ברירת המחדל - כדי שדפדפן שנשאר עם נתונים מסבב-בדיקה קודם לא יקרוס
+   בשקט על שדות שעדיין לא קיימים אצלו.
+
    מסך מסוג 'question' מורכב מרצף blocks (זה מה שמאפשר לבנות אותו
    בגרירה בתצוגת המנהל, ולערבב בו כמה שאילתות/תסריטים/פופאפים):
      { kind:'script',   text }                       - טקסט מוטמע במסך
@@ -13,9 +19,14 @@
    responseType: 'buttons' | 'dropdown' | 'multiselect' | 'short-text'
    מסכי menu/payment/summary נשארים במבנה הייעודי שלהם, אך גם הם יכולים
    לשאת leadingBlocks (script/popup) שמוצגים לפני התוכן הראשי שלהם.
+   מסך מסוג 'menu' הוא מסך אחד לכל סניף, עם לשוניות-קטגוריה לפי
+   restaurant.menuCategoryIds (מוגדר בתצוגת מנהל).
 =================================================================== */
 
+const SCHEMA_VERSION = 3;
+
 const DEFAULT_DATA = {
+  _schemaVersion: SCHEMA_VERSION,
 
   menuCategories: [
     { id: 'mains', name: "מנות עיקריות וסושי" },
@@ -31,8 +42,8 @@ const DEFAULT_DATA = {
     { id: 'rol-veg', name: "רול אבוקדו טבעוני", price: 36, categoryId: 'mains', tags: ['טבעוני', 'ללא גלוטן'], image: null, desc: "אבוקדו, מלפפון, גזר" },
     {
       id: 'build-your-own', name: "רול לבחירה אישית", price: 44, categoryId: 'mains', tags: ['התאמה אישית'], image: null,
-      desc: "בוחרים מילוי בעצמכם", customizable: true,
-      ingredientIds: ['ing-sweet-potato', 'ing-cucumber', 'ing-avocado', 'ing-salmon', 'ing-tuna', 'ing-cream-cheese']
+      desc: "לוחצים על המנה ובוחרים מילוי בעצמכם", customizable: true,
+      ingredientIds: ['ing-sweet-potato', 'ing-cucumber', 'ing-avocado', 'ing-salmon', 'ing-tuna', 'ing-carrot', 'ing-cream-cheese']
     },
     { id: 'sushi-24', name: "מגש 24 חלקים", price: 96, categoryId: 'mains', tags: ['פופולרי'], image: null, desc: "מבחר רולים משתנה" },
     { id: 'sushi-40', name: "מגש 40 חלקים", price: 158, categoryId: 'mains', tags: [], image: null, desc: "מבחר רולים משתנה, מומלץ לזוג" },
@@ -78,13 +89,15 @@ const DEFAULT_DATA = {
       name: "ג'אפן",
       kinds: ['פרווה', 'סושי'],
       active: true,
+      menuCategoryIds: ['mains', 'party', 'sides', 'drinks'],
       ingredients: [
-        { id: 'ing-sweet-potato', name: 'בטטה', available: true },
-        { id: 'ing-cucumber', name: 'מלפפון', available: false },
-        { id: 'ing-avocado', name: 'אבוקדו', available: true },
-        { id: 'ing-salmon', name: 'סלמון', available: true },
-        { id: 'ing-tuna', name: 'טונה', available: true },
-        { id: 'ing-cream-cheese', name: 'גבינת שמנת', available: true }
+        { id: 'ing-sweet-potato', name: 'בטטה' },
+        { id: 'ing-cucumber', name: 'מלפפון' },
+        { id: 'ing-avocado', name: 'אבוקדו' },
+        { id: 'ing-salmon', name: 'סלמון' },
+        { id: 'ing-tuna', name: 'טונה' },
+        { id: 'ing-carrot', name: 'גזר' },
+        { id: 'ing-cream-cheese', name: 'גבינת שמנת' }
       ],
       branches: [
         {
@@ -92,8 +105,13 @@ const DEFAULT_DATA = {
           name: "ג'אפן גוש עציון",
           shortName: "גוש עציון",
           address: "מרכז מסחרי אלון שבות, גוש עציון",
-          minOrderDelivery: null,
+          openingHours: "א'-ה' 12:00-23:00 · ו' 11:00-15:00 · מוצ״ש שעה אחרי צאת השבת עד 23:00",
+          kashrut: "בד״ץ בית יוסף - פרווה",
           busySlot: '18:00',
+          unavailableIngredientIds: [],
+          deliveryZones: [
+            { id: 'zone-goh-local', name: "גוש עציון (מקומי)", minOrder: 0, deliveryFee: 15, waitMin: 45, waitMax: 60 }
+          ],
           flow: [
             {
               id: 'goh-s1', type: 'question', title: "פרטי התקשרות", enabled: true,
@@ -123,10 +141,9 @@ const DEFAULT_DATA = {
               ]
             },
             {
-              id: 'goh-menu-mains', type: 'menu', title: "מנות עיקריות, סושי ומגשים", categoryFilter: ['mains', 'party'], enabled: true,
-              leadingBlocks: [{ id: 'goh-mm-b1', kind: 'popup', text: "מעולה, עכשיו נזמין את המנות שתרצה. אחרי מנות העיקריות נעבור לתוספות ולשתייה בנפרד." }]
+              id: 'goh-menu', type: 'menu', title: "תפריט", enabled: true,
+              leadingBlocks: [{ id: 'goh-mm-b1', kind: 'popup', text: "מעולה, עכשיו נזמין את המנות שתרצה. אפשר לדפדף בין הלשוניות למעלה." }]
             },
-            { id: 'goh-menu-sides', type: 'menu', title: "תוספות, סלטים ושתייה", categoryFilter: ['sides', 'drinks'], enabled: true, leadingBlocks: [] },
             { id: 'goh-payment', type: 'payment', title: "תשלום", enabled: true, leadingBlocks: [] },
             { id: 'goh-summary', type: 'summary', title: "סיכום הזמנה", enabled: true, leadingBlocks: [] }
           ]
@@ -136,8 +153,14 @@ const DEFAULT_DATA = {
           name: "ג'אפן פתח תקווה",
           shortName: "פתח תקווה",
           address: "רחוב חנקין 12, פתח תקווה",
-          minOrderDelivery: 100,
+          openingHours: "א'-ה' 12:00-23:30 · ו' 11:00-15:30 · מוצ״ש שעה אחרי צאת השבת עד 00:00",
+          kashrut: "רבנות פתח תקווה - פרווה",
           busySlot: null,
+          unavailableIngredientIds: ['ing-cucumber'],
+          deliveryZones: [
+            { id: 'zone-pt-local', name: "פתח תקווה (מקומי)", minOrder: 0, deliveryFee: 12, waitMin: 60, waitMax: 60 },
+            { id: 'zone-pt-nehalim', name: "נחלים", minOrder: 120, deliveryFee: 30, waitMin: 60, waitMax: 75 }
+          ],
           flow: [
             {
               id: 'pt-s1', type: 'question', title: "פתיחה + תזמון", enabled: true,
@@ -172,10 +195,9 @@ const DEFAULT_DATA = {
               ]
             },
             {
-              id: 'pt-menu-mains', type: 'menu', title: "מנות עיקריות, סושי ומגשים", categoryFilter: ['mains', 'party'], enabled: true,
-              leadingBlocks: [{ id: 'pt-mm-b1', kind: 'popup', text: "מעולה, עכשיו נזמין את המנות שתרצה. שימי לב: תוספות ושתייה נמצאות במסך הבא בנפרד." }]
+              id: 'pt-menu', type: 'menu', title: "תפריט", enabled: true,
+              leadingBlocks: [{ id: 'pt-mm-b1', kind: 'popup', text: "מעולה, עכשיו נזמין את המנות שתרצה. אפשר לדפדף בין הלשוניות למעלה." }]
             },
-            { id: 'pt-menu-sides', type: 'menu', title: "תוספות, סלטים ושתייה", categoryFilter: ['sides', 'drinks'], enabled: true, leadingBlocks: [] },
             { id: 'pt-payment', type: 'payment', title: "תשלום", enabled: true, leadingBlocks: [] },
             { id: 'pt-summary', type: 'summary', title: "סיכום הזמנה", enabled: true, leadingBlocks: [] }
           ]
@@ -256,7 +278,7 @@ const DEFAULT_DATA = {
       scope: { branchId: 'japan-pt' },
       kind: 'suggestion',
       name: "השלמת מינימום הזמנה למשלוח",
-      triggerNote: "נדלק כשלוחצים \"המשך\" מהתפריט הלאה לתשלום, אם נבחר \"משלוח\" והסכום קרוב למינימום ההזמנה (100 ₪) אך לא מגיע אליו",
+      triggerNote: "נדלק כשלוחצים \"המשך\" מהתפריט הלאה לתשלום, אם נבחר \"משלוח\" והסכום קרוב למינימום ההזמנה של אזור המשלוח שנבחר (למשל אזור נחלים: 120 ₪) אך לא מגיע אליו",
       message: "אדוני, חסר לך {{gap}} ₪ להשלמת מינימום ההזמנה למשלוח ({{min}} ₪). תרצה שאציע לך מוצרים במחיר הזה?",
       buttons: [
         { label: "כן, תציע לי מוצרים", action: 'applyPriceFilterToGap' },
