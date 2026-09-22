@@ -1,8 +1,18 @@
 /* ===================================================================
    DEFAULT_DATA - נתוני דמו (Mock Data) למוקד ההזמנות.
-   זהו "מצב המנהל" ההתחלתי: מסעדות, סניפים, זרימת מסכים, תפריט וחוקים.
-   כל עריכה בתצוגת המנהל משוכפלת לעותק חי ב-store.js (localStorage),
-   כך שהאובייקט הזה עצמו נשאר קבוע ומשמש גם לכפתור "איפוס דמו".
+   זהו "מצב המנהל" ההתחלתי: מסעדות, סניפים, זרימת מסכים, תפריט, מרכיבים
+   וחוקים. כל עריכה בתצוגת המנהל משוכפלת לעותק חי ב-store.js
+   (localStorage), כך שהאובייקט הזה עצמו נשאר קבוע ומשמש גם לכפתור
+   "איפוס דמו".
+
+   מסך מסוג 'question' מורכב מרצף blocks (זה מה שמאפשר לבנות אותו
+   בגרירה בתצוגת המנהל, ולערבב בו כמה שאילתות/תסריטים/פופאפים):
+     { kind:'script',   text }                       - טקסט מוטמע במסך
+     { kind:'popup',    text }                        - פופאפ תזכורת חד-פעמי בכניסה למסך
+     { kind:'question', key, label, responseType, ... } - שאילתה בפועל
+   responseType: 'buttons' | 'dropdown' | 'multiselect' | 'short-text'
+   מסכי menu/payment/summary נשארים במבנה הייעודי שלהם, אך גם הם יכולים
+   לשאת leadingBlocks (script/popup) שמוצגים לפני התוכן הראשי שלהם.
 =================================================================== */
 
 const DEFAULT_DATA = {
@@ -15,10 +25,15 @@ const DEFAULT_DATA = {
   ],
 
   menuItems: [
-    { id: 'rol-cali', name: "רול קליפורניה", price: 42, categoryId: 'mains', tags: ['פופולרי', 'ללא גלוטן'], image: null, desc: "אבוקדו, סורימי, מלפפון"},
+    { id: 'rol-cali', name: "רול קליפורניה", price: 42, categoryId: 'mains', tags: ['פופולרי', 'ללא גלוטן'], image: null, desc: "אבוקדו, סורימי, מלפפון" },
     { id: 'rol-salmon', name: "רול סלמון חריף", price: 46, categoryId: 'mains', tags: ['חריף', 'פופולרי'], image: null, desc: "סלמון, מיונז חריף, בצל ירוק" },
     { id: 'rol-tuna', name: "רול טונה", price: 48, categoryId: 'mains', tags: [], image: null, desc: "טונה טרייה, מלפפון, שומשום" },
     { id: 'rol-veg', name: "רול אבוקדו טבעוני", price: 36, categoryId: 'mains', tags: ['טבעוני', 'ללא גלוטן'], image: null, desc: "אבוקדו, מלפפון, גזר" },
+    {
+      id: 'build-your-own', name: "רול לבחירה אישית", price: 44, categoryId: 'mains', tags: ['התאמה אישית'], image: null,
+      desc: "בוחרים מילוי בעצמכם", customizable: true,
+      ingredientIds: ['ing-sweet-potato', 'ing-cucumber', 'ing-avocado', 'ing-salmon', 'ing-tuna', 'ing-cream-cheese']
+    },
     { id: 'sushi-24', name: "מגש 24 חלקים", price: 96, categoryId: 'mains', tags: ['פופולרי'], image: null, desc: "מבחר רולים משתנה" },
     { id: 'sushi-40', name: "מגש 40 חלקים", price: 158, categoryId: 'mains', tags: [], image: null, desc: "מבחר רולים משתנה, מומלץ לזוג" },
     { id: 'party-tray', name: "מגש מסיבה (60 חלקים)", price: 249, categoryId: 'party', tags: ['מומלץ לאירועים'], special: 'party-tray', image: null, desc: "חצי צמחוני, חצי עם דגים - בכפוף לנוהל המגשים" },
@@ -36,12 +51,41 @@ const DEFAULT_DATA = {
     { phone: '0521112233', fullName: "מיכל לוי" }
   ],
 
+  /* ספריית רכיבים מובנים לפלטת הגרירה בתצוגת מנהל - תבניות מוכנות
+     שאפשר לגרור (או ללחוץ עליהן) כדי להוסיף לבניית מסך. "יצירת חדש"
+     בכל קטגוריה מוסיפה בלוק ריק לעריכה. */
+  blockLibrary: {
+    questions: [
+      { label: "טלפון נייד", template: { key: 'phone', label: "מה מספר הנייד לביצוע ההזמנה?", responseType: 'short-text', inputMode: 'tel', autofill: true, required: true } },
+      { label: "שם מלא", template: { key: 'fullName', label: "מה השם המלא?", responseType: 'short-text', autofill: true, required: true } },
+      { label: "משלוח או איסוף", template: { key: 'fulfillment', label: "משלוח או איסוף?", responseType: 'buttons', options: ['משלוח', 'איסוף'], required: true } },
+      { label: "עכשיו או עתידי", template: { key: 'timing', label: "ההזמנה היא לעכשיו או עתידית?", responseType: 'buttons', options: ['עכשיו', 'עתידי'], required: true } },
+      { label: "שאלת כן/לא (תפריט נפתח)", template: { key: 'customYesNo', label: "שאלה חדשה...", responseType: 'dropdown', options: ['כן', 'לא'], required: false } },
+      { label: "אלרגיות (בחירה מרובה)", template: { key: 'allergies', label: "יש אלרגיות שכדאי לדעת עליהן?", responseType: 'multiselect', options: ['בוטנים', 'גלוטן', 'ביצים', 'שומשום'], required: false } }
+    ],
+    scripts: [
+      { label: "פתיחה - איסוף פרטים", template: { text: "לפני שאני מתחילה אני אשאל אותך מספר שאלות כדי לבצע את ההזמנה על הצד הטוב ביותר" } },
+      { label: "מעבר לתפריט", template: { text: "מעולה, עכשיו נזמין את המנות שתרצה." } }
+    ],
+    popups: [
+      { label: "תזכורת כללית לנציגה", template: { text: "תזכורת לנציגה: לוודא את כל פרטי ההזמנה מול הלקוח לפני הסיום." } }
+    ]
+  },
+
   restaurants: [
     {
       id: 'japan',
       name: "ג'אפן",
       kinds: ['פרווה', 'סושי'],
       active: true,
+      ingredients: [
+        { id: 'ing-sweet-potato', name: 'בטטה', available: true },
+        { id: 'ing-cucumber', name: 'מלפפון', available: false },
+        { id: 'ing-avocado', name: 'אבוקדו', available: true },
+        { id: 'ing-salmon', name: 'סלמון', available: true },
+        { id: 'ing-tuna', name: 'טונה', available: true },
+        { id: 'ing-cream-cheese', name: 'גבינת שמנת', available: true }
+      ],
       branches: [
         {
           id: 'japan-goh',
@@ -51,15 +95,40 @@ const DEFAULT_DATA = {
           minOrderDelivery: null,
           busySlot: '18:00',
           flow: [
-            { id: 'goh-q1', type: 'question', key: 'phone', label: "מה מספר הנייד לביצוע ההזמנה?", inputType: 'tel', autofill: true, required: true, enabled: true },
-            { id: 'goh-q2', type: 'question', key: 'fullName', label: "מה השם המלא?", inputType: 'text', autofill: true, required: true, enabled: true },
-            { id: 'goh-q3', type: 'question', key: 'fulfillment', label: "משלוח או איסוף?", inputType: 'choice', options: ['משלוח', 'איסוף'], required: true, enabled: true },
-            { id: 'goh-q4', type: 'question', key: 'addressOrPickup', dynamic: 'fulfillment-followup', inputType: 'dynamic-fulfillment', required: true, enabled: true },
-            { id: 'goh-q5', type: 'question', key: 'timing', label: "ההזמנה היא לעכשיו או ליותר מאוחר?", inputType: 'timing', options: ['עכשיו', 'ליותר מאוחר'], required: true, enabled: true },
-            { id: 'goh-menu-mains', type: 'menu', title: "מנות עיקריות, סושי ומגשים", categoryFilter: ['mains', 'party'], entryScript: "מעולה, עכשיו נזמין את המנות שתרצה. אחרי מנות העיקריות נעבור לתוספות ולשתייה בנפרד.", enabled: true },
-            { id: 'goh-menu-sides', type: 'menu', title: "תוספות, סלטים ושתייה", categoryFilter: ['sides', 'drinks'], enabled: true },
-            { id: 'goh-payment', type: 'payment', title: "תשלום", enabled: true },
-            { id: 'goh-summary', type: 'summary', title: "סיכום הזמנה", enabled: true }
+            {
+              id: 'goh-s1', type: 'question', title: "פרטי התקשרות", enabled: true,
+              blocks: [
+                { id: 'goh-s1-b1', kind: 'script', text: "לפני שאני מתחילה אני אשאל אותך מספר שאלות כדי לבצע את ההזמנה על הצד הטוב ביותר" },
+                { id: 'goh-s1-b2', kind: 'question', key: 'phone', label: "מה מספר הנייד לביצוע ההזמנה?", responseType: 'short-text', inputMode: 'tel', autofill: true, required: true },
+                { id: 'goh-s1-b3', kind: 'question', key: 'fullName', label: "מה השם המלא?", responseType: 'short-text', autofill: true, required: true },
+                { id: 'goh-s1-b4', kind: 'question', key: 'allergies', label: "יש אלרגיות שכדאי לדעת עליהן?", responseType: 'multiselect', options: ['בוטנים', 'גלוטן', 'ביצים', 'שומשום'], required: false }
+              ]
+            },
+            {
+              id: 'goh-s2', type: 'question', title: "משלוח או איסוף", enabled: true,
+              blocks: [
+                { id: 'goh-s2-b1', kind: 'question', key: 'fulfillment', label: "משלוח או איסוף?", responseType: 'buttons', options: ['משלוח', 'איסוף'], required: true }
+              ]
+            },
+            {
+              id: 'goh-s3', type: 'question', title: "כתובת / איסוף", enabled: true,
+              blocks: [
+                { id: 'goh-s3-b1', kind: 'question', key: 'addressOrPickup', dynamic: 'fulfillment-followup', responseType: 'dynamic-fulfillment', required: true }
+              ]
+            },
+            {
+              id: 'goh-s4', type: 'question', title: "תזמון ההזמנה", enabled: true,
+              blocks: [
+                { id: 'goh-s4-b1', kind: 'question', key: 'timing', label: "ההזמנה היא לעכשיו או ליותר מאוחר?", responseType: 'timing-slots', options: ['עכשיו', 'ליותר מאוחר'], required: true }
+              ]
+            },
+            {
+              id: 'goh-menu-mains', type: 'menu', title: "מנות עיקריות, סושי ומגשים", categoryFilter: ['mains', 'party'], enabled: true,
+              leadingBlocks: [{ id: 'goh-mm-b1', kind: 'popup', text: "מעולה, עכשיו נזמין את המנות שתרצה. אחרי מנות העיקריות נעבור לתוספות ולשתייה בנפרד." }]
+            },
+            { id: 'goh-menu-sides', type: 'menu', title: "תוספות, סלטים ושתייה", categoryFilter: ['sides', 'drinks'], enabled: true, leadingBlocks: [] },
+            { id: 'goh-payment', type: 'payment', title: "תשלום", enabled: true, leadingBlocks: [] },
+            { id: 'goh-summary', type: 'summary', title: "סיכום הזמנה", enabled: true, leadingBlocks: [] }
           ]
         },
         {
@@ -70,16 +139,45 @@ const DEFAULT_DATA = {
           minOrderDelivery: 100,
           busySlot: null,
           flow: [
-            { id: 'pt-q1', type: 'question', key: 'timing', label: "ההזמנה היא לעכשיו או עתידית?", inputType: 'timing-gate', options: ['עכשיו', 'עתידי'], required: true, enabled: true },
-            { id: 'pt-q2', type: 'question', key: 'fulfillment', label: "משלוח או איסוף?", inputType: 'choice', options: ['משלוח', 'איסוף'], required: true, enabled: true },
-            { id: 'pt-q3', type: 'question', key: 'phone', label: "מה מספר הנייד לביצוע ההזמנה?", inputType: 'tel', autofill: true, required: true, enabled: true },
-            { id: 'pt-q4', type: 'question', key: 'fullName', label: "מה השם המלא?", inputType: 'text', autofill: true, required: true, enabled: true },
-            { id: 'pt-q5', type: 'question', key: 'memberCard', label: "התשלום יתבצע בכרטיס \"חבר\"?", inputType: 'choice', options: ['כן', 'לא'], required: true, enabled: true },
-            { id: 'pt-q6', type: 'question', key: 'addressOrPickup', dynamic: 'fulfillment-followup', inputType: 'dynamic-fulfillment', required: true, enabled: true },
-            { id: 'pt-menu-mains', type: 'menu', title: "מנות עיקריות, סושי ומגשים", categoryFilter: ['mains', 'party'], entryScript: "מעולה, עכשיו נזמין את המנות שתרצה. שימי לב: תוספות ושתייה נמצאות במסך הבא בנפרד.", enabled: true },
-            { id: 'pt-menu-sides', type: 'menu', title: "תוספות, סלטים ושתייה", categoryFilter: ['sides', 'drinks'], enabled: true },
-            { id: 'pt-payment', type: 'payment', title: "תשלום", enabled: true },
-            { id: 'pt-summary', type: 'summary', title: "סיכום הזמנה", enabled: true }
+            {
+              id: 'pt-s1', type: 'question', title: "פתיחה + תזמון", enabled: true,
+              blocks: [
+                { id: 'pt-s1-b1', kind: 'script', text: "לפני שאני מתחילה אני אשאל אותך מספר שאלות כדי לבצע את ההזמנה על הצד הטוב ביותר" },
+                { id: 'pt-s1-b2', kind: 'question', key: 'timing', label: "ההזמנה היא לעכשיו או עתידית?", responseType: 'buttons', options: ['עכשיו', 'עתידי'], required: true }
+              ]
+            },
+            {
+              id: 'pt-s2', type: 'question', title: "משלוח או איסוף", enabled: true,
+              blocks: [
+                { id: 'pt-s2-b1', kind: 'question', key: 'fulfillment', label: "משלוח או איסוף?", responseType: 'buttons', options: ['משלוח', 'איסוף'], required: true }
+              ]
+            },
+            {
+              id: 'pt-s3', type: 'question', title: "פרטי התקשרות", enabled: true,
+              blocks: [
+                { id: 'pt-s3-b1', kind: 'question', key: 'phone', label: "מה מספר הנייד לביצוע ההזמנה?", responseType: 'short-text', inputMode: 'tel', autofill: true, required: true },
+                { id: 'pt-s3-b2', kind: 'question', key: 'fullName', label: "מה השם המלא?", responseType: 'short-text', autofill: true, required: true }
+              ]
+            },
+            {
+              id: 'pt-s4', type: 'question', title: "אמצעי תשלום מועדף", enabled: true,
+              blocks: [
+                { id: 'pt-s4-b1', kind: 'question', key: 'memberCard', label: "התשלום יתבצע בכרטיס \"חבר\"?", responseType: 'dropdown', options: ['כן', 'לא'], required: true }
+              ]
+            },
+            {
+              id: 'pt-s5', type: 'question', title: "כתובת / איסוף", enabled: true,
+              blocks: [
+                { id: 'pt-s5-b1', kind: 'question', key: 'addressOrPickup', dynamic: 'fulfillment-followup', responseType: 'dynamic-fulfillment', required: true }
+              ]
+            },
+            {
+              id: 'pt-menu-mains', type: 'menu', title: "מנות עיקריות, סושי ומגשים", categoryFilter: ['mains', 'party'], enabled: true,
+              leadingBlocks: [{ id: 'pt-mm-b1', kind: 'popup', text: "מעולה, עכשיו נזמין את המנות שתרצה. שימי לב: תוספות ושתייה נמצאות במסך הבא בנפרד." }]
+            },
+            { id: 'pt-menu-sides', type: 'menu', title: "תוספות, סלטים ושתייה", categoryFilter: ['sides', 'drinks'], enabled: true, leadingBlocks: [] },
+            { id: 'pt-payment', type: 'payment', title: "תשלום", enabled: true, leadingBlocks: [] },
+            { id: 'pt-summary', type: 'summary', title: "סיכום הזמנה", enabled: true, leadingBlocks: [] }
           ]
         }
       ]
@@ -93,7 +191,7 @@ const DEFAULT_DATA = {
   ],
 
   /* ---------------------------------------------------------------
-     rules - מנוע החוקים והאוטומציות.
+     rules - מנוע החוקים והאוטומציות החוצות-מסכים (הלשונית "אוטומציות").
      kind:
        blocking       -> עוצר את התהליך, חייבים לבחור כפתור
        reminder       -> תזכורת/תסריט לנציגה, ניתן לסגירה
@@ -158,11 +256,11 @@ const DEFAULT_DATA = {
       scope: { branchId: 'japan-pt' },
       kind: 'suggestion',
       name: "השלמת מינימום הזמנה למשלוח",
-      triggerNote: "נדלק בכל שינוי בעגלה כשנבחר \"משלוח\" והסכום קרוב למינימום ההזמנה (100 ₪) אך לא מגיע אליו",
+      triggerNote: "נדלק כשלוחצים \"המשך\" מהתפריט הלאה לתשלום, אם נבחר \"משלוח\" והסכום קרוב למינימום ההזמנה (100 ₪) אך לא מגיע אליו",
       message: "אדוני, חסר לך {{gap}} ₪ להשלמת מינימום ההזמנה למשלוח ({{min}} ₪). תרצה שאציע לך מוצרים במחיר הזה?",
       buttons: [
         { label: "כן, תציע לי מוצרים", action: 'applyPriceFilterToGap' },
-        { label: "לא תודה", action: 'dismiss' }
+        { label: "לא, המשך לתשלום", action: 'dismiss' }
       ],
       enabled: true
     },
