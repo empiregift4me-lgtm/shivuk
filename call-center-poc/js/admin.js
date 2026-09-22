@@ -2,24 +2,28 @@
    AdminView - תצוגת מנהל. בונה מסכים בגרירה-ושחרור: פלטת רכיבים
    מובנים (שאילתות/תסריטים/פופאפים) מימין, קנבס WYSIWYG משמאל. גם
    לחיצה (לא רק גרירה) מוסיפה רכיב - כדי שהבנייה תמיד תהיה אמינה.
-   לשונית אוטומציות ולשונית מרכיבים (ברמת מסעדה) משלימות את התמונה.
+   פרטי סניף (כתובת/שעות/כשרות), אזורי משלוח, אוטומציות ומרכיבים
+   (זמינות ברמת סניף) משלימים את התמונה.
 =================================================================== */
 
 const AdminView = (function () {
   let mountedRoot = null;
   let selectedRestaurantId = 'japan';
   let selectedBranchId = 'japan-goh';
-  let activeSubtab = 'flow'; // 'flow' | 'automations' | 'ingredients'
+  let activeSubtab = 'flow'; // 'flow' | 'automations' | 'ingredients' | 'zones'
   let expandedScreenId = null;
 
   const SCREEN_ICON = { question: '❓', menu: '🍽️', payment: '💳', summary: '🧾' };
   const SCREEN_TYPE_LABEL = { question: 'שאלה', menu: 'תפריט', payment: 'תשלום', summary: 'סיכום' };
   const RULE_KIND_LABEL = { blocking: 'חוסם', reminder: 'תזכורת', 'guided-choice': 'תסריט מונחה', suggestion: 'הצעה אוטומטית' };
-  const RESPONSE_TYPE_LABEL = { 'short-text': 'תשובה קצרה', buttons: 'כפתורי בחירה', dropdown: 'תפריט נפתח', multiselect: 'בחירה מרובה', 'dynamic-fulfillment': 'מנוסח אוטומטית', 'timing-slots': 'כפתורים + בורר שעה' };
   const BLOCK_KIND_ICON = { script: '🗣️', popup: '💬', question: '❓' };
 
   function escapeAttr(str) {
     return String(str == null ? '' : str).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+
+  function blockLibrary() {
+    return Store.data.blockLibrary || { questions: [], scripts: [], popups: [] };
   }
 
   function mount(root) {
@@ -76,10 +80,12 @@ const AdminView = (function () {
       <div class="branch-tabs" id="branch-tabs">
         ${restaurant.branches.map(b => `<button type="button" class="branch-tab ${b.id === branch.id ? 'is-active' : ''}" data-branch="${b.id}">${b.shortName}</button>`).join('')}
       </div>
+      <div class="branch-settings" id="branch-settings"></div>
       <div class="subtabs" id="subtabs">
         <button type="button" class="subtab ${activeSubtab === 'flow' ? 'is-active' : ''}" data-subtab="flow">🧭 זרימת מסכים</button>
         <button type="button" class="subtab ${activeSubtab === 'automations' ? 'is-active' : ''}" data-subtab="automations">⚡ אוטומציות</button>
         <button type="button" class="subtab ${activeSubtab === 'ingredients' ? 'is-active' : ''}" data-subtab="ingredients">🥗 מרכיבים</button>
+        <button type="button" class="subtab ${activeSubtab === 'zones' ? 'is-active' : ''}" data-subtab="zones">🚚 אזורי משלוח</button>
       </div>
       <div id="subtab-content"></div>
     `;
@@ -87,23 +93,48 @@ const AdminView = (function () {
     main.querySelectorAll('[data-branch]').forEach(btn => btn.addEventListener('click', () => { selectedBranchId = btn.dataset.branch; expandedScreenId = null; render(); }));
     main.querySelectorAll('[data-subtab]').forEach(btn => btn.addEventListener('click', () => { activeSubtab = btn.dataset.subtab; render(); }));
 
+    renderBranchSettings(main.querySelector('#branch-settings'), branch);
+
     const contentEl = main.querySelector('#subtab-content');
-    if (activeSubtab === 'flow') renderFlowTab(contentEl, branch.id);
+    if (activeSubtab === 'flow') renderFlowTab(contentEl, restaurant, branch.id);
     else if (activeSubtab === 'automations') renderAutomationsTab(contentEl, restaurant, branch);
-    else renderIngredientsTab(contentEl, restaurant);
+    else if (activeSubtab === 'ingredients') renderIngredientsTab(contentEl, restaurant, branch);
+    else renderZonesTab(contentEl, branch);
+  }
+
+  /* ================= פרטי סניף (כתובת/שעות/כשרות) ================= */
+
+  function renderBranchSettings(container, branch) {
+    container.innerHTML = `
+      <details class="branch-settings-details">
+        <summary>⚙️ פרטי הסניף (כתובת, שעות פתיחה, כשרות) - מוצגים לנציגה ברצועה העליונה בכל מסך</summary>
+        <div class="branch-settings-grid">
+          <label>כתובת<input type="text" class="text-input" id="bs-address" value="${escapeAttr(branch.address)}"></label>
+          <label>שעות פתיחה<input type="text" class="text-input" id="bs-hours" value="${escapeAttr(branch.openingHours || '')}"></label>
+          <label>כשרות<input type="text" class="text-input" id="bs-kashrut" value="${escapeAttr(branch.kashrut || '')}"></label>
+        </div>
+      </details>`;
+    const idsAndFields = [['bs-address', 'address'], ['bs-hours', 'openingHours'], ['bs-kashrut', 'kashrut']];
+    idsAndFields.forEach(([id, field]) => {
+      const el = container.querySelector('#' + id);
+      el.addEventListener('change', () => {
+        Store.updateBranchInfo(branch.id, { [field]: el.value });
+        showToast('הפרטים נשמרו', 'success');
+      });
+    });
   }
 
   /* ================= לשונית זרימת מסכים ================= */
 
-  function renderFlowTab(container, branchId) {
+  function renderFlowTab(container, restaurant, branchId) {
     container.innerHTML = `
-      <p class="section-sub">סדר המסכים כפי שהנציגה תראה אותם בשיחה. לחצי על מסך כדי לפתוח את בנאי הרכיבים שלו - גוררים (או לוחצים) שאילתות/תסריטים/פופאפים מהפלטה אל הקנבס, ורואים בדיוק איך זה ייראה.</p>
+      <p class="section-sub">סדר המסכים כפי שהנציגה תראה אותם בשיחה. לחצי על מסך כדי לפתוח את בנאי הרכיבים שלו - גוררים (או לוחצים) שאילתות/תסריטים/פופאפים מהפלטה אל הקנבס, ורואים בדיוק איך זה ייראה. בשיחה עצמה כל רכיב נחשף רק אחרי שהקודם לו הושלם.</p>
       <div class="flow-list" id="flow-list"></div>
     `;
-    renderFlowList(container.querySelector('#flow-list'), branchId);
+    renderFlowList(container.querySelector('#flow-list'), restaurant, branchId);
   }
 
-  function renderFlowList(listEl, branchId) {
+  function renderFlowList(listEl, restaurant, branchId) {
     const branch = Store.findBranchById(branchId).branch;
     listEl.innerHTML = branch.flow.map((s, i) => flowCardHTML(s, i, branch)).join('');
 
@@ -112,14 +143,14 @@ const AdminView = (function () {
         if (e.target.closest('[data-noexpand]')) return;
         const id = head.closest('.flow-card').dataset.screen;
         expandedScreenId = expandedScreenId === id ? null : id;
-        renderFlowList(listEl, branchId);
+        renderFlowList(listEl, restaurant, branchId);
       });
     });
     listEl.querySelectorAll('[data-move-screen]').forEach(btn => {
       btn.addEventListener('click', (e) => {
         e.stopPropagation();
         Store.moveScreen(branchId, btn.dataset.screen, btn.dataset.moveScreen === 'up' ? -1 : 1);
-        renderFlowList(listEl, branchId);
+        renderFlowList(listEl, restaurant, branchId);
         showToast('סדר המסכים עודכן', 'success');
       });
     });
@@ -128,7 +159,7 @@ const AdminView = (function () {
       toggle.addEventListener('change', (e) => {
         Store.setScreenEnabled(branchId, toggle.dataset.screen, toggle.checked);
         showToast(toggle.checked ? 'המסך הופעל' : 'המסך כובה', 'success');
-        renderFlowList(listEl, branchId);
+        renderFlowList(listEl, restaurant, branchId);
       });
     });
     listEl.querySelectorAll('.screen-title-input').forEach(input => {
@@ -140,14 +171,17 @@ const AdminView = (function () {
     });
 
     const expandedScreen = branch.flow.find(s => s.id === expandedScreenId);
-    if (expandedScreen) wireBlockBuilder(listEl, branchId, expandedScreen);
+    if (expandedScreen) {
+      wireBlockBuilder(listEl, restaurant, branchId, expandedScreen);
+      if (expandedScreen.type === 'menu') wireCategoryManager(listEl, restaurant, branchId);
+    }
   }
 
   function flowCardHTML(s, i, branch) {
     const icon = SCREEN_ICON[s.type] || '📄';
     const isExpanded = expandedScreenId === s.id;
     const blockCount = (s.blocks || []).length + (s.leadingBlocks || []).length;
-    const meta = s.type === 'menu' ? `קטגוריות: ${s.categoryFilter.length} · רכיבי פתיחה: ${(s.leadingBlocks || []).length}` : `${blockCount} רכיבים`;
+    const meta = `${blockCount} רכיבים`;
     return `
       <div class="flow-card ${s.enabled === false ? 'is-disabled' : ''}" data-screen="${s.id}">
         <div class="flow-card-head">
@@ -180,14 +214,7 @@ const AdminView = (function () {
       return titleRow + blockBuilderHTML(s, 'blocks', true);
     }
     if (s.type === 'menu') {
-      const catNames = s.categoryFilter.map(c => {
-        const cat = Store.data.menuCategories.find(mc => mc.id === c);
-        return cat ? cat.name : c;
-      });
-      return titleRow + `<div class="question-edit-row">
-        <span class="field-label">קטגוריות מוצגות במסך זה</span>
-        <div>${catNames.map(n => `<span class="type-badge">${n}</span>`).join(' ')}</div>
-      </div>` + blockBuilderHTML(s, 'leadingBlocks', false);
+      return titleRow + `<div class="question-edit-row" id="category-manager"></div>` + blockBuilderHTML(s, 'leadingBlocks', false);
     }
     if (s.type === 'payment') {
       return titleRow + `<p style="font-size:12.5px;color:var(--text-muted);margin-bottom:10px;">מסך תשלום סטנדרטי - כולל אפשרות פיצול בין שני אמצעי תשלום.</p>` + blockBuilderHTML(s, 'leadingBlocks', false);
@@ -195,20 +222,71 @@ const AdminView = (function () {
     return titleRow + `<p style="font-size:12.5px;color:var(--text-muted);margin-bottom:10px;">מסך סיכום - מפיק טקסט חופשי מובנה עם כפתור העתקה, כולל כל התזכורות שהוצגו לנציגה.</p>` + blockBuilderHTML(s, 'leadingBlocks', false);
   }
 
+  /* ---------------- ניהול לשוניות קטגוריה (ברמת מסעדה, מוצג בתוך מסך התפריט) ---------------- */
+
+  function wireCategoryManager(listEl, restaurant, branchId) {
+    const holder = listEl.querySelector('#category-manager');
+    if (!holder) return;
+    renderCategoryManager(holder, restaurant, branchId);
+  }
+
+  function renderCategoryManager(holder, restaurant, branchId) {
+    const active = Store.getRestaurantCategories(restaurant.id);
+    const activeIds = active.map(c => c.id);
+    const available = Store.data.menuCategories.filter(c => activeIds.indexOf(c.id) === -1);
+    holder.innerHTML = `
+      <span class="field-label">לשוניות התפריט של ${restaurant.name} (משותפות לכל הסניפים)</span>
+      <div class="category-manager-list">
+        ${active.map((c, i) => `
+          <div class="category-manager-item">
+            <span>${c.name}</span>
+            <button type="button" class="icon-btn" data-cat-move="up" data-cat="${c.id}" ${i === 0 ? 'disabled' : ''} title="הזזה">▲</button>
+            <button type="button" class="icon-btn" data-cat-move="down" data-cat="${c.id}" ${i === active.length - 1 ? 'disabled' : ''} title="הזזה">▼</button>
+            <button type="button" class="icon-btn" data-cat-remove="${c.id}" title="הסרה">🗑</button>
+          </div>`).join('') || '<p class="admin-empty-note">לא הוגדרו עדיין לשוניות.</p>'}
+      </div>
+      <div class="category-manager-add">
+        ${available.length ? `<select id="cat-existing-select"><option value="">הוספת לשונית קיימת...</option>${available.map(c => `<option value="${c.id}">${c.name}</option>`).join('')}</select>` : ''}
+        <input type="text" class="text-input" id="cat-new-input" placeholder="שם לשונית חדשה...">
+        <button type="button" class="btn btn-secondary btn-small" id="cat-add-btn">+ הוספה</button>
+      </div>`;
+
+    holder.querySelectorAll('[data-cat-move]').forEach(btn => btn.addEventListener('click', () => {
+      Store.moveCategoryInRestaurant(restaurant.id, btn.dataset.cat, btn.dataset.catMove === 'up' ? -1 : 1);
+      renderCategoryManager(holder, restaurant, branchId);
+    }));
+    holder.querySelectorAll('[data-cat-remove]').forEach(btn => btn.addEventListener('click', () => {
+      Store.removeCategoryFromRestaurant(restaurant.id, btn.dataset.catRemove);
+      renderCategoryManager(holder, restaurant, branchId);
+    }));
+    const existingSelect = holder.querySelector('#cat-existing-select');
+    if (existingSelect) existingSelect.addEventListener('change', () => {
+      if (existingSelect.value) { Store.addCategoryToRestaurant(restaurant.id, existingSelect.value); renderCategoryManager(holder, restaurant, branchId); }
+    });
+    holder.querySelector('#cat-add-btn').addEventListener('click', () => {
+      const input = holder.querySelector('#cat-new-input');
+      const name = input.value.trim();
+      if (!name) return;
+      Store.createAndAddCategory(restaurant.id, name);
+      renderCategoryManager(holder, restaurant, branchId);
+      showToast('הלשונית נוספה', 'success');
+    });
+  }
+
   /* ---------------- בנאי הגרירה-ושחרור ---------------- */
 
   function blockBuilderHTML(screen, listKey, includeQuestions) {
     const blocks = screen[listKey] || [];
-    const lib = Store.data.blockLibrary;
+    const lib = blockLibrary();
     return `
       <div class="block-builder">
+        <div class="block-palette">
+          ${includeQuestions ? paletteSectionHTML('שאילתות מובנות', 'question', lib.questions || []) : ''}
+          ${paletteSectionHTML('תסריטים מובנים', 'script', lib.scripts || [])}
+          ${paletteSectionHTML('פופאפים מובנים', 'popup', lib.popups || [])}
+        </div>
         <div class="block-canvas" id="canvas-${screen.id}-${listKey}" data-screen="${screen.id}" data-listkey="${listKey}">
           ${blocks.length ? blocks.map((b, i) => canvasBlockHTML(b, i, blocks.length)).join('') : '<div class="canvas-empty-note">גררי לכאן שאילתה, תסריט או פופאפ מהפלטה - או לחצי על פריט בפלטה כדי להוסיף.</div>'}
-        </div>
-        <div class="block-palette">
-          ${includeQuestions ? paletteSectionHTML('שאילתות מובנות', 'question', lib.questions) : ''}
-          ${paletteSectionHTML('תסריטים מובנים', 'script', lib.scripts)}
-          ${paletteSectionHTML('פופאפים מובנים', 'popup', lib.popups)}
         </div>
       </div>`;
   }
@@ -218,7 +296,7 @@ const AdminView = (function () {
       <div class="palette-section">
         <div class="palette-section-title">${title}</div>
         <div class="palette-items">
-          ${items.map((tpl, i) => `<div class="palette-item" draggable="true" data-kind="${kind}" data-tpl-index="${i}">${BLOCK_KIND_ICON[kind]} ${tpl.label}</div>`).join('')}
+          ${items.map((tpl, i) => `<div class="palette-item" draggable="true" data-kind="${kind}" data-tpl-index="${i}" title="גררי לקנבס, או לחצי להוספה בסוף">${BLOCK_KIND_ICON[kind]} ${tpl.label}</div>`).join('')}
         </div>
         <button type="button" class="palette-add-new" data-kind="${kind}">+ צור ${kind === 'question' ? 'שאילתה' : kind === 'script' ? 'תסריט' : 'פופאפ'} חדש</button>
       </div>`;
@@ -249,7 +327,7 @@ const AdminView = (function () {
     if (b.kind === 'script' || b.kind === 'popup') {
       return `<div class="canvas-block canvas-block-${b.kind}" draggable="true" data-block="${b.id}">
         <div class="canvas-block-head">
-          <span class="canvas-block-type">${BLOCK_KIND_ICON[b.kind]} ${b.kind === 'script' ? 'תסריט (טקסט מוטמע במסך)' : 'פופאפ (חד-פעמי בכניסה למסך)'}</span>
+          <span class="canvas-block-type">${BLOCK_KIND_ICON[b.kind]} ${b.kind === 'script' ? 'תסריט (טקסט מוטמע במסך + כפתור "הבא")' : 'פופאפ (חד-פעמי בכניסה למסך)'}</span>
           <div class="canvas-block-actions" data-noexpand>${moveButtons}</div>
         </div>
         <textarea class="block-text-edit" data-block="${b.id}" data-field="text">${b.text}</textarea>
@@ -264,7 +342,7 @@ const AdminView = (function () {
         <div class="canvas-block-actions" data-noexpand>${moveButtons}</div>
       </div>
       ${isDynamic
-        ? `<p style="font-size:12px;color:var(--text-muted);">נוסח אוטומטית לפי התשובה למשלוח/איסוף (״לאן לשלוח לך?״ / ״אז אתה מגיע לקחת מסניף X?״).</p>`
+        ? `<p style="font-size:12px;color:var(--text-muted);">נוסח אוטומטית לפי התשובה למשלוח/איסוף (״לאן לשלוח לך?״ / ״אז אתה מגיע לקחת מסניף X?״), כולל בחירת אזור משלוח מתוך לשונית "אזורי משלוח".</p>`
         : `<input type="text" class="block-text-edit" data-block="${b.id}" data-field="label" value="${escapeAttr(b.label)}">`}
       ${!isDynamic ? `
       <div class="block-subrow">
@@ -306,13 +384,13 @@ const AdminView = (function () {
     if (el) el.remove();
   }
 
-  function wireBlockBuilder(listEl, branchId, screen) {
+  function wireBlockBuilder(listEl, restaurant, branchId, screen) {
     ['blocks', 'leadingBlocks'].forEach(listKey => {
       const canvas = listEl.querySelector('#canvas-' + screen.id + '-' + listKey);
       if (!canvas) return;
       const builderRoot = canvas.closest('.block-builder');
 
-      function refresh() { renderFlowList(listEl, branchId); }
+      function refresh() { renderFlowList(listEl, restaurant, branchId); }
 
       canvas.querySelectorAll('.canvas-block').forEach(el => {
         el.addEventListener('dragstart', (e) => {
@@ -367,6 +445,7 @@ const AdminView = (function () {
             patch.options = ['אפשרות 1', 'אפשרות 2'];
           }
           Store.updateBlock(branchId, screen.id, listKey, el.dataset.block, patch);
+          showToast('סוג המענה עודכן', 'success');
           refresh();
         });
       });
@@ -391,6 +470,7 @@ const AdminView = (function () {
           });
           el.addEventListener('click', () => {
             addPaletteBlockToScreen(branchId, screen.id, listKey, { kind: el.dataset.kind, tplIndex: parseInt(el.dataset.tplIndex, 10) }, undefined);
+            showToast('הרכיב נוסף לקנבס', 'success');
             refresh();
           });
         });
@@ -405,7 +485,7 @@ const AdminView = (function () {
   }
 
   function addPaletteBlockToScreen(branchId, screenId, listKey, payload, insertIndex) {
-    const lib = Store.data.blockLibrary[payload.kind + 's'];
+    const lib = blockLibrary()[payload.kind + 's'];
     const tpl = lib && lib[payload.tplIndex];
     if (!tpl) return;
     const block = Object.assign({ kind: payload.kind }, JSON.parse(JSON.stringify(tpl.template)));
@@ -468,18 +548,18 @@ const AdminView = (function () {
       </div>`;
   }
 
-  /* ================= לשונית מרכיבים ================= */
+  /* ================= לשונית מרכיבים (קטלוג ברמת מסעדה, זמינות ברמת סניף) ================= */
 
-  function renderIngredientsTab(container, restaurant) {
+  function renderIngredientsTab(container, restaurant, branch) {
     container.innerHTML = `
-      <p class="section-sub">רשימת המרכיבים הבסיסיים של ${restaurant.name}. מרכיב שמסומן "לא זמין היום" עדיין יופיע לנציגה במסך התפריט, אך מסומן ב-✕ ולא ניתן לבחירה - כדי שאפשר יהיה להסביר ללקוח שהוא חסר היום, בלי להסתיר אותו.</p>
+      <p class="section-sub">קטלוג המרכיבים משותף לכל סניפי ${restaurant.name}, אבל הזמינות (מה שנגמר היום) מוגדרת בנפרד לכל סניף - כרגע עבור <strong>${branch.shortName}</strong>. מרכיב "לא זמין היום" עדיין יופיע לנציגה במסך התפריט, אך מסומן ב-✕ ולא ניתן לבחירה - כדי שאפשר יהיה להסביר ללקוח שהוא חסר, בלי להסתיר אותו.</p>
       <div class="ingredient-list" id="ingredient-list"></div>
       <div class="add-ingredient-row">
-        <input type="text" class="text-input" id="new-ingredient-input" placeholder="שם מרכיב חדש...">
+        <input type="text" class="text-input" id="new-ingredient-input" placeholder="שם מרכיב חדש (יתווסף לקטלוג של כל הסניפים)...">
         <button type="button" class="btn btn-secondary" id="add-ingredient-btn">+ הוספת מרכיב</button>
       </div>
     `;
-    renderIngredientList(container.querySelector('#ingredient-list'), restaurant.id);
+    renderIngredientList(container.querySelector('#ingredient-list'), restaurant.id, branch.id);
 
     container.querySelector('#add-ingredient-btn').addEventListener('click', () => {
       const input = container.querySelector('#new-ingredient-input');
@@ -487,36 +567,87 @@ const AdminView = (function () {
       if (!name) return;
       Store.addIngredient(restaurant.id, name);
       input.value = '';
-      renderIngredientList(container.querySelector('#ingredient-list'), restaurant.id);
-      showToast('המרכיב נוסף', 'success');
+      renderIngredientList(container.querySelector('#ingredient-list'), restaurant.id, branch.id);
+      showToast('המרכיב נוסף לקטלוג', 'success');
     });
     container.querySelector('#new-ingredient-input').addEventListener('keydown', (e) => {
       if (e.key === 'Enter') container.querySelector('#add-ingredient-btn').click();
     });
   }
 
-  function renderIngredientList(listEl, restaurantId) {
-    const ingredients = Store.getIngredients(restaurantId);
-    listEl.innerHTML = ingredients.length ? ingredients.map(ing => `
-      <div class="ingredient-row ${!ing.available ? 'is-unavailable' : ''}">
-        <span class="ingredient-row-name">${ing.name}${!ing.available ? ' ✕' : ''}</span>
-        <span class="ingredient-row-status">${ing.available ? 'זמין' : 'לא זמין היום'}</span>
-        <label class="toggle-switch" title="זמין היום">
-          <input type="checkbox" class="ingredient-available-toggle" data-ing="${ing.id}" ${ing.available ? 'checked' : ''}>
+  function renderIngredientList(listEl, restaurantId, branchId) {
+    const ingredients = Store.getIngredientCatalog(restaurantId);
+    listEl.innerHTML = ingredients.length ? ingredients.map(ing => {
+      const available = Store.isIngredientAvailableAtBranch(branchId, ing.id);
+      return `
+      <div class="ingredient-row ${!available ? 'is-unavailable' : ''}">
+        <span class="ingredient-row-name">${ing.name}${!available ? ' ✕' : ''}</span>
+        <span class="ingredient-row-status">${available ? 'זמין' : 'לא זמין היום'}</span>
+        <label class="toggle-switch" title="זמין היום בסניף זה">
+          <input type="checkbox" class="ingredient-available-toggle" data-ing="${ing.id}" ${available ? 'checked' : ''}>
           <span class="toggle-switch-slider"></span>
         </label>
-        <button type="button" class="icon-btn" data-remove-ing="${ing.id}" title="הסרה קבועה מהרשימה">🗑</button>
-      </div>
-    `).join('') : '<div class="admin-empty-note">אין עדיין מרכיבים מוגדרים למסעדה זו.</div>';
+        <button type="button" class="icon-btn" data-remove-ing="${ing.id}" title="הסרה קבועה מהקטלוג">🗑</button>
+      </div>`;
+    }).join('') : '<div class="admin-empty-note">אין עדיין מרכיבים מוגדרים למסעדה זו.</div>';
 
     listEl.querySelectorAll('.ingredient-available-toggle').forEach(t => t.addEventListener('change', () => {
-      Store.setIngredientAvailable(restaurantId, t.dataset.ing, t.checked);
-      renderIngredientList(listEl, restaurantId);
-      showToast(t.checked ? 'המרכיב סומן כזמין' : 'המרכיב סומן כלא זמין היום', 'success');
+      Store.setIngredientAvailableAtBranch(branchId, t.dataset.ing, t.checked);
+      renderIngredientList(listEl, restaurantId, branchId);
+      showToast(t.checked ? 'המרכיב סומן כזמין בסניף זה' : 'המרכיב סומן כלא זמין היום בסניף זה', 'success');
     }));
     listEl.querySelectorAll('[data-remove-ing]').forEach(btn => btn.addEventListener('click', () => {
       Store.removeIngredient(restaurantId, btn.dataset.removeIng);
-      renderIngredientList(listEl, restaurantId);
+      renderIngredientList(listEl, restaurantId, branchId);
+    }));
+  }
+
+  /* ================= לשונית אזורי משלוח ================= */
+
+  function renderZonesTab(container, branch) {
+    container.innerHTML = `
+      <p class="section-sub">לכל אזור משלוח - מינימום הזמנה, דמי משלוח וטווח זמן המתנה משלו. הנציגה תבחר את האזור הרלוונטי כשהלקוח בוחר משלוח.</p>
+      <div class="zone-list" id="zone-list"></div>
+      <button type="button" class="btn btn-secondary btn-small" id="add-zone-btn">+ הוספת אזור משלוח</button>
+    `;
+    renderZoneList(container.querySelector('#zone-list'), branch.id);
+    container.querySelector('#add-zone-btn').addEventListener('click', () => {
+      Store.addDeliveryZone(branch.id, { name: 'אזור חדש' });
+      renderZoneList(container.querySelector('#zone-list'), branch.id);
+      showToast('אזור המשלוח נוסף', 'success');
+    });
+  }
+
+  function renderZoneList(listEl, branchId) {
+    const zones = Store.getDeliveryZones(branchId);
+    listEl.innerHTML = zones.length ? zones.map(z => `
+      <div class="zone-card" data-zone="${z.id}">
+        <div class="zone-card-row">
+          <label>שם האזור<input type="text" class="text-input zone-field" data-zone="${z.id}" data-field="name" value="${escapeAttr(z.name)}"></label>
+          <button type="button" class="icon-btn" data-remove-zone="${z.id}" title="הסרת אזור">🗑</button>
+        </div>
+        <div class="zone-card-row">
+          <label>מינימום הזמנה (₪, 0 = אין מינימום)<input type="number" min="0" class="text-input zone-field" data-zone="${z.id}" data-field="minOrder" value="${z.minOrder}"></label>
+          <label>דמי משלוח (₪)<input type="number" min="0" class="text-input zone-field" data-zone="${z.id}" data-field="deliveryFee" value="${z.deliveryFee}"></label>
+        </div>
+        <div class="zone-card-row">
+          <label>זמן המתנה מ- (דק')<input type="number" min="0" class="text-input zone-field" data-zone="${z.id}" data-field="waitMin" value="${z.waitMin}"></label>
+          <label>זמן המתנה עד (דק')<input type="number" min="0" class="text-input zone-field" data-zone="${z.id}" data-field="waitMax" value="${z.waitMax}"></label>
+        </div>
+      </div>`).join('') : '<div class="admin-empty-note">לא הוגדרו אזורי משלוח לסניף זה.</div>';
+
+    listEl.querySelectorAll('.zone-field').forEach(el => {
+      el.addEventListener('change', () => {
+        const field = el.dataset.field;
+        const value = (field === 'minOrder' || field === 'deliveryFee' || field === 'waitMin' || field === 'waitMax') ? (parseFloat(el.value) || 0) : el.value;
+        Store.updateDeliveryZone(branchId, el.dataset.zone, { [field]: value });
+        showToast('אזור המשלוח עודכן', 'success');
+      });
+    });
+    listEl.querySelectorAll('[data-remove-zone]').forEach(btn => btn.addEventListener('click', () => {
+      Store.removeDeliveryZone(branchId, btn.dataset.removeZone);
+      renderZoneList(listEl, branchId);
+      showToast('אזור המשלוח הוסר', 'success');
     }));
   }
 

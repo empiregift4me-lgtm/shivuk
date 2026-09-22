@@ -65,20 +65,20 @@ const Engine = (function () {
     return activeRule('rule-japan-party-tray-tuna', session.restaurantId, session.branchId);
   }
 
-  /* נקרא אחרי כל שינוי בעגלה */
+  /* נקרא בלחיצה על "המשך" מהתפריט לתשלום - המינימום נקבע לפי אזור המשלוח שנבחר */
   function checkMinOrder(session, total) {
     if (session._minOrderDismissed) return null;
     if (session.answers.fulfillment !== 'משלוח') return null;
 
-    const found = Store.findBranchById(session.branchId);
-    if (!found || !found.branch.minOrderDelivery) return null;
+    const zone = Store.getDeliveryZone(session.branchId, session.answers.deliveryZoneId);
+    if (!zone || !zone.minOrder) return null;
 
     const rule = activeRule('rule-pt-min-order', session.restaurantId, session.branchId);
     if (!rule) return null;
 
-    const gap = found.branch.minOrderDelivery - total;
+    const gap = zone.minOrder - total;
     if (gap > 0 && gap <= 40) {
-      return { rule, gap, min: found.branch.minOrderDelivery };
+      return { rule, gap, min: zone.minOrder };
     }
     return null;
   }

@@ -1,8 +1,10 @@
 /* ===================================================================
-   AgentView - תצוגת הנציגה (מוקד). מסך שאלות מציג רצף blocks
-   (תסריט מוטמע / פופאפ חד-פעמי / שאילתה) בדיוק כפי שהורכב בתצוגת
-   המנהל. קורא את מבנה הזרימה מ-Store בכל רינדור, כך שעריכה בתצוגת
-   המנהל משפיעה מיד גם כאן.
+   AgentView - תצוגת הנציגה (מוקד). מסך שאלות חושף blocks בהדרגה
+   (כמו צ'אט - כל שאילתה/תסריט מתגלה רק אחרי שהקודם לו הושלם). רצועת
+   מידע עליונה (מסעדה/סניף/כתובת/שעות/כשרות) מחליפה את פס ההתקדמות,
+   וכפתור "קודם" יושב בה. מסך תפריט אחד עם לשוניות קטגוריה, וקוביית
+   סל הזמנה קבועה בצד. קורא הכול מ-Store בכל רינדור, כך שעריכה
+   בתצוגת המנהל משפיעה מיד גם כאן.
 =================================================================== */
 
 const AgentView = (function () {
@@ -10,6 +12,7 @@ const AgentView = (function () {
   let currentScreenIndex = 0;
   let menuFilterState = { search: '', tag: null, maxPrice: '', justAutoSet: false };
   let expandedCustomItemId = null;
+  let menuActiveTab = null;
   let mountedRoot = null;
 
   function escapeAttr(str) {
@@ -83,54 +86,54 @@ const AgentView = (function () {
       notesLog: [],
       _minOrderDismissed: false,
       _shownScripts: {},
+      _revealCount: {},
       customItemSelection: {}
     };
     currentScreenIndex = 0;
     menuFilterState = { search: '', tag: null, maxPrice: '', justAutoSet: false };
     expandedCustomItemId = null;
+    menuActiveTab = null;
     renderInternal();
   }
 
-  /* ---------------- שירותי בלוקים (תסריט/פופאפ חד-פעמי) ---------------- */
+  /* ---------------- רצועת מידע עליונה (במקום פס ההתקדמות) ---------------- */
 
-  function firePopupBlocksOnce(screen, blocks) {
-    (blocks || []).filter(b => b.kind === 'popup').forEach(b => {
-      const flagKey = screen.id + ':' + b.id;
-      if (!session._shownScripts[flagKey]) {
-        session._shownScripts[flagKey] = true;
-        Popups.reminder({ title: 'תזכורת לנציגה', message: b.text, buttons: [{ label: 'הבנתי, ממשיך', onClick: function () {} }] });
-      }
-    });
-  }
-
-  function scriptBlockHTML(b) {
-    return `<div class="script-block"><span class="script-block-icon">🗣️</span><p>${b.text}</p></div>`;
-  }
-
-  /* ---------------- shared header / nav ---------------- */
-
-  function progressHTML(branch) {
-    const flow = Store.getActiveFlow(branch);
-    const pct = Math.round(((currentScreenIndex + 1) / flow.length) * 100);
+  function infoStripHTML(branch) {
     return `
-      <div class="wizard-progress">
-        <div class="wizard-progress-label">
-          <span>מסך ${currentScreenIndex + 1} מתוך ${flow.length}</span>
-          <button type="button" id="btn-abort-call" style="border:none;background:transparent;cursor:pointer;color:var(--text-faint);text-decoration:underline;font-size:12px;">✕ החלפת שיחה</button>
+      <div class="info-strip">
+        <div class="info-strip-actions">
+          <button type="button" class="info-strip-prev" id="btn-prev" ${currentScreenIndex === 0 ? 'disabled' : ''}>→ קודם</button>
+          <button type="button" class="info-strip-abort" id="btn-abort-call">✕ החלפת שיחה</button>
         </div>
-        <div class="wizard-progress-bar"><div class="wizard-progress-fill" style="width:${pct}%"></div></div>
+        <div class="info-strip-main">
+          <button type="button" class="info-strip-btn" id="btn-kashrut">✡️ כשרות</button>
+          <button type="button" class="info-strip-btn" id="btn-hours">🕐 שעות פתיחה</button>
+          <span class="info-strip-address">${branch.address}</span>
+          <span class="info-strip-name">${branch.name}</span>
+        </div>
       </div>`;
   }
 
-  function attachNavListeners(container, branch) {
+  function attachInfoStripListeners(container, branch) {
     const prevBtn = container.querySelector('#btn-prev');
-    const nextBtn = container.querySelector('#btn-next');
     const abortBtn = container.querySelector('#btn-abort-call');
+    const hoursBtn = container.querySelector('#btn-hours');
+    const kashrutBtn = container.querySelector('#btn-kashrut');
     if (prevBtn) prevBtn.addEventListener('click', () => { if (currentScreenIndex > 0) { currentScreenIndex--; renderInternal(); } });
-    if (nextBtn) nextBtn.addEventListener('click', () => goNext(branch));
     if (abortBtn) abortBtn.addEventListener('click', () => {
       if (confirm('להחליף שיחה? הפרטים שהוזנו בשיחה הנוכחית יאבדו.')) { session = null; renderInternal(); }
     });
+    if (hoursBtn) hoursBtn.addEventListener('click', () => {
+      Popups.reminder({ title: 'שעות פתיחה', message: branch.openingHours || 'לא הוגדרו שעות פתיחה לסניף זה.', buttons: [{ label: 'סגירה', onClick: function () {} }] });
+    });
+    if (kashrutBtn) kashrutBtn.addEventListener('click', () => {
+      Popups.reminder({ title: 'כשרות', message: branch.kashrut || 'לא הוגדר פרט כשרות לסניף זה.', buttons: [{ label: 'סגירה', onClick: function () {} }] });
+    });
+  }
+
+  function attachNextListener(container, branch) {
+    const nextBtn = container.querySelector('#btn-next');
+    if (nextBtn) nextBtn.addEventListener('click', () => goNext(branch));
   }
 
   function goNext(branch) {
@@ -163,25 +166,46 @@ const AgentView = (function () {
     }
   }
 
+  function isBlockValid(b, branch) {
+    if (b.kind !== 'question') return true;
+    if (b.required === false) return true;
+    if (b.responseType === 'multiselect') {
+      const arr = session.answers[b.key];
+      return Array.isArray(arr) && arr.length > 0;
+    }
+    if (b.responseType === 'dynamic-fulfillment') {
+      if (!session.answers.addressOrPickup) return false;
+      if (session.answers.fulfillment === 'משלוח' && Store.getDeliveryZones(branch.id).length && !session.answers.deliveryZoneId) return false;
+      return true;
+    }
+    const val = session.answers[b.key];
+    return !!(val && String(val).trim());
+  }
+
   function canProceed(screen) {
     if (screen.type === 'question') {
-      const blocks = (screen.blocks || []).filter(b => b.kind === 'question');
-      return blocks.every(b => {
-        if (b.required === false) return true;
-        if (b.responseType === 'multiselect') {
-          const arr = session.answers[b.key];
-          return Array.isArray(arr) && arr.length > 0;
-        }
-        if (b.responseType === 'dynamic-fulfillment') return !!session.answers.addressOrPickup;
-        const val = session.answers[b.key];
-        return !!(val && String(val).trim());
-      });
+      const found = Store.findBranchById(session.branchId);
+      const branch = found ? found.branch : null;
+      return (screen.blocks || []).filter(b => b.kind === 'question').every(b => isBlockValid(b, branch));
     }
     if (screen.type === 'payment') return !!session.payment.method;
     return true;
   }
 
-  /* ---------------- question screens ---------------- */
+  /* ---------------- question screens: חשיפה הדרגתית של בלוקים ---------------- */
+
+  function getRevealCount(screen) {
+    const blocks = screen.blocks || [];
+    if (!blocks.length) return 0;
+    if (session._revealCount[screen.id] === undefined) session._revealCount[screen.id] = 1;
+    return Math.min(session._revealCount[screen.id], blocks.length);
+  }
+
+  function advanceReveal(screen) {
+    const blocks = screen.blocks || [];
+    session._revealCount[screen.id] = Math.min((session._revealCount[screen.id] || 1) + 1, blocks.length);
+    renderInternal();
+  }
 
   function resolveQuestionLabel(b, branch) {
     if (b.dynamic === 'fulfillment-followup') {
@@ -201,6 +225,10 @@ const AgentView = (function () {
     return `<div class="wizard-choice-row">${b.options.map(o => `<button type="button" class="choice-btn ${currentVal === o ? 'is-selected' : ''}" data-value="${escapeAttr(o)}" data-key="${b.key}">${o}</button>`).join('')}</div>`;
   }
 
+  function skipLinkHTML(b) {
+    return b.required === false ? `<button type="button" class="skip-link" data-skip-block="${b.id}">→ דלג</button>` : '';
+  }
+
   function questionBlockHTML(b, branch) {
     const label = resolveQuestionLabel(b, branch);
     const currentVal = session.answers[b.key];
@@ -217,8 +245,9 @@ const AgentView = (function () {
           controlHTML += `<div data-autofill-name-slot data-block="${b.id}"></div>`;
         }
       }
+      controlHTML += `<div class="inline-advance-row"><button type="button" class="mini-advance-btn" data-advance-block="${b.id}">המשך →</button>${skipLinkHTML(b)}</div>`;
     } else if (b.responseType === 'buttons') {
-      controlHTML = choiceButtonsHTML(b, currentVal);
+      controlHTML = choiceButtonsHTML(b, currentVal) + skipLinkHTML(b);
     } else if (b.responseType === 'timing-slots') {
       controlHTML = choiceButtonsHTML(b, currentVal);
       if (currentVal === 'ליותר מאוחר') {
@@ -229,16 +258,23 @@ const AgentView = (function () {
       controlHTML = `<select class="wizard-input" id="q-input-${b.id}" data-key="${b.key}">
         <option value="" ${!currentVal ? 'selected' : ''}>בחר/י...</option>
         ${b.options.map(o => `<option value="${escapeAttr(o)}" ${currentVal === o ? 'selected' : ''}>${o}</option>`).join('')}
-      </select>`;
+      </select>` + skipLinkHTML(b);
     } else if (b.responseType === 'multiselect') {
       const arr = Array.isArray(currentVal) ? currentVal : [];
       controlHTML = `<div class="multiselect-row">${b.options.map(o => `
         <label class="multiselect-chip ${arr.indexOf(o) > -1 ? 'is-selected' : ''}">
           <input type="checkbox" data-key="${b.key}" data-multi-option="${escapeAttr(o)}" ${arr.indexOf(o) > -1 ? 'checked' : ''}> ${o}
-        </label>`).join('')}</div>`;
+        </label>`).join('')}</div>
+        <div class="inline-advance-row"><button type="button" class="mini-advance-btn" data-advance-block="${b.id}">המשך →</button></div>`;
     } else if (b.responseType === 'dynamic-fulfillment') {
       if (session.answers.fulfillment === 'משלוח') {
-        controlHTML = `<input class="wizard-input" id="q-input-${b.id}" type="text" value="${escapeAttr(currentVal)}" placeholder="לדוגמה: רחוב הרצל 10, כניסה ב׳, קומה 2" autocomplete="off">`;
+        const zones = Store.getDeliveryZones(branch.id);
+        const zoneSelectHTML = zones.length ? `<select class="wizard-input" id="q-zone-${b.id}" style="margin-bottom:10px;">
+          <option value="" ${!session.answers.deliveryZoneId ? 'selected' : ''}>בחר/י אזור משלוח...</option>
+          ${zones.map(z => `<option value="${z.id}" ${session.answers.deliveryZoneId === z.id ? 'selected' : ''}>${z.name} · דמי משלוח ${z.deliveryFee} ₪${z.minOrder ? ' · מינימום ' + z.minOrder + ' ₪' : ''}</option>`).join('')}
+        </select>` : '';
+        controlHTML = zoneSelectHTML + `<input class="wizard-input" id="q-input-${b.id}" type="text" value="${escapeAttr(currentVal)}" placeholder="לדוגמה: רחוב הרצל 10, כניסה ב׳, קומה 2" autocomplete="off">`
+          + `<div class="inline-advance-row"><button type="button" class="mini-advance-btn" data-advance-block="${b.id}">המשך →</button></div>`;
       } else if (session.answers.fulfillment === 'איסוף') {
         controlHTML = `<button type="button" class="choice-btn ${currentVal ? 'is-selected' : ''}" data-value="${escapeAttr(branch.shortName)}" data-key="${b.key}" style="width:100%;">כן, מגיע/ה לקחת מסניף ${branch.shortName}</button>`;
       } else {
@@ -253,64 +289,74 @@ const AgentView = (function () {
   }
 
   function renderQuestionScreen(container, branch, screen) {
-    const blocks = screen.blocks || [];
-    firePopupBlocksOnce(screen, blocks);
-    const questionBlocks = blocks.filter(b => b.kind === 'question');
+    const allBlocks = screen.blocks || [];
+    firePopupBlocksOnce(screen, allBlocks);
+    const revealCount = getRevealCount(screen);
+    const visibleBlocks = allBlocks.slice(0, revealCount);
+    const questionBlocks = visibleBlocks.filter(b => b.kind === 'question');
+    const fullyRevealed = revealCount >= allBlocks.length;
 
-    const bodyHTML = blocks.map(b => {
-      if (b.kind === 'script') return scriptBlockHTML(b);
+    const bodyHTML = visibleBlocks.map(b => {
+      if (b.kind === 'script') return scriptBlockHTML(b, true);
       if (b.kind === 'question') return questionBlockHTML(b, branch);
       return '';
     }).join('');
 
     container.innerHTML = `
       <div class="wizard">
-        ${progressHTML(branch)}
+        ${infoStripHTML(branch)}
         <div class="wizard-card">
-          <span class="wizard-branch-tag">${branch.name}</span>
           ${bodyHTML}
-          <div class="wizard-nav">
-            <button class="btn btn-secondary" id="btn-prev" type="button" ${currentScreenIndex === 0 ? 'disabled' : ''}>→ הקודם</button>
-            <button class="btn btn-primary" id="btn-next" type="button" ${canProceed(screen) ? '' : 'disabled'}>המשך →</button>
-          </div>
+          ${fullyRevealed ? `<div class="wizard-nav"><button class="btn btn-primary" id="btn-next" type="button" ${canProceed(screen) ? '' : 'disabled'}>המשך →</button></div>` : ''}
         </div>
       </div>
     `;
 
-    attachQuestionBlockListeners(container, branch, screen, questionBlocks);
-    attachNavListeners(container, branch);
+    attachQuestionBlockListeners(container, branch, screen, questionBlocks, allBlocks);
+    attachInfoStripListeners(container, branch);
+    attachNextListener(container, branch);
   }
 
-  function refreshNextButton(container, screen) {
-    const nextBtn = container.querySelector('#btn-next');
-    if (nextBtn) nextBtn.disabled = !canProceed(screen);
-  }
-
-  function refreshNameAutofillStrips(container, questionBlocks) {
-    questionBlocks.filter(b => b.key === 'fullName' && b.autofill).forEach(b => {
-      const slot = container.querySelector('[data-autofill-name-slot][data-block="' + b.id + '"]');
-      if (!slot) return;
-      const known = Store.knownCustomerByPhone(session.answers.phone || '');
-      if (known && !session.answers.fullName) {
-        slot.classList.add('autofill-strip');
-        slot.innerHTML = `<span>🔎 לקוח מוכר: ${known.fullName}</span><button type="button" class="autofill-strip-btn" data-autofill-name-btn="${b.id}">מילוי אוטומטי</button>`;
-        const btn = slot.querySelector('[data-autofill-name-btn]');
-        if (btn) btn.addEventListener('click', () => { session.answers.fullName = known.fullName; renderInternal(); });
-      } else {
-        slot.classList.remove('autofill-strip');
-        slot.innerHTML = '';
-      }
+  function showRuleFromCheck(check) {
+    const rule = check.rule;
+    const fn = rule.kind === 'blocking' ? Popups.blocking : Popups.reminder;
+    fn({
+      title: rule.name,
+      message: rule.message,
+      buttons: rule.buttons.map(b => ({
+        label: b.label,
+        onClick: () => {
+          logNote(`${rule.message} ← נבחר: "${b.label}"`);
+          performRuleAction(b.action);
+          renderInternal();
+        }
+      }))
     });
   }
 
-  function attachQuestionBlockListeners(container, branch, screen, questionBlocks) {
+  function performRuleAction(action) {
+    if (!action || action === 'dismiss' || action === 'removeFromCart') return;
+    if (action === 'cancelOrder') { showToast('ההזמנה בוטלה', 'danger'); session = null; return; }
+    if (action.indexOf('set:') === 0) {
+      const parts = action.slice(4).split('=');
+      session.answers[parts[0]] = parts[1];
+    }
+  }
+
+  function logNote(text) { if (session) session.notesLog.push(text); }
+
+  function attachQuestionBlockListeners(container, branch, screen, questionBlocks, allBlocks) {
     function handleKeyAnswered(key) {
+      advanceReveal(screen);
       if (['timing', 'fulfillment', 'timeSlot'].indexOf(key) > -1) {
         const check = Engine.checkAfterAnswer(session);
-        if (check) { showRuleFromCheck(check); return; }
+        if (check) showRuleFromCheck(check);
       }
-      renderInternal();
     }
+
+    container.querySelectorAll('.script-continue-btn').forEach(btn => {
+      btn.addEventListener('click', () => advanceReveal(screen));
+    });
 
     questionBlocks.forEach(b => {
       const isTextInput = b.responseType === 'short-text' || (b.responseType === 'dynamic-fulfillment' && session.answers.fulfillment === 'משלוח');
@@ -319,7 +365,6 @@ const AgentView = (function () {
         if (input) {
           input.addEventListener('input', (e) => {
             session.answers[b.key] = e.target.value;
-            refreshNextButton(container, screen);
             if (b.key === 'phone') {
               const slot = container.querySelector('#autofill-slot-' + b.id);
               if (slot) slot.innerHTML = autofillSlotHTML(e.target.value);
@@ -327,9 +372,11 @@ const AgentView = (function () {
             }
           });
           input.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter' && canProceed(screen)) goNext(branch);
+            if (e.key === 'Enter' && isBlockValid(b, branch)) handleKeyAnswered(b.key);
           });
         }
+        const zoneSelect = container.querySelector('#q-zone-' + b.id);
+        if (zoneSelect) zoneSelect.addEventListener('change', (e) => { session.answers.deliveryZoneId = e.target.value || null; });
       }
 
       if (b.responseType === 'dropdown') {
@@ -365,40 +412,134 @@ const AgentView = (function () {
     container.querySelectorAll('.slot-btn[data-slot]').forEach(btn => {
       btn.addEventListener('click', () => { session.answers.timeSlot = btn.dataset.slot; handleKeyAnswered('timeSlot'); });
     });
-  }
 
-  function showRuleFromCheck(check) {
-    const rule = check.rule;
-    const fn = rule.kind === 'blocking' ? Popups.blocking : Popups.reminder;
-    fn({
-      title: rule.name,
-      message: rule.message,
-      buttons: rule.buttons.map(b => ({
-        label: b.label,
-        onClick: () => {
-          logNote(`${rule.message} ← נבחר: "${b.label}"`);
-          performRuleAction(b.action);
-          renderInternal();
-        }
-      }))
+    container.querySelectorAll('[data-advance-block]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const block = allBlocks.find(bl => bl.id === btn.dataset.advanceBlock);
+        if (!block || !isBlockValid(block, branch)) return;
+        handleKeyAnswered(block.key);
+      });
+    });
+
+    container.querySelectorAll('[data-skip-block]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const block = allBlocks.find(bl => bl.id === btn.dataset.skipBlock);
+        if (!block) return;
+        handleKeyAnswered(block.key);
+      });
     });
   }
 
-  function performRuleAction(action) {
-    if (!action || action === 'dismiss' || action === 'removeFromCart') return;
-    if (action === 'cancelOrder') { showToast('ההזמנה בוטלה', 'danger'); session = null; return; }
-    if (action.indexOf('set:') === 0) {
-      const parts = action.slice(4).split('=');
-      session.answers[parts[0]] = parts[1];
-    }
+  function refreshNameAutofillStrips(container, questionBlocks) {
+    questionBlocks.filter(b => b.key === 'fullName' && b.autofill).forEach(b => {
+      const slot = container.querySelector('[data-autofill-name-slot][data-block="' + b.id + '"]');
+      if (!slot) return;
+      const known = Store.knownCustomerByPhone(session.answers.phone || '');
+      if (known && !session.answers.fullName) {
+        slot.classList.add('autofill-strip');
+        slot.innerHTML = `<span>🔎 לקוח מוכר: ${known.fullName}</span><button type="button" class="autofill-strip-btn" data-autofill-name-btn="${b.id}">מילוי אוטומטי</button>`;
+        const btn = slot.querySelector('[data-autofill-name-btn]');
+        if (btn) btn.addEventListener('click', () => { session.answers.fullName = known.fullName; renderInternal(); });
+      } else {
+        slot.classList.remove('autofill-strip');
+        slot.innerHTML = '';
+      }
+    });
   }
 
-  function logNote(text) { if (session) session.notesLog.push(text); }
+  /* ---------------- שירותי בלוקים (תסריט/פופאפ) ---------------- */
 
-  /* ---------------- menu screen ---------------- */
+  function firePopupBlocksOnce(screen, blocks) {
+    (blocks || []).filter(b => b.kind === 'popup').forEach(b => {
+      const flagKey = screen.id + ':' + b.id;
+      if (!session._shownScripts[flagKey]) {
+        session._shownScripts[flagKey] = true;
+        Popups.reminder({ title: 'תזכורת לנציגה', message: b.text, buttons: [{ label: 'הבנתי, ממשיך', onClick: function () {} }] });
+      }
+    });
+  }
 
-  function computeFilteredItems(screen) {
-    const items = Store.getMenuItemsByCategory(screen.categoryFilter);
+  function scriptBlockHTML(b, withContinue) {
+    return `<div class="script-block">
+      <span class="script-block-icon">🗣️</span>
+      <div style="flex:1;">
+        <p>${b.text}</p>
+        ${withContinue ? `<button type="button" class="script-continue-btn" data-block="${b.id}">הבא ←</button>` : ''}
+      </div>
+    </div>`;
+  }
+
+  /* ---------------- סל הזמנה (קוביה קבועה) ---------------- */
+
+  function deliveryFeeForSession() {
+    if (!session || session.answers.fulfillment !== 'משלוח') return 0;
+    const zone = Store.getDeliveryZone(session.branchId, session.answers.deliveryZoneId);
+    return zone ? zone.deliveryFee : 0;
+  }
+
+  function grandTotal() { return cartTotal() + deliveryFeeForSession(); }
+
+  function cartLineHTML(line) {
+    const item = Store.getMenuItem(line.itemId);
+    if (!item) return '';
+    return `
+      <div class="order-sidebar-line">
+        <button type="button" class="order-sidebar-edit" data-edit-item="${item.id}" title="עריכת המנה">✏️</button>
+        <div class="order-sidebar-line-info">
+          <span class="order-sidebar-line-name">${line.qty} × ${item.name}</span>
+          ${line.note ? `<span class="order-sidebar-line-note">${line.note}</span>` : ''}
+        </div>
+        <span class="order-sidebar-line-price">${item.price * line.qty} ₪</span>
+      </div>`;
+  }
+
+  function cartSidebarHTML(branch) {
+    const zone = session.answers.fulfillment === 'משלוח' ? Store.getDeliveryZone(branch.id, session.answers.deliveryZoneId) : null;
+    const fee = zone ? zone.deliveryFee : 0;
+    return `
+      <div class="order-sidebar" id="order-sidebar">
+        <div class="order-sidebar-title">🧾 ההזמנה שלך</div>
+        <div class="order-sidebar-lines">
+          ${session.cart.length ? session.cart.map(cartLineHTML).join('') : '<p class="order-sidebar-empty">העגלה עדיין ריקה</p>'}
+        </div>
+        ${zone ? `<div class="order-sidebar-row"><span>דמי משלוח (${zone.name})</span><span>${fee} ₪</span></div>` : ''}
+        <div class="order-sidebar-row is-total"><span>סה״כ</span><span>${grandTotal()} ₪</span></div>
+      </div>`;
+  }
+
+  function attachSidebarListeners(container, branch) {
+    const sidebar = container.querySelector('#order-sidebar');
+    if (!sidebar) return;
+    sidebar.querySelectorAll('[data-edit-item]').forEach(btn => {
+      btn.addEventListener('click', () => scrollToAndEditItem(btn.dataset.editItem, branch));
+    });
+  }
+
+  function scrollToAndEditItem(itemId, branch) {
+    const item = Store.getMenuItem(itemId);
+    if (!item) return;
+    const flow = Store.getActiveFlow(branch);
+    const menuIdx = flow.findIndex(s => s.type === 'menu');
+    if (menuIdx > -1) currentScreenIndex = menuIdx;
+    const cats = Store.getRestaurantCategories(session.restaurantId);
+    if (cats.some(c => c.id === item.categoryId)) menuActiveTab = item.categoryId;
+    if (item.customizable) expandedCustomItemId = item.id;
+    renderInternal();
+    requestAnimationFrame(() => {
+      const card = mountedRoot.querySelector('.item-card[data-item-id="' + itemId + '"]');
+      if (card) {
+        card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        card.classList.add('is-flash-highlight');
+        setTimeout(() => card.classList.remove('is-flash-highlight'), 1200);
+      }
+    });
+  }
+
+  /* ---------------- menu screen (לשוניות קטגוריה + תפריט) ---------------- */
+
+  function computeFilteredItems() {
+    if (!menuActiveTab) return [];
+    const items = Store.getMenuItemsByCategory([menuActiveTab]);
     const maxPrice = menuFilterState.maxPrice !== '' ? parseFloat(menuFilterState.maxPrice) : null;
     return items.filter(it => {
       if (menuFilterState.search && menuFilterState.search.trim()) {
@@ -416,13 +557,13 @@ const AgentView = (function () {
     const selected = session.customItemSelection[it.id] || [];
     return `
       <div class="customize-panel">
-        <div class="field-label">בחר/י מילוי</div>
+        <div class="field-label">בחר/י מילוי (לחיצה מוסיפה / מסירה)</div>
         <div class="ingredient-chip-row">
-          ${ingredients.map(ing => `
-            <label class="ingredient-chip ${!ing.available ? 'is-unavailable' : ''} ${selected.indexOf(ing.id) > -1 ? 'is-selected' : ''}">
-              <input type="checkbox" data-ingredient="${ing.id}" data-item="${it.id}" ${selected.indexOf(ing.id) > -1 ? 'checked' : ''} ${!ing.available ? 'disabled' : ''}>
-              ${ing.name}${!ing.available ? ' ✕' : ''}
-            </label>`).join('')}
+          ${ingredients.map(ing => {
+            const isSel = selected.indexOf(ing.id) > -1;
+            const available = Store.isIngredientAvailableAtBranch(session.branchId, ing.id);
+            return `<button type="button" class="ingredient-chip ${isSel ? 'is-selected' : ''} ${!available ? 'is-unavailable' : ''}" data-action="toggle-ingredient" data-ingredient="${ing.id}" data-item="${it.id}" ${!available ? 'disabled' : ''}>${isSel ? '✓ ' : '+ '}${ing.name}${!available ? ' ✕' : ''}</button>`;
+          }).join('')}
         </div>
         <button type="button" class="btn btn-primary btn-small" data-action="confirm-custom" data-item="${it.id}">הוספה לעגלה</button>
       </div>`;
@@ -431,20 +572,22 @@ const AgentView = (function () {
   function itemCardHTML(it) {
     const line = session.cart.find(l => l.itemId === it.id);
     const qty = line ? line.qty : 0;
+    const totalQtyForItem = session.cart.filter(l => l.itemId === it.id).reduce((s, l) => s + l.qty, 0);
     const emoji = it.categoryId === 'drinks' ? '🥤' : it.categoryId === 'sides' ? '🥗' : it.categoryId === 'party' ? '🎉' : '🍣';
+    const cartBadge = totalQtyForItem > 0 ? `<span class="item-in-cart-badge">בעגלה: ${totalQtyForItem}</span>` : '';
 
     if (it.customizable) {
       const isExpanded = expandedCustomItemId === it.id;
       return `
-        <div class="item-card">
+        <div class="item-card ${isExpanded ? 'is-expanded' : ''}" data-item-id="${it.id}" data-action="customize-card">
           <div class="item-image-placeholder">${emoji}<span class="item-image-placeholder-label">תמונה תתווסף</span></div>
           <div class="item-body">
             <div class="item-name">${it.name}</div>
             ${it.tags.length ? `<div class="item-tags">${it.tags.map(t => `<span class="item-tag">${t}</span>`).join('')}</div>` : ''}
-            ${line && line.note ? `<span class="item-note-tag">${line.note}</span>` : ''}
+            ${cartBadge}
             <div class="item-foot">
               <span class="item-price">${it.price} ₪</span>
-              <button type="button" class="add-btn" data-action="customize" data-item="${it.id}">בחירת מילוי ${isExpanded ? '−' : '+'}</button>
+              <span class="add-btn is-static">${isExpanded ? 'סגירה −' : 'לחצו לבחירת מילוי +'}</span>
             </div>
           </div>
           ${isExpanded ? customizePanelHTML(it) : ''}
@@ -452,7 +595,7 @@ const AgentView = (function () {
     }
 
     return `
-      <div class="item-card">
+      <div class="item-card" data-item-id="${it.id}">
         <div class="item-image-placeholder">${emoji}<span class="item-image-placeholder-label">תמונה תתווסף</span></div>
         <div class="item-body">
           <div class="item-name">${it.name}</div>
@@ -472,55 +615,65 @@ const AgentView = (function () {
     return allTags.map(t => `<button type="button" class="tag-chip ${menuFilterState.tag === t ? 'is-active' : ''}" data-tag="${t}">${t}</button>`).join('');
   }
 
-  function refreshMenuGrid(container, screen) {
+  function refreshMenuGrid(container) {
     const grid = container.querySelector('#menu-grid');
     if (!grid) return;
-    const filtered = computeFilteredItems(screen);
+    const filtered = computeFilteredItems();
     grid.innerHTML = filtered.map(itemCardHTML).join('') || '<p style="color:var(--text-muted);font-size:13px;grid-column:1/-1;">לא נמצאו פריטים תואמים.</p>';
+  }
+
+  function categoryTabsHTML(categories) {
+    return `<div class="category-tabs">${categories.map(c => `<button type="button" class="category-tab ${menuActiveTab === c.id ? 'is-active' : ''}" data-tab="${c.id}">${c.name}</button>`).join('')}</div>`;
   }
 
   function renderMenuScreen(container, branch, screen) {
     firePopupBlocksOnce(screen, screen.leadingBlocks);
-    const leadingScriptsHTML = (screen.leadingBlocks || []).filter(b => b.kind === 'script').map(scriptBlockHTML).join('');
+    const leadingScriptsHTML = (screen.leadingBlocks || []).filter(b => b.kind === 'script').map(b => scriptBlockHTML(b, false)).join('');
 
-    const items = Store.getMenuItemsByCategory(screen.categoryFilter);
+    const categories = Store.getRestaurantCategories(session.restaurantId);
+    if (!menuActiveTab || !categories.some(c => c.id === menuActiveTab)) menuActiveTab = categories.length ? categories[0].id : null;
+
+    const items = menuActiveTab ? Store.getMenuItemsByCategory([menuActiveTab]) : [];
     const allTags = Array.from(new Set(items.reduce((acc, it) => acc.concat(it.tags), [])));
-    const total = cartTotal();
-    const count = session.cart.reduce((s, l) => s + l.qty, 0);
 
     container.innerHTML = `
-      ${progressHTML(branch)}
-      <span class="wizard-branch-tag">${branch.name}</span>
-      ${leadingScriptsHTML}
-      <h2 class="menu-screen-title">${screen.title}</h2>
-      <div class="menu-toolbar">
-        <input class="search-input" id="menu-search" type="text" placeholder="חיפוש מהיר לפי שם או תגית..." value="${escapeAttr(menuFilterState.search)}">
-        <input class="price-filter-input ${menuFilterState.justAutoSet ? 'is-flash' : ''}" id="price-filter" type="number" min="0" step="1" placeholder="סינון: עד כמה ₪?" value="${escapeAttr(menuFilterState.maxPrice)}">
-      </div>
-      ${allTags.length ? `<div class="tag-chip-row" id="tag-chip-row">${tagChipsHTML(allTags)}</div>` : ''}
-      <div class="menu-grid" id="menu-grid"></div>
-      <div class="cart-bar">
-        <div class="cart-bar-info">
-          <span class="cart-bar-count">${count} פריטים בעגלה</span>
-          <span class="cart-bar-total">סה״כ: ${total} ₪</span>
-          ${branch.minOrderDelivery ? `<span class="cart-bar-min-note">מינימום למשלוח: ${branch.minOrderDelivery} ₪</span>` : ''}
+      ${infoStripHTML(branch)}
+      <div class="order-layout">
+        <div class="order-main">
+          ${leadingScriptsHTML}
+          <h2 class="menu-screen-title">${screen.title}</h2>
+          ${categories.length ? categoryTabsHTML(categories) : '<p class="admin-empty-note">לא הוגדרו קטגוריות תפריט למסעדה זו.</p>'}
+          <div class="menu-toolbar">
+            <input class="search-input" id="menu-search" type="text" placeholder="חיפוש מהיר לפי שם או תגית..." value="${escapeAttr(menuFilterState.search)}">
+            <input class="price-filter-input ${menuFilterState.justAutoSet ? 'is-flash' : ''}" id="price-filter" type="number" min="0" step="1" placeholder="סינון: עד כמה ₪?" value="${escapeAttr(menuFilterState.maxPrice)}">
+          </div>
+          ${allTags.length ? `<div class="tag-chip-row" id="tag-chip-row">${tagChipsHTML(allTags)}</div>` : ''}
+          <div class="menu-grid" id="menu-grid"></div>
+          <div class="wizard-nav"><button class="btn btn-primary" id="btn-next" type="button">המשך →</button></div>
         </div>
-        <div class="wizard-nav-inline">
-          <button class="btn btn-secondary" id="btn-prev" type="button">→ הקודם</button>
-          <button class="btn btn-primary" id="btn-next" type="button">המשך →</button>
-        </div>
+        ${cartSidebarHTML(branch)}
       </div>
     `;
     menuFilterState.justAutoSet = false;
-    refreshMenuGrid(container, screen);
+    refreshMenuGrid(container);
+
+    const tabsEl = container.querySelector('.category-tabs');
+    if (tabsEl) tabsEl.addEventListener('click', (e) => {
+      const tab = e.target.closest('.category-tab');
+      if (!tab) return;
+      menuActiveTab = tab.dataset.tab;
+      menuFilterState.search = '';
+      menuFilterState.tag = null;
+      renderInternal();
+    });
 
     container.querySelector('#menu-search').addEventListener('input', (e) => {
       menuFilterState.search = e.target.value;
-      refreshMenuGrid(container, screen);
+      refreshMenuGrid(container);
     });
     container.querySelector('#price-filter').addEventListener('input', (e) => {
       menuFilterState.maxPrice = e.target.value;
-      refreshMenuGrid(container, screen);
+      refreshMenuGrid(container);
     });
     const chipRow = container.querySelector('#tag-chip-row');
     if (chipRow) chipRow.addEventListener('click', (e) => {
@@ -529,46 +682,43 @@ const AgentView = (function () {
       const tag = chip.dataset.tag;
       menuFilterState.tag = menuFilterState.tag === tag ? null : tag;
       chipRow.innerHTML = tagChipsHTML(allTags);
-      refreshMenuGrid(container, screen);
+      refreshMenuGrid(container);
     });
 
     const grid = container.querySelector('#menu-grid');
     grid.addEventListener('click', (e) => {
       const btn = e.target.closest('[data-action]');
       if (!btn) return;
-      const item = Store.getMenuItem(btn.dataset.item);
+      const itemId = btn.dataset.item || btn.closest('[data-item-id]').dataset.itemId;
+      const item = Store.getMenuItem(itemId);
       if (!item) return;
-      if (btn.dataset.action === 'add') handleAddToCart(item, branch);
-      else if (btn.dataset.action === 'inc') { changeQty(item.id, 1); afterCartChange(branch); }
-      else if (btn.dataset.action === 'dec') { changeQty(item.id, -1); afterCartChange(branch); }
-      else if (btn.dataset.action === 'customize') {
+      const action = btn.dataset.action;
+      if (action === 'add') handleAddToCart(item, branch);
+      else if (action === 'inc') { changeQty(item.id, 1); afterCartChange(); }
+      else if (action === 'dec') { changeQty(item.id, -1); afterCartChange(); }
+      else if (action === 'customize-card') {
         expandedCustomItemId = expandedCustomItemId === item.id ? null : item.id;
         if (!session.customItemSelection[item.id]) session.customItemSelection[item.id] = [];
-        refreshMenuGrid(container, screen);
-      } else if (btn.dataset.action === 'confirm-custom') {
+        refreshMenuGrid(container);
+      } else if (action === 'toggle-ingredient') {
+        const arr = session.customItemSelection[item.id] || (session.customItemSelection[item.id] = []);
+        const idx = arr.indexOf(btn.dataset.ingredient);
+        if (idx > -1) arr.splice(idx, 1); else arr.push(btn.dataset.ingredient);
+        refreshMenuGrid(container);
+      } else if (action === 'confirm-custom') {
         const names = (session.customItemSelection[item.id] || []).map(id => {
           const ing = Store.getIngredient(session.restaurantId, id);
           return ing ? ing.name : id;
         });
         addItemToCart(item.id, names.length ? names.join(', ') : null);
         expandedCustomItemId = null;
-        afterCartChange(branch);
+        afterCartChange();
       }
     });
-    grid.addEventListener('change', (e) => {
-      const chk = e.target.closest('input[data-ingredient]');
-      if (!chk) return;
-      const itemId = chk.dataset.item;
-      if (!session.customItemSelection[itemId]) session.customItemSelection[itemId] = [];
-      const arr = session.customItemSelection[itemId];
-      const idx = arr.indexOf(chk.dataset.ingredient);
-      if (chk.checked && idx === -1) arr.push(chk.dataset.ingredient);
-      if (!chk.checked && idx > -1) arr.splice(idx, 1);
-      const chip = chk.closest('.ingredient-chip');
-      if (chip) chip.classList.toggle('is-selected', chk.checked);
-    });
 
-    attachNavListeners(container, branch);
+    attachSidebarListeners(container, branch);
+    attachInfoStripListeners(container, branch);
+    attachNextListener(container, branch);
   }
 
   function handleAddToCart(item, branch) {
@@ -598,12 +748,12 @@ const AgentView = (function () {
                   Popups.reminder({
                     title: tunaRule.name,
                     message: tunaRule.message,
-                    buttons: tunaRule.buttons.map(bb => ({ label: bb.label, onClick: () => { logNote(tunaRule.message); afterCartChange(branch); } }))
+                    buttons: tunaRule.buttons.map(bb => ({ label: bb.label, onClick: () => { logNote(tunaRule.message); afterCartChange(); } }))
                   });
                   return;
                 }
               }
-              afterCartChange(branch);
+              afterCartChange();
             }
           }))
         });
@@ -611,7 +761,7 @@ const AgentView = (function () {
       }
     }
     addItemToCart(item.id, null);
-    afterCartChange(branch);
+    afterCartChange();
   }
 
   function addItemToCart(itemId, note) {
@@ -635,11 +785,11 @@ const AgentView = (function () {
   }
 
   function applyPriceFilterToGap(gap) {
-    menuFilterState.maxPrice = String(gap);
+    menuFilterState.maxPrice = String(gap + 10);
     menuFilterState.justAutoSet = true;
   }
 
-  function afterCartChange(branch) {
+  function afterCartChange() {
     renderInternal();
   }
 
@@ -647,8 +797,8 @@ const AgentView = (function () {
 
   function renderPaymentScreen(container, branch, screen) {
     firePopupBlocksOnce(screen, screen.leadingBlocks);
-    const leadingScriptsHTML = (screen.leadingBlocks || []).filter(b => b.kind === 'script').map(scriptBlockHTML).join('');
-    const total = cartTotal();
+    const leadingScriptsHTML = (screen.leadingBlocks || []).filter(b => b.kind === 'script').map(b => scriptBlockHTML(b, false)).join('');
+    const total = grandTotal();
     const methods = [
       { id: 'cash', label: 'מזומן', icon: '💵' },
       { id: 'credit', label: 'אשראי', icon: '💳' },
@@ -658,31 +808,34 @@ const AgentView = (function () {
     ];
     const p = session.payment;
     container.innerHTML = `
-      ${progressHTML(branch)}
-      <span class="wizard-branch-tag">${branch.name}</span>
-      ${leadingScriptsHTML}
-      <h2 class="menu-screen-title">${screen.title} · סה״כ ${total} ₪</h2>
-      <div class="payment-methods" id="payment-methods">
-        ${methods.map(m => `<div class="payment-method-card ${p.method === m.id ? 'is-selected' : ''}" data-method="${m.id}"><span class="payment-method-icon">${m.icon}</span>${m.label}</div>`).join('')}
-      </div>
-      <label class="split-toggle-row"><input type="checkbox" id="split-toggle" ${p.split ? 'checked' : ''}> פיצול תשלום בין 2 אמצעים</label>
-      ${p.split ? `
-      <div class="split-block">
-        <div class="split-row">
-          <label style="min-width:100px;font-size:12.5px;color:var(--text-muted);">אמצעי שני</label>
-          <select id="split-method">
-            <option value="">בחר/י...</option>
-            ${methods.filter(m => m.id !== p.method).map(m => `<option value="${m.id}" ${p.splitMethod === m.id ? 'selected' : ''}>${m.label}</option>`).join('')}
-          </select>
+      ${infoStripHTML(branch)}
+      <div class="order-layout">
+        <div class="order-main">
+          ${leadingScriptsHTML}
+          <h2 class="menu-screen-title">${screen.title} · סה״כ ${total} ₪</h2>
+          <div class="payment-methods" id="payment-methods">
+            ${methods.map(m => `<div class="payment-method-card ${p.method === m.id ? 'is-selected' : ''}" data-method="${m.id}"><span class="payment-method-icon">${m.icon}</span>${m.label}</div>`).join('')}
+          </div>
+          <label class="split-toggle-row"><input type="checkbox" id="split-toggle" ${p.split ? 'checked' : ''}> פיצול תשלום בין 2 אמצעים</label>
+          ${p.split ? `
+          <div class="split-block">
+            <div class="split-row">
+              <label style="min-width:100px;font-size:12.5px;color:var(--text-muted);">אמצעי שני</label>
+              <select id="split-method">
+                <option value="">בחר/י...</option>
+                ${methods.filter(m => m.id !== p.method).map(m => `<option value="${m.id}" ${p.splitMethod === m.id ? 'selected' : ''}>${m.label}</option>`).join('')}
+              </select>
+            </div>
+            <div class="split-row">
+              <label style="min-width:100px;font-size:12.5px;color:var(--text-muted);">סכום לאמצעי השני (₪)</label>
+              <input type="number" id="split-amount" min="0" max="${total}" value="${p.splitAmount || ''}" placeholder="לדוגמה 50">
+            </div>
+          </div>` : ''}
+          <div class="wizard-nav">
+            <button class="btn btn-primary" id="btn-next" type="button" ${p.method ? '' : 'disabled'}>המשך →</button>
+          </div>
         </div>
-        <div class="split-row">
-          <label style="min-width:100px;font-size:12.5px;color:var(--text-muted);">סכום לאמצעי השני (₪)</label>
-          <input type="number" id="split-amount" min="0" max="${total}" value="${p.splitAmount || ''}" placeholder="לדוגמה 50">
-        </div>
-      </div>` : ''}
-      <div class="wizard-nav">
-        <button class="btn btn-secondary" id="btn-prev" type="button">→ הקודם</button>
-        <button class="btn btn-primary" id="btn-next" type="button" ${p.method ? '' : 'disabled'}>המשך →</button>
+        ${cartSidebarHTML(branch)}
       </div>
     `;
 
@@ -700,24 +853,25 @@ const AgentView = (function () {
     const splitAmount = container.querySelector('#split-amount');
     if (splitAmount) splitAmount.addEventListener('input', (e) => { session.payment.splitAmount = e.target.value; });
 
-    attachNavListeners(container, branch);
+    attachSidebarListeners(container, branch);
+    attachInfoStripListeners(container, branch);
+    attachNextListener(container, branch);
   }
 
   /* ---------------- summary ---------------- */
 
   function renderSummaryScreen(container, branch, screen) {
     firePopupBlocksOnce(screen, screen.leadingBlocks);
-    const leadingScriptsHTML = (screen.leadingBlocks || []).filter(b => b.kind === 'script').map(scriptBlockHTML).join('');
-    const text = Summary.buildText({ branch: branch, answers: session.answers, cart: session.cart, payment: session.payment, notesLog: session.notesLog });
+    const leadingScriptsHTML = (screen.leadingBlocks || []).filter(b => b.kind === 'script').map(b => scriptBlockHTML(b, false)).join('');
+    const zone = session.answers.fulfillment === 'משלוח' ? Store.getDeliveryZone(branch.id, session.answers.deliveryZoneId) : null;
+    const text = Summary.buildText({ branch: branch, answers: session.answers, cart: session.cart, payment: session.payment, notesLog: session.notesLog, zone: zone, deliveryFee: deliveryFeeForSession(), grandTotal: grandTotal() });
     container.innerHTML = `
-      ${progressHTML(branch)}
-      <span class="wizard-branch-tag">${branch.name}</span>
+      ${infoStripHTML(branch)}
       ${leadingScriptsHTML}
       <h2 class="menu-screen-title">${screen.title}</h2>
       <textarea class="summary-textarea" id="summary-text" readonly></textarea>
       <div class="summary-actions">
         <button class="btn btn-primary" id="btn-copy" type="button">📋 העתקת סיכום ההזמנה</button>
-        <button class="btn btn-secondary" id="btn-prev" type="button">→ חזרה לתשלום</button>
         <button class="btn btn-ghost" id="btn-new-call" type="button">☎️ שיחה חדשה</button>
       </div>
     `;
@@ -727,8 +881,8 @@ const AgentView = (function () {
         .then(() => showToast('הסיכום הועתק ללוח! ✅', 'success'))
         .catch(() => showToast('העתקה נכשלה - ניתן לסמן ולהעתיק ידנית', 'danger'));
     });
-    container.querySelector('#btn-prev').addEventListener('click', () => { currentScreenIndex--; renderInternal(); });
     container.querySelector('#btn-new-call').addEventListener('click', () => { session = null; renderInternal(); });
+    attachInfoStripListeners(container, branch);
   }
 
   return { mount };
