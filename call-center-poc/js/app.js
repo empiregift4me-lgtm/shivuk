@@ -7,6 +7,7 @@
 
   function renderView() {
     const root = document.getElementById('app-root');
+    AgentView.unmount();
     root.innerHTML = '';
     if (currentView === 'agent') AgentView.mount(root);
     else AdminView.mount(root);

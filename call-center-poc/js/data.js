@@ -23,7 +23,7 @@
    restaurant.menuCategoryIds (מוגדר בתצוגת מנהל).
 =================================================================== */
 
-const SCHEMA_VERSION = 3;
+const SCHEMA_VERSION = 4;
 
 const DEFAULT_DATA = {
   _schemaVersion: SCHEMA_VERSION,
@@ -185,7 +185,8 @@ const DEFAULT_DATA = {
             {
               id: 'pt-s4', type: 'question', title: "אמצעי תשלום מועדף", enabled: true,
               blocks: [
-                { id: 'pt-s4-b1', kind: 'question', key: 'memberCard', label: "התשלום יתבצע בכרטיס \"חבר\"?", responseType: 'dropdown', options: ['כן', 'לא'], required: true }
+                { id: 'pt-s4-b1', kind: 'question', key: 'memberCard', label: "התשלום יתבצע בכרטיס \"חבר\"?", responseType: 'dropdown', options: ['כן', 'לא'], required: true },
+                { id: 'pt-s4-b2', kind: 'script', text: "יש לוודא מול הלקוח את מספר כרטיס ה\"חבר\" ולציין אותו בפרטי ההזמנה - לתשומת לב: במגשי מסיבה לא ניתן לשלם בכרטיס חבר.", condition: { key: 'memberCard', equals: 'כן' } }
               ]
             },
             {

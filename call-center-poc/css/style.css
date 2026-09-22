@@ -584,6 +584,11 @@ textarea.block-text-edit { min-height: 46px; }
   padding: 8px 10px; font-size: 12.5px; min-height: 56px; background: var(--surface-alt); color: var(--text); font-family: 'Rubik', sans-serif;
 }
 .canvas-block-preview { margin-top: 10px; padding-top: 10px; border-top: 1px dashed var(--border); }
+.condition-badge { font-size: 10.5px; font-weight: 700; color: var(--accent); background: var(--accent-tint); border-radius: 999px; padding: 2px 7px; margin-inline-start: 4px; }
+.block-condition-row { display: flex; align-items: center; gap: 8px; margin-top: 10px; padding-top: 10px; border-top: 1px dashed var(--border); flex-wrap: wrap; }
+.block-condition-row .field-label { white-space: nowrap; }
+.block-condition-key, .block-condition-value { padding: 7px 9px; border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 12.5px; background: var(--surface); color: var(--text); }
+.block-condition-value { flex: 1; min-width: 120px; }
 
 .block-palette { display: flex; flex-direction: column; gap: 14px; }
 .palette-section { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 10px; }
@@ -614,6 +619,7 @@ textarea.block-text-edit { min-height: 46px; }
 .mini-advance-btn { border: none; background: var(--primary); color: #fff; padding: 9px 18px; border-radius: var(--radius-sm); font-size: 13px; font-weight: 700; cursor: pointer; }
 .mini-advance-btn:hover { background: var(--primary-dark); }
 .skip-link { border: none; background: transparent; color: var(--text-faint); font-size: 12px; text-decoration: underline; cursor: pointer; margin-top: 8px; }
+.field-hint { margin: 6px 2px 0; font-size: 11.5px; color: var(--text-faint); }
 
 /* ===== Admin: branch settings, zones, category manager ===== */
 .branch-settings-details { margin-bottom: 14px; border: 1px solid var(--border); border-radius: var(--radius); padding: 4px 14px; background: var(--surface); }
